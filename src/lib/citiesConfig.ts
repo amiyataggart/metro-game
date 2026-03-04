@@ -2,6 +2,7 @@ import barcelona from '@/app/(game)/barcelona/opengraph-image.jpg'
 import berlin from '@/app/(game)/berlin/opengraph-image.jpg'
 import boston from '@/app/(game)/boston/opengraph-image.jpg'
 import budapest from '@/app/(game)/budapest/opengraph-image.jpg'
+import busan from '@/app/(game)/busan/opengraph-image.jpg'
 import chicago from '@/app/(game)/chicago/opengraph-image.jpg'
 import dc from '@/app/(game)/dc/opengraph-image.jpg'
 import dresden from '@/app/(game)/dresden/opengraph-image.jpg'
@@ -73,6 +74,11 @@ export const cities: ICity[] = [
     name: 'Seoul',
     image: seoul,
     link: '/seoul',
+  },
+  {
+    name: 'Busan',
+    image: busan,
+    link: '/busan',
   },
   {
     name: 'Mexico City',
