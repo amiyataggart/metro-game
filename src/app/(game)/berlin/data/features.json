@@ -4184,7 +4184,7 @@
     {
       "type": "Feature",
       "geometry": { "type": "Point", "coordinates": [13.383798, 52.511519] },
-      "properties": { "id": 324, "name": "Mohrenstraße", "line": "U2" },
+      "properties": { "id": 324, "name": "Anton-Wilhelm-Amo-Straße", "line": "U2" },
       "id": 324
     },
     {
