@@ -223,6 +223,14 @@ const replacers: { [key: string]: (str: string) => string } = {
       .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim(),
+
+  hongkong: (str) =>
+    str
+      .toLowerCase()
+      .replace(/\([^()]*\)/g, '')
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim(),
 }
 
 const getCustomReplacer = (cityName: string) => {
@@ -231,7 +239,7 @@ const getCustomReplacer = (cityName: string) => {
 
 export const normalizeString = (city: string) => {
   // normalization for CJK cities should preserve non-latin scripts.
-  if (city === 'seoul' || city === 'busan' || city === 'tokyo') {
+  if (city === 'seoul' || city === 'busan' || city === 'tokyo' || city === 'hongkong') {
     return getCustomReplacer(city)
   }
 
