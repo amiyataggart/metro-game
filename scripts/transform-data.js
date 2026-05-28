@@ -57,7 +57,11 @@ for (const [k, stations] of Object.entries(OVERGROUND_LINES)) {
 // OSM tagging don't include (e.g. "St Pauls" without apostrophe is handled
 // by the normalizer, but "Kings Cross" without "St Pancras" needs an alt).
 const NAME_ALIASES = {
-  'St Pancras International': ['Kings Cross', "King's Cross", "King's Cross St Pancras", 'Kings Cross St Pancras'],
+  // St Pancras International is the Thameslink/Eurostar station — kept
+  // distinct from the Tube station 'King's Cross St Pancras'. Only short
+  // forms of its own name go here; do NOT add 'Kings Cross' variants or
+  // typing them will match the wrong station.
+  'St Pancras International': ['St Pancras', 'St Pancras Intl', 'London St Pancras'],
   'London Blackfriars': ['Blackfriars'],
   'London Bridge': [],
   'Elephant & Castle': ['Elephant and Castle', 'Elephant'],

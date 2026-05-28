@@ -38,3 +38,6 @@ public/stats/*
 
 # Local data backups
 *.original.json
+
+# QA render output (screenshots + reports)
+/qa/

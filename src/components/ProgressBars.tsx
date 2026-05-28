@@ -57,13 +57,18 @@ const LegendRoundel = ({
   const S = 32
   const cx = S / 2
   const cy = S / 2
-  const ringStroke = 2.5
-  const ringR = cx - ringStroke / 2
-  const discR = ringR - ringStroke / 2
-  const barH = S * 0.34
-  const stripeW = Math.max(1.4, barH / 3)
+  // Service-line bar — half the previous thickness.
+  const barH = S * 0.17
+  const stripeW = Math.max(1, barH / 3)
+  // Hollow progress ring sits inside the bar: outer diameter = 80% of the
+  // bar width, stroke width = bar thickness. Looks like a TFL roundel at
+  // 100% (ring around bar).
+  const ringStroke = barH
+  const ringOuterR = (S * 0.8) / 2
+  const ringR = ringOuterR - ringStroke / 2
   const circumference = 2 * Math.PI * ringR
-  // start arc at 12 o'clock, sweep clockwise
+  // Hollow circle that "fills out" as progress goes 0→100%. The stroke
+  // draws an arc starting at 12 o'clock and sweeping clockwise.
   const dashOffset = circumference * (1 - pct)
 
   return (
@@ -77,11 +82,7 @@ const LegendRoundel = ({
         height="100%"
         aria-label={title}
       >
-        {/* Disc behind the bar — fades 0→1 as the line is completed, so the
-            swatch grows from a bare bar into a roundel. */}
-        <circle cx={cx} cy={cy} r={discR} fill={line.color} opacity={pct} />
-
-        {/* Progress ring — completes around the circle in line colour. */}
+        {/* Progress ring — outline only, fills out as the line is completed. */}
         <circle
           cx={cx}
           cy={cy}

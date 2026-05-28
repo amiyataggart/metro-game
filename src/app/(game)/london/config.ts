@@ -149,8 +149,8 @@ export const LINES: {
   },
   Thameslink: {
     name: 'Thameslink',
-    color: '#7E5B95',
-    backgroundColor: '#3f2d4a',
+    color: '#D182A0',
+    backgroundColor: '#6c3d51',
     textColor: '#fff',
     order: 19,
     stripe: 'dashed',

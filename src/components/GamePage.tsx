@@ -299,10 +299,10 @@ export default function GamePage({
         })
       }
 
-      // Always-visible base layer: solid-white circle (with neutral outline)
-      // for every un-found station. Sized noticeably larger than the colored
-      // line widths so the marker punches through. Hidden once a station is
-      // found so the colored stations-circles takes over cleanly.
+      // Always-visible base layer: hollow circle for every un-found station,
+      // hidden once that station is found so the colored stations-circles
+      // takes over cleanly. Radii here and on stations-circles are kept in
+      // lockstep so the colored marker exactly replaces the empty one.
       m.addLayer({
         id: 'stations-base',
         type: 'circle',
@@ -311,24 +311,32 @@ export default function GamePage({
         paint: {
           'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
-            9, 4.5,
-            13, 8,
-            16, 12,
-            22, 20,
+            9, 3.6,
+            13, 6.4,
+            16, 9.6,
+            22, 16,
           ],
+          // Found stations: collapse to a 0-radius dot (and 0 stroke). Won't
+          // be visible — the colored stations-circles renders on top.
           'circle-color': '#ffffff',
-          'circle-stroke-color': 'rgb(110, 110, 110)',
+          'circle-stroke-color': '#1d2835',
           'circle-stroke-width': [
             'case',
             ['to-boolean', ['feature-state', 'found']],
             0,
             [
               'interpolate', ['linear'], ['zoom'],
-              8, 1.2,
-              22, 2.4,
+              8, 1.4,
+              22, 2.8,
             ],
           ],
           'circle-opacity': [
+            'case',
+            ['to-boolean', ['feature-state', 'found']],
+            0,
+            1,
+          ],
+          'circle-stroke-opacity': [
             'case',
             ['to-boolean', ['feature-state', 'found']],
             0,
@@ -357,10 +365,10 @@ export default function GamePage({
         paint: {
           'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
-            9, ['case', ['to-boolean', ['feature-state', 'found']], 4.5, 0],
-            13, ['case', ['to-boolean', ['feature-state', 'found']], 7, 0],
-            16, ['case', ['to-boolean', ['feature-state', 'found']], 11, 0],
-            22, ['case', ['to-boolean', ['feature-state', 'found']], 18, 0],
+            9, ['case', ['to-boolean', ['feature-state', 'found']], 3.6, 0],
+            13, ['case', ['to-boolean', ['feature-state', 'found']], 5.6, 0],
+            16, ['case', ['to-boolean', ['feature-state', 'found']], 8.8, 0],
+            22, ['case', ['to-boolean', ['feature-state', 'found']], 14.4, 0],
           ],
           'circle-color': [
             'match',
@@ -395,7 +403,9 @@ export default function GamePage({
           'text-field': ['to-string', ['get', 'name']],
           'text-font': ['Noto Sans Regular'],
           'text-anchor': 'bottom',
-          'text-offset': [0, -0.5],
+          // Raise text bottom by ~0.8× the current circle diameter (1.5em on
+          // a ~12px label ≈ 18px lift) so the label clears the marker.
+          'text-offset': [0, -1.5],
           'text-size': ['interpolate', ['linear'], ['zoom'], 11, 12, 22, 14],
         },
         paint: {
