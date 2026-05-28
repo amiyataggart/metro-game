@@ -49,18 +49,37 @@ export default function AboutModal({
                     >
                       {METADATA.title as string}
                     </Dialog.Title>
-                    <div className="mt-2">
+                    <div className="mt-2 space-y-2">
                       <p className="text-sm text-gray-500">
-                        Made with ☕️ by{' '}
+                        Developed by <strong>AJ Taggart</strong> — extended with
+                        Thameslink and the 2024 Overground line names
+                        (Lioness, Mildmay, Windrush, Weaver, Suffragette,
+                        Liberty).
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Based on{' '}
+                        <a
+                          href="https://github.com/benjamintd/metro-memory.com"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-zinc-600 underline hover:text-zinc-500"
+                        >
+                          metro-memory.com
+                        </a>{' '}
+                        by{' '}
                         <a
                           href="https://twitter.com/_benjamintd"
                           target="_blank"
                           rel="noreferrer"
-                          className="text-zinc-600 hover:text-zinc-500"
+                          className="text-zinc-600 underline hover:text-zinc-500"
                         >
-                          Benjamin TD
+                          Benjamin Tran Dinh
                         </a>{' '}
-                        (benjamin.tdm@gmail.com).
+                        (MIT-licensed).
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Line data: TfL Open Data (Powered by TfL Open Data) and
+                        OpenStreetMap contributors.
                       </p>
                     </div>
                   </div>

@@ -5,20 +5,16 @@ import { Menu, Transition } from '@headlessui/react'
 import MenuIcon from './MenuIcon'
 import classNames from 'classnames'
 import AboutModal from './AboutModal'
-import { useConfig } from '@/lib/configContext'
 import useTranslation from '@/hooks/useTranslation'
 
 export default function MenuComponent({
   onReset,
-  setHideLabels,
-  hideLabels,
+  openSettings,
 }: {
   onReset: () => void
-  hideLabels: boolean
-  setHideLabels: (hide: boolean) => void
+  openSettings: () => void
 }) {
   const [modalOpen, setModalOpen] = useState(false)
-  const { STRIPE_LINK } = useConfig()
   const { t } = useTranslation()
 
   return (
@@ -47,9 +43,9 @@ export default function MenuComponent({
                     active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
                     'block w-full px-4 py-2 text-left text-sm',
                   )}
-                  onClick={onReset}
+                  onClick={openSettings}
                 >
-                  {t('startOver')}
+                  Settings
                 </button>
               )}
             </Menu.Item>
@@ -60,28 +56,11 @@ export default function MenuComponent({
                     active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
                     'block w-full px-4 py-2 text-left text-sm',
                   )}
-                  onClick={() => setHideLabels(!hideLabels)}
+                  onClick={onReset}
                 >
-                  {hideLabels ? t('showSolutions') : t('hideSolutions')}
+                  {t('startOver')}
                 </button>
               )}
-            </Menu.Item>
-            <Menu.Item>
-              {({ active }) => {
-                return (
-                  <a
-                    rel="noreferrer"
-                    target="_blank"
-                    href={STRIPE_LINK}
-                    className={classNames(
-                      active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
-                      'block w-full px-4 py-2 text-left text-sm',
-                    )}
-                  >
-                    {t('supportProject')}
-                  </a>
-                )
-              }}
             </Menu.Item>
             <Menu.Item>
               {({ active }) => (

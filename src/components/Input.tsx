@@ -3,6 +3,7 @@
 import classNames from 'classnames'
 import { useState, KeyboardEventHandler, useCallback } from 'react'
 import Fuse from 'fuse.js'
+import maplibregl from 'maplibre-gl'
 import { DataFeature } from '@/lib/types'
 import { Transition } from '@headlessui/react'
 import { Feature, Point } from 'geojson'
@@ -24,7 +25,7 @@ const Input = ({
   setFound: (found: number[]) => void
   setIsNewPlayer: (isNewPlayer: boolean) => void
   inputRef: React.RefObject<HTMLInputElement>
-  map: mapboxgl.Map | null
+  map: maplibregl.Map | null
   idMap: Map<number, DataFeature>
 }) => {
   const { t } = useTranslation()
@@ -94,13 +95,13 @@ const Input = ({
         setSuccess(true)
         setTimeout(() => setSuccess(false), 250)
         if (map) {
-          ;(map.getSource('hovered') as mapboxgl.GeoJSONSource).setData({
+          ;(map.getSource('hovered') as maplibregl.GeoJSONSource).setData({
             type: 'FeatureCollection',
             features: (matches || []).map((id) => idMap.get(id)!),
           })
 
           setTimeout(() => {
-            ;(map.getSource('hovered') as mapboxgl.GeoJSONSource).setData({
+            ;(map.getSource('hovered') as maplibregl.GeoJSONSource).setData({
               type: 'FeatureCollection',
               features: [],
             })

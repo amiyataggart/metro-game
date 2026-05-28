@@ -1,8 +1,7 @@
 'use client'
 
-import { usePrevious } from '@react-hookz/web'
 import classNames from 'classnames'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import ProgressBars from './ProgressBars'
 import { MaximizeIcon } from './MaximizeIcon'
 import { MinimizeIcon } from './MinimizeIcon'
@@ -24,44 +23,7 @@ const FoundSummary = ({
   defaultMinimized?: boolean
 }) => {
   const { t } = useTranslation()
-  const previousFound = usePrevious(foundStationsPerLine)
   const [minimized, setMinimized] = useState<boolean>(defaultMinimized)
-
-  useEffect(() => {
-    // confetti when new line is 100%
-    const newFoundLines = Object.keys(foundStationsPerLine).filter(
-      (line) =>
-        previousFound &&
-        foundStationsPerLine[line] > previousFound[line] &&
-        foundStationsPerLine[line] === stationsPerLine[line],
-    )
-
-    if (newFoundLines.length > 0) {
-      const makeConfetti = async () => {
-        const confetti = (await import('tsparticles-confetti')).confetti
-        confetti({
-          spread: 120,
-          ticks: 200,
-          particleCount: 150,
-          origin: { y: 0.2 },
-          decay: 0.85,
-          gravity: 2,
-          startVelocity: 50,
-          shapes: ['image'],
-          scalar: 2,
-          shapeOptions: {
-            image: newFoundLines.map((line) => ({
-              src: `/images/${line}.svg`,
-              width: 64,
-              height: 64,
-            })),
-          },
-        })
-      }
-
-      makeConfetti()
-    }
-  }, [previousFound, foundStationsPerLine, stationsPerLine])
 
   return (
     <div

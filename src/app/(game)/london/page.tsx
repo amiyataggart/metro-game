@@ -1,7 +1,8 @@
 import data from './data/features.json'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import routesData from './data/routes.json'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import 'react-circular-progressbar/dist/styles.css'
-import { DataFeatureCollection } from '@/lib/types'
+import { DataFeatureCollection, RoutesFeatureCollection } from '@/lib/types'
 import config from './config'
 import GamePage from '@/components/GamePage'
 import { Provider } from '@/lib/configContext'
@@ -20,13 +21,15 @@ const fc = {
   features: data.features.filter((f) => !!config.LINES[f.properties.line]),
 } as DataFeatureCollection
 
+const routes = routesData as RoutesFeatureCollection
+
 export const metadata = config.METADATA
 
 export default function London() {
   return (
     <Provider value={config}>
       <Main className={`${font.className} min-h-screen`}>
-        <GamePage fc={fc} />
+        <GamePage fc={fc} routes={routes} />
       </Main>
     </Provider>
   )

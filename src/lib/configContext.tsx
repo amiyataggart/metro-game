@@ -3,36 +3,27 @@
 import { ReactNode, createContext, useContext } from 'react'
 import { Config } from './types'
 
+const POSITRON_STYLE =
+  'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+
 export const ConfigContext = createContext<Config>({
   LOCALE: 'en',
-  BEG_THRESHOLD: 0.2,
+  BEG_THRESHOLD: 1,
   CITY_NAME: 'default',
   MAP_CONFIG: {
     container: 'map',
-    style: 'mapbox://styles/benjamintd/clohp062g002b01o4e3lt1exh',
+    style: POSITRON_STYLE,
     bounds: [
-      [-4.184549, 40.156349],
-      [-3.19578, 40.62702],
-    ],
-    maxBounds: [
-      [-5.184549, 39.156349],
-      [-2.19578, 41.62702],
+      [-0.619997, 51.323273],
+      [0.35504, 51.68869],
     ],
     minZoom: 6,
     fadeDuration: 50,
   },
-  STRIPE_LINK: 'https://buy.stripe.com/bIY8x3fiCgmC9bi8wx',
   METADATA: {
-    title: 'Metro Memory',
-    description: 'How many of the Metro stations can you name from memory?',
-    openGraph: {
-      title: 'Metro Memory',
-      description:
-        'How many of the metro stations can you name from memory? Try this game to find out.',
-      type: 'website',
-      locale: 'en',
-      url: 'https://metro-memory.com/',
-    },
+    title: 'London Rail Memory',
+    description:
+      'How many London Underground, Overground, Thameslink, Elizabeth line and DLR stations can you name from memory?',
   },
   LINES: {},
 })

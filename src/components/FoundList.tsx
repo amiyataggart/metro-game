@@ -3,14 +3,19 @@
 import { Transition } from '@headlessui/react'
 import classNames from 'classnames'
 import SortMenu from '@/components/SortMenu'
-import { Fragment, memo, useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { SortOption, DataFeature, SortOptionType } from '@/lib/types'
-import { DateAddedIcon } from './DateAddedIcon'
 import { sortBy } from 'lodash'
-import Image from 'next/image'
-import AdBlock from './Ad'
 import { useConfig } from '@/lib/configContext'
 import useTranslation from '@/hooks/useTranslation'
+import LineSwatch from './LineSwatch'
+
+const ClockIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
 
 const FoundList = ({
   found,
@@ -35,7 +40,7 @@ const FoundList = ({
       {
         name: t('sort.order'),
         id: 'order',
-        shortName: <DateAddedIcon className="h-4 w-4" />,
+        shortName: <ClockIcon className="h-4 w-4" />,
       },
       { name: t('sort.name'), id: 'name', shortName: 'A-Z' },
       { name: t('sort.line'), id: 'line', shortName: '1-9' },
@@ -117,31 +122,15 @@ const FoundList = ({
         </div>
       )}
       <ol className={classNames({ 'blur-md transition-all': hideLabels })}>
-        {grouped.map((features, i) => {
-          if (i % 20 === 19) {
-            return (
-              <Fragment key={features[0].id}>
-                <GroupedLine
-                  key={features[0].id}
-                  features={features}
-                  zoomToFeature={zoomToFeature}
-                  setHoveredId={setHoveredId}
-                  hoveredId={hoveredId}
-                />
-                <AdBlock />
-              </Fragment>
-            )
-          }
-          return (
-            <GroupedLine
-              key={features[0].id}
-              features={features}
-              zoomToFeature={zoomToFeature}
-              setHoveredId={setHoveredId}
-              hoveredId={hoveredId}
-            />
-          )
-        })}
+        {grouped.map((features) => (
+          <GroupedLine
+            key={features[0].id}
+            features={features}
+            zoomToFeature={zoomToFeature}
+            setHoveredId={setHoveredId}
+            hoveredId={hoveredId}
+          />
+        ))}
       </ol>
     </div>
   )
@@ -190,14 +179,13 @@ const GroupedLine = memo(
         >
           {sortBy(features, (f) => LINES[f.properties.line || '']?.order).map(
             (feature) => {
+              const line = LINES[feature.properties.line || '']
               return (
-                <Image
+                <LineSwatch
                   key={feature.id!}
-                  alt={feature.properties.line || ''}
-                  src={`/images/${feature.properties.line}.svg`}
-                  width={64}
-                  height={64}
-                  className="-mr-0.5 h-5 w-5 object-contain"
+                  line={line}
+                  size="sm"
+                  className="-mr-0.5"
                 />
               )
             },

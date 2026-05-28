@@ -3,9 +3,9 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import Fuse from 'fuse.js'
 import { useLocalStorageValue } from '@react-hookz/web'
-import mapboxgl from 'mapbox-gl'
+import maplibregl from 'maplibre-gl'
 import { coordEach } from '@turf/meta'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import 'react-circular-progressbar/dist/styles.css'
 import MenuComponent from '@/components/Menu'
 import IntroModal from '@/components/IntroModal'
@@ -16,8 +16,7 @@ import {
   RoutesFeatureCollection,
 } from '@/lib/types'
 import Input from '@/components/Input'
-import useHideLabels from '@/hooks/useHideLabels'
-import StripeModal from '@/components/StripeModal'
+import SettingsModal from '@/components/SettingsModal'
 import { useConfig } from '@/lib/configContext'
 import useTranslation from '@/hooks/useTranslation'
 import FoundList from '@/components/FoundList'
@@ -31,44 +30,75 @@ export default function GamePage({
   fc: DataFeatureCollection
   routes?: RoutesFeatureCollection
 }) {
-  const { BEG_THRESHOLD, CITY_NAME, MAP_CONFIG, LINES, MAP_FROM_DATA } =
-    useConfig()
+  const { CITY_NAME, MAP_CONFIG, LINES } = useConfig()
   const { t } = useTranslation()
 
   const normalizeString = useNormalizeString()
 
-  const [map, setMap] = useState<mapboxgl.Map | null>(null)
+  const [map, setMap] = useState<maplibregl.Map | null>(null)
   const [hoveredId, setHoveredId] = useState<number | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const { hideLabels, setHideLabels } = useHideLabels(map)
-  const [showStripeModal, setShowStripeModal] = useState<boolean>(false)
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false)
 
-  const { value: hasShownStripeModal, set: setHasShownStripeModal } =
-    useLocalStorageValue<boolean>('has-shown-stripe-modal', {
-      defaultValue: false,
+  // Settings — persisted to localStorage.
+  const allLineKeys = useMemo(() => Object.keys(LINES), [LINES])
+  const defaultEnabled = useMemo(() => {
+    const o: Record<string, boolean> = {}
+    for (const k of allLineKeys) o[k] = true
+    return o
+  }, [allLineKeys])
+
+  const { value: storedEnabled, set: setEnabledLines } = useLocalStorageValue<
+    Record<string, boolean>
+  >(`${CITY_NAME}-enabled-lines`, {
+    defaultValue: defaultEnabled,
+    initializeWithValue: false,
+  })
+  const enabledLines = useMemo(() => {
+    // Merge stored state with defaults so newly added lines default to enabled.
+    const next: Record<string, boolean> = { ...defaultEnabled }
+    if (storedEnabled) {
+      for (const k of allLineKeys) {
+        if (storedEnabled[k] === false) next[k] = false
+      }
+    }
+    return next
+  }, [storedEnabled, defaultEnabled, allLineKeys])
+
+  const { value: showAllStations, set: setShowAllStations } =
+    useLocalStorageValue<boolean>(`${CITY_NAME}-show-all-stations`, {
+      defaultValue: true,
+      initializeWithValue: false,
+    })
+  const { value: showFoundLabels, set: setShowFoundLabels } =
+    useLocalStorageValue<boolean>(`${CITY_NAME}-show-found-labels`, {
+      defaultValue: true,
       initializeWithValue: false,
     })
 
+  // Subsets restricted to enabled lines.
+  const enabledFeatures = useMemo(
+    () => fc.features.filter((f) => enabledLines[f.properties.line || '']),
+    [fc.features, enabledLines],
+  )
+
   const idMap = useMemo(() => {
     const map = new Map<number, DataFeature>()
-    fc.features.forEach((feature) => {
+    for (const feature of enabledFeatures) {
       map.set(feature.id! as number, feature)
-    })
+    }
     return map
-  }, [fc.features])
+  }, [enabledFeatures])
 
   const stationsPerLine = useMemo(() => {
-    const stationsPerLine: { [key: string]: number } = {}
-    for (let feature of fc.features) {
-      const line = feature.properties.line
-      if (!line) {
-        continue
-      }
-      stationsPerLine[line] = (stationsPerLine[line] || 0) + 1
+    const r: Record<string, number> = {}
+    for (const f of enabledFeatures) {
+      const l = f.properties.line
+      if (!l) continue
+      r[l] = (r[l] || 0) + 1
     }
-
-    return stationsPerLine
-  }, [fc])
+    return r
+  }, [enabledFeatures])
 
   const { value: localFound, set: setFound } = useLocalStorageValue<
     number[] | null
@@ -83,6 +113,7 @@ export default function GamePage({
       initializeWithValue: false,
     })
 
+  // Found set restricted to currently-enabled lines (score reflects active selection).
   const found: number[] = useMemo(() => {
     return (localFound || []).filter((f) => idMap.has(f))
   }, [localFound, idMap])
@@ -91,30 +122,24 @@ export default function GamePage({
     if (confirm(t('restartWarning'))) {
       setFound([])
       setIsNewPlayer(true)
-      setHasShownStripeModal(false)
     }
-  }, [setFound, setIsNewPlayer, setHasShownStripeModal, t])
+  }, [setFound, setIsNewPlayer, t])
 
   const foundStationsPerLine = useMemo(() => {
-    const foundStationsPerLine: { [key: string]: number } = {}
-    for (let id of found || []) {
-      const feature = idMap.get(id)
-      if (!feature) {
-        continue
-      }
-      const line = feature.properties.line
-      if (!line) {
-        continue
-      }
-      foundStationsPerLine[line] = (foundStationsPerLine[line] || 0) + 1
+    const r: Record<string, number> = {}
+    for (const id of found) {
+      const f = idMap.get(id)
+      if (!f) continue
+      const l = f.properties.line
+      if (!l) continue
+      r[l] = (r[l] || 0) + 1
     }
-
-    return foundStationsPerLine
+    return r
   }, [found, idMap])
 
   const fuse = useMemo(
     () =>
-      new Fuse(fc.features, {
+      new Fuse(enabledFeatures, {
         includeScore: true,
         includeMatches: true,
         keys: [
@@ -128,187 +153,230 @@ export default function GamePage({
         distance: 10,
         getFn: (obj, path) => {
           const value = Fuse.config.getFn(obj, path)
-          if (value === undefined) {
-            return ''
-          } else if (Array.isArray(value)) {
-            return value.map((el) => normalizeString(el))
-          } else {
-            return normalizeString(value as string)
-          }
+          if (value === undefined) return ''
+          if (Array.isArray(value)) return value.map((el) => normalizeString(el))
+          return normalizeString(value as string)
         },
       }),
-    [fc, normalizeString],
+    [enabledFeatures, normalizeString],
   )
 
-  const foundProportion = found.length / fc.features.length
+  const foundProportion =
+    enabledFeatures.length > 0 ? found.length / enabledFeatures.length : 0
 
+  // Build a MapLibre filter expression keeping only features whose line is enabled.
+  const lineFilter = useMemo(() => {
+    const allowed = allLineKeys.filter((k) => enabledLines[k])
+    return ['in', ['get', 'line'], ['literal', allowed]] as unknown as maplibregl.FilterSpecification
+  }, [allLineKeys, enabledLines])
+
+  const solidStripeLineKeys = useMemo(
+    () => allLineKeys.filter((k) => LINES[k].stripe === 'solid'),
+    [allLineKeys, LINES],
+  )
+  const dashedStripeLineKeys = useMemo(
+    () => allLineKeys.filter((k) => LINES[k].stripe === 'dashed'),
+    [allLineKeys, LINES],
+  )
+
+  // -------- Map setup --------
   useEffect(() => {
-    if (foundProportion > BEG_THRESHOLD && !hasShownStripeModal) {
-      // once we reach a certain threshold, we show the stripe modal
-      // and unlock the rest of the game.
-      setShowStripeModal(true)
-      setHasShownStripeModal(true)
-    }
-  }, [
-    hasShownStripeModal,
-    setHasShownStripeModal,
-    foundProportion,
-    found,
-    setFound,
-    idMap,
-    BEG_THRESHOLD,
-  ])
+    const m = new maplibregl.Map({ ...MAP_CONFIG, container: 'map' })
 
-  useEffect(() => {
-    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!
-
-    const mapboxMap = new mapboxgl.Map(MAP_CONFIG)
-
-    mapboxMap.on('load', () => {
-      mapboxMap.addSource('features', {
+    m.on('load', () => {
+      m.addSource('features', { type: 'geojson', data: fc, promoteId: 'id' })
+      m.addSource('hovered', {
         type: 'geojson',
-        data: fc,
+        data: { type: 'FeatureCollection', features: [] },
       })
 
-      mapboxMap.addSource('hovered', {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: [],
+      if (routes) {
+        // Offset per feature for parallel-ribbon rendering. MapLibre requires
+        // the zoom interpolator to be the OUTERMOST expression in a
+        // data-driven paint property.
+        const offsetExpr = [
+          'interpolate', ['linear'], ['zoom'],
+          8.763, ['*', ['coalesce', ['get', 'offset'], 0], 2.6],
+          13, ['*', ['coalesce', ['get', 'offset'], 0], 5],
+          18, ['*', ['coalesce', ['get', 'offset'], 0], 8],
+          22, ['*', ['coalesce', ['get', 'offset'], 0], 11],
+        ] as unknown as maplibregl.ExpressionSpecification
+
+        m.addSource('lines', { type: 'geojson', data: routes })
+        m.addLayer({
+          id: 'lines',
+          type: 'line',
+          source: 'lines',
+          paint: {
+            // Thinner than the previous pass — clearer separation when 3-4
+            // lines run in parallel and easier to read when zoomed in.
+            'line-width': [
+              'interpolate', ['linear'], ['zoom'],
+              8.763, 2.6,
+              13, 4.5,
+              18, 7.5,
+              22, 9,
+            ],
+            // Resolve from LINES config so map, legend, and found list stay
+            // in lockstep — `routes.json` ships baked colours that can drift.
+            'line-color': [
+              'match',
+              ['get', 'line'],
+              ...allLineKeys.flatMap((line) => [[line], LINES[line].color]),
+              '#888',
+            ] as unknown as maplibregl.ExpressionSpecification,
+            'line-opacity': 0.95,
+            'line-offset': offsetExpr,
+          },
+          layout: {
+            // Higher-order lines render on top. Underground tube lines (order
+            // 0-10) sit beneath Elizabeth/DLR/Overground/Thameslink/National
+            // Rail (11-22), so where Thameslink runs alongside Met/Circle/H&C
+            // it stays visible instead of being buried.
+            'line-sort-key': ['get', 'order'],
+            'line-cap': 'round',
+            'line-join': 'round',
+          },
+        })
+
+        // White core stripe (solid) — Overground / Elizabeth / DLR / etc.
+        m.addLayer({
+          id: 'lines-stripe-solid',
+          type: 'line',
+          source: 'lines',
+          filter: [
+            'in',
+            ['get', 'line'],
+            ['literal', solidStripeLineKeys],
+          ] as unknown as maplibregl.FilterSpecification,
+          paint: {
+            // ~1/3 of the colored line-width.
+            'line-width': [
+              'interpolate', ['linear'], ['zoom'],
+              8.763, 0.9,
+              13, 1.5,
+              18, 2.5,
+              22, 3,
+            ],
+            'line-color': '#ffffff',
+            'line-offset': offsetExpr,
+          },
+          layout: {
+            'line-sort-key': ['get', 'order'],
+            'line-cap': 'round',
+            'line-join': 'round',
+          },
+        })
+
+        // White core stripe (dashed) — Thameslink / Gatwick Express. Gaps
+        // reveal the line color through the dashes.
+        m.addLayer({
+          id: 'lines-stripe-dashed',
+          type: 'line',
+          source: 'lines',
+          filter: [
+            'in',
+            ['get', 'line'],
+            ['literal', dashedStripeLineKeys],
+          ] as unknown as maplibregl.FilterSpecification,
+          paint: {
+            'line-width': [
+              'interpolate', ['linear'], ['zoom'],
+              8.763, 0.9,
+              13, 1.5,
+              18, 2.5,
+              22, 3,
+            ],
+            'line-color': '#ffffff',
+            'line-dasharray': [3, 2.5],
+            'line-offset': offsetExpr,
+          },
+          layout: {
+            'line-sort-key': ['get', 'order'],
+            'line-cap': 'butt',
+            'line-join': 'round',
+          },
+        })
+      }
+
+      // Always-visible base layer: solid-white circle (with neutral outline)
+      // for every un-found station. Sized noticeably larger than the colored
+      // line widths so the marker punches through. Hidden once a station is
+      // found so the colored stations-circles takes over cleanly.
+      m.addLayer({
+        id: 'stations-base',
+        type: 'circle',
+        source: 'features',
+        layout: { visibility: 'visible' },
+        paint: {
+          'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            9, 4.5,
+            13, 8,
+            16, 12,
+            22, 20,
+          ],
+          'circle-color': '#ffffff',
+          'circle-stroke-color': 'rgb(110, 110, 110)',
+          'circle-stroke-width': [
+            'case',
+            ['to-boolean', ['feature-state', 'found']],
+            0,
+            [
+              'interpolate', ['linear'], ['zoom'],
+              8, 1.2,
+              22, 2.4,
+            ],
+          ],
+          'circle-opacity': [
+            'case',
+            ['to-boolean', ['feature-state', 'found']],
+            0,
+            1,
+          ],
         },
       })
 
-      if (MAP_FROM_DATA && routes) {
-        mapboxMap.addSource('lines', {
-          type: 'geojson',
-          data: routes,
-        })
-
-        mapboxMap.addLayer({
-          id: 'lines',
-          type: 'line',
-          paint: {
-            'line-width': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              8.763,
-              1.5,
-              15,
-              3,
-              22,
-              3,
-            ],
-            'line-color': ['get', 'color'],
-            'line-offset': ['match', ['get', 'line'], '', 2, 0],
-          },
-          source: 'lines',
-          layout: {
-            'line-sort-key': ['-', 100, ['get', 'order']],
-          },
-        })
-
-        mapboxMap.addLayer({
-          type: 'circle',
-          source: 'features',
-          id: 'stations',
-          paint: {
-            'circle-radius': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              9,
-              1.5,
-              16,
-              10,
-            ],
-            'circle-color': '#ffffff',
-            'circle-stroke-color': 'rgb(122, 122, 122)',
-            'circle-stroke-width': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              8,
-              0.5,
-              22,
-              2,
-            ],
-          },
-        })
-
-        const box = bbox(routes)
-
-        mapboxMap.fitBounds(
-          [
-            [box[0], box[1]],
-            [box[2], box[3]],
-          ],
-          { padding: 100, duration: 0 },
-        )
-
-        mapboxMap.setMaxBounds([
-          [box[0] - 1, box[1] - 1],
-          [box[2] + 1, box[3] + 1],
-        ])
-      }
-
-      mapboxMap.addLayer({
+      m.addLayer({
         id: 'stations-hovered',
         type: 'circle',
+        source: 'hovered',
+        filter: ['==', '$type', 'Point'],
         paint: {
           'circle-radius': 16,
           'circle-color': '#fde047',
-          'circle-blur-transition': {
-            duration: 100,
-          },
           'circle-blur': 1,
         },
-        source: 'hovered',
-        filter: ['==', '$type', 'Point'],
       })
 
-      mapboxMap.addLayer({
+      // Found-state layer: colored dot, only renders when feature-state.found.
+      m.addLayer({
+        id: 'stations-circles',
         type: 'circle',
         source: 'features',
-        id: 'stations-circles',
         paint: {
           'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            9,
-            ['case', ['to-boolean', ['feature-state', 'found']], 2, 1],
-            16,
-            ['case', ['to-boolean', ['feature-state', 'found']], 6, 4],
+            'interpolate', ['linear'], ['zoom'],
+            9, ['case', ['to-boolean', ['feature-state', 'found']], 4.5, 0],
+            13, ['case', ['to-boolean', ['feature-state', 'found']], 7, 0],
+            16, ['case', ['to-boolean', ['feature-state', 'found']], 11, 0],
+            22, ['case', ['to-boolean', ['feature-state', 'found']], 18, 0],
           ],
           'circle-color': [
-            'case',
-            ['to-boolean', ['feature-state', 'found']],
-            [
-              'match',
-              ['get', 'line'],
-              ...Object.keys(LINES).flatMap((line) => [
-                [line],
-                LINES[line].color,
-              ]),
-              'rgba(255, 255, 255, 0.8)',
-            ],
-            'rgba(255, 255, 255, 0.8)',
-          ],
+            'match',
+            ['get', 'line'],
+            ...allLineKeys.flatMap((line) => [[line], LINES[line].color]),
+            '#888',
+          ] as unknown as maplibregl.ExpressionSpecification,
           'circle-stroke-color': [
-            'case',
-            ['to-boolean', ['feature-state', 'found']],
-            [
-              'match',
-              ['get', 'line'],
-              ...Object.keys(LINES).flatMap((line) => [
-                [line],
-                LINES[line].backgroundColor,
-              ]),
-              'rgba(255, 255, 255, 0.8)',
-            ],
-            'rgba(255, 255, 255, 0.8)',
-          ],
+            'match',
+            ['get', 'line'],
+            ...allLineKeys.flatMap((line) => [
+              [line],
+              LINES[line].backgroundColor,
+            ]),
+            '#444',
+          ] as unknown as maplibregl.ExpressionSpecification,
           'circle-stroke-width': [
             'case',
             ['to-boolean', ['feature-state', 'found']],
@@ -316,23 +384,20 @@ export default function GamePage({
             0,
           ],
         },
-        layout: {
-          'circle-sort-key': ['-', 100, ['get', 'order']],
-        },
       })
 
-      mapboxMap.addLayer({
+      m.addLayer({
+        id: 'stations-labels',
+        type: 'symbol',
+        source: 'features',
         minzoom: 11,
         layout: {
           'text-field': ['to-string', ['get', 'name']],
-          'text-font': ['Cabin Regular', 'Arial Unicode MS Regular'],
+          'text-font': ['Noto Sans Regular'],
           'text-anchor': 'bottom',
           'text-offset': [0, -0.5],
           'text-size': ['interpolate', ['linear'], ['zoom'], 11, 12, 22, 14],
         },
-        type: 'symbol',
-        source: 'features',
-        id: 'stations-labels',
         paint: {
           'text-color': [
             'case',
@@ -343,7 +408,7 @@ export default function GamePage({
           'text-halo-color': [
             'case',
             ['to-boolean', ['feature-state', 'found']],
-            'rgba(255, 255, 255, 0.8)',
+            'rgba(255, 255, 255, 0.85)',
             'rgba(0, 0, 0, 0)',
           ],
           'text-halo-blur': 1,
@@ -351,9 +416,11 @@ export default function GamePage({
         },
       })
 
-      mapboxMap.addLayer({
+      m.addLayer({
         id: 'hover-label-point',
         type: 'symbol',
+        source: 'hovered',
+        filter: ['==', '$type', 'Point'],
         paint: {
           'text-halo-color': 'rgb(255, 255, 255)',
           'text-halo-width': 2,
@@ -362,82 +429,143 @@ export default function GamePage({
         },
         layout: {
           'text-field': ['to-string', ['get', 'name']],
-          'text-font': ['Cabin Bold', 'Arial Unicode MS Regular'],
+          'text-font': ['Noto Sans Bold'],
           'text-anchor': 'bottom',
           'text-offset': [0, -0.6],
           'text-size': ['interpolate', ['linear'], ['zoom'], 11, 14, 22, 16],
-          'symbol-placement': 'point',
         },
-        source: 'hovered',
-        filter: ['==', '$type', 'Point'],
       })
 
-      mapboxMap.once('data', () => {
-        setMap((map) => (map === null ? mapboxMap : map))
-      })
+      if (routes) {
+        const box = bbox(routes)
+        m.fitBounds(
+          [
+            [box[0], box[1]],
+            [box[2], box[3]],
+          ],
+          { padding: 60, duration: 0 },
+        )
+      }
 
-      mapboxMap.once('idle', () => {
-        setMap((map) => (map === null ? mapboxMap : map))
-        mapboxMap.on('mousemove', ['stations-circles'], (e) => {
+      m.once('idle', () => {
+        setMap((prev) => (prev === null ? m : prev))
+        m.on('mousemove', 'stations-circles', (e) => {
           if (e.features && e.features.length > 0) {
             const feature = e.features.find((f) => f.state.found && f.id)
-            if (feature && feature.id) {
-              return setHoveredId(feature.id as number)
-            }
+            if (feature && feature.id) return setHoveredId(feature.id as number)
           }
-
           setHoveredId(null)
         })
-
-        mapboxMap.on('mouseleave', ['stations-circles'], () => {
-          setHoveredId(null)
-        })
+        m.on('mouseleave', 'stations-circles', () => setHoveredId(null))
       })
     })
 
     return () => {
-      mapboxMap.remove()
+      m.remove()
     }
-  }, [setMap, fc, LINES, MAP_CONFIG, MAP_FROM_DATA, routes])
+    // We deliberately depend only on fc/routes/MAP_CONFIG so settings changes
+    // don't tear the map down — they're applied via setFilter/setLayoutProperty.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fc, routes, MAP_CONFIG])
 
+  // Apply line filter whenever enabled lines change.
   useEffect(() => {
-    if (!map) {
-      return
-    } else {
-      ;(map.getSource('hovered') as mapboxgl.GeoJSONSource).setData({
-        type: 'FeatureCollection',
-        features: hoveredId ? [idMap.get(hoveredId)!] : [],
-      })
+    if (!map) return
+    for (const layer of ['stations-base', 'stations-circles', 'stations-labels']) {
+      if (map.getLayer(layer)) map.setFilter(layer, lineFilter)
     }
+    if (map.getLayer('lines')) map.setFilter('lines', lineFilter)
+    // Stripe layers keep both the enabled-lines filter AND their stripe-type filter.
+    const allowed = allLineKeys.filter((k) => enabledLines[k])
+    if (map.getLayer('lines-stripe-solid')) {
+      map.setFilter('lines-stripe-solid', [
+        'all',
+        ['in', ['get', 'line'], ['literal', allowed]],
+        ['in', ['get', 'line'], ['literal', solidStripeLineKeys]],
+      ] as unknown as maplibregl.FilterSpecification)
+    }
+    if (map.getLayer('lines-stripe-dashed')) {
+      map.setFilter('lines-stripe-dashed', [
+        'all',
+        ['in', ['get', 'line'], ['literal', allowed]],
+        ['in', ['get', 'line'], ['literal', dashedStripeLineKeys]],
+      ] as unknown as maplibregl.FilterSpecification)
+    }
+  }, [
+    map,
+    lineFilter,
+    allLineKeys,
+    enabledLines,
+    solidStripeLineKeys,
+    dashedStripeLineKeys,
+  ])
+
+  // Toggle base layer visibility. `undefined` (pre-localStorage hydration)
+  // is treated as the default (visible) — otherwise the layer briefly hides
+  // until the LS read resolves.
+  useEffect(() => {
+    if (!map || !map.getLayer('stations-base')) return
+    map.setLayoutProperty(
+      'stations-base',
+      'visibility',
+      showAllStations === false ? 'none' : 'visible',
+    )
+  }, [map, showAllStations])
+
+  // Toggle found-station map labels (same default-true treatment).
+  useEffect(() => {
+    if (!map || !map.getLayer('stations-labels')) return
+    map.setLayoutProperty(
+      'stations-labels',
+      'visibility',
+      showFoundLabels === false ? 'none' : 'visible',
+    )
+  }, [map, showFoundLabels])
+
+  // Hovered source.
+  useEffect(() => {
+    if (!map) return
+    const src = map.getSource('hovered') as maplibregl.GeoJSONSource | undefined
+    if (!src) return
+    src.setData({
+      type: 'FeatureCollection',
+      features: hoveredId && idMap.get(hoveredId) ? [idMap.get(hoveredId)!] : [],
+    })
   }, [map, hoveredId, idMap])
 
+  // Found feature-state.
   useEffect(() => {
-    if (!map || !found) return
-
+    if (!map) return
     map.removeFeatureState({ source: 'features' })
-
-    for (let id of found) {
+    for (const id of found) {
       map.setFeatureState({ source: 'features', id }, { found: true })
     }
   }, [found, map])
 
+  const revealAll = useCallback(() => {
+    if (!confirm('Reveal every station on enabled lines? (Use "Start over" to reset.)'))
+      return
+    const ids: number[] = []
+    for (const f of enabledFeatures) {
+      if (typeof f.id === 'number') ids.push(f.id)
+    }
+    setFound(ids)
+    setIsNewPlayer(false)
+  }, [enabledFeatures, setFound, setIsNewPlayer])
+
   const zoomToFeature = useCallback(
     (id: number) => {
       if (!map) return
-
       const feature = idMap.get(id)
       if (!feature) return
-
       if (feature.geometry.type === 'Point') {
         map.flyTo({
           center: feature.geometry.coordinates as [number, number],
           zoom: 14,
         })
       } else {
-        const bounds = new mapboxgl.LngLatBounds()
-        coordEach(feature, (coord) => {
-          bounds.extend(coord as [number, number])
-        })
+        const bounds = new maplibregl.LngLatBounds()
+        coordEach(feature, (coord) => bounds.extend(coord as [number, number]))
         map.fitBounds(bounds, { padding: 100 })
       }
     },
@@ -469,8 +597,7 @@ export default function GamePage({
             />
             <MenuComponent
               onReset={onReset}
-              hideLabels={hideLabels}
-              setHideLabels={setHideLabels}
+              openSettings={() => setSettingsOpen(true)}
             />
           </div>
         </div>
@@ -489,7 +616,7 @@ export default function GamePage({
           idMap={idMap}
           setHoveredId={setHoveredId}
           hoveredId={hoveredId}
-          hideLabels={hideLabels}
+          hideLabels={!showFoundLabels}
           zoomToFeature={zoomToFeature}
         />
       </div>
@@ -500,10 +627,16 @@ export default function GamePage({
       >
         {t('introInstruction')} ⏎
       </IntroModal>
-      <StripeModal
-        foundProportion={foundProportion}
-        open={showStripeModal}
-        setOpen={setShowStripeModal}
+      <SettingsModal
+        open={settingsOpen}
+        setOpen={setSettingsOpen}
+        enabledLines={enabledLines}
+        setEnabledLines={setEnabledLines}
+        showAllStations={showAllStations ?? true}
+        setShowAllStations={setShowAllStations}
+        showFoundLabels={showFoundLabels ?? true}
+        setShowFoundLabels={setShowFoundLabels}
+        revealAll={revealAll}
       />
     </div>
   )
