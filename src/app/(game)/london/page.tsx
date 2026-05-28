@@ -9,6 +9,7 @@ import {
   visibleRouteFeatures,
   visibleLines,
 } from './visibility'
+import { annotateInterchanges } from './interchanges'
 import GamePage from '@/components/GamePage'
 import { Provider } from '@/lib/configContext'
 import Main from '@/components/Main'
@@ -26,12 +27,14 @@ const font = Cabin({
 const visLines = visibleLines(config.LINES)
 const visConfig = { ...config, LINES: visLines }
 
-const fc = {
+// annotateInterchanges stamps lineCount / interchange on each station so the
+// map can size multi-line interchanges larger than single-line stops.
+const fc = annotateInterchanges({
   ...data,
   features: visibleStationFeatures(
     data.features.filter((f) => !!visLines[f.properties.line]) as any,
   ),
-} as unknown as DataFeatureCollection
+} as unknown as DataFeatureCollection)
 
 const routes = {
   ...(routesData as object),

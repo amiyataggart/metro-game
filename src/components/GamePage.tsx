@@ -23,6 +23,12 @@ import FoundList from '@/components/FoundList'
 import useNormalizeString from '@/hooks/useNormalizeString'
 import { bbox } from '@turf/turf'
 
+// v2 — HUB SIZE RAMP BY LINE COUNT
+// Each station's circle radius scales with how many lines serve it.
+// lineCount 1 → smallest dot; lineCount 6 → largest hub.
+// Formula: radius = BASE_ZOOM_VALUE * (1 + 0.35 * (lineCount - 1))
+// The zoom interpolate is ALWAYS the outermost expression (MapLibre rule).
+
 export default function GamePage({
   fc,
   routes,
@@ -55,7 +61,6 @@ export default function GamePage({
     initializeWithValue: false,
   })
   const enabledLines = useMemo(() => {
-    // Merge stored state with defaults so newly added lines default to enabled.
     const next: Record<string, boolean> = { ...defaultEnabled }
     if (storedEnabled) {
       for (const k of allLineKeys) {
@@ -113,7 +118,7 @@ export default function GamePage({
       initializeWithValue: false,
     })
 
-  // Found set restricted to currently-enabled lines (score reflects active selection).
+  // Found set restricted to currently-enabled lines.
   const found: number[] = useMemo(() => {
     return (localFound || []).filter((f) => idMap.has(f))
   }, [localFound, idMap])
@@ -191,25 +196,13 @@ export default function GamePage({
       })
 
       if (routes) {
-        // BAKED OFFSETS. The parallel-ribbon separation is baked directly into
-        // routes.json coordinates at BUILD time (true geometric parallel offset
-        // along per-vertex miter normals — see scripts/bake-offsets.js). The
-        // runtime `line-offset` paint property — which pushes each line along
-        // its OWN local tangent and therefore diverges / flips order where
-        // co-running geometries differ even slightly — is set to a constant 0.
-        // What renders is purely the baked geometry, so co-running lines stay
-        // exactly parallel and never reorder across zoom. Tradeoff: the offset
-        // is in GROUND units, so ribbon spacing reads tighter when zoomed out
-        // and wider when zoomed in (vs the old screen-pixel offset).
-
+        // BAKED OFFSETS — same as GamePage. line-offset constant 0.
         m.addSource('lines', { type: 'geojson', data: routes })
         m.addLayer({
           id: 'lines',
           type: 'line',
           source: 'lines',
           paint: {
-            // Thinner than the previous pass — clearer separation when 3-4
-            // lines run in parallel and easier to read when zoomed in.
             'line-width': [
               'interpolate', ['linear'], ['zoom'],
               8.763, 2.6,
@@ -217,8 +210,6 @@ export default function GamePage({
               18, 7.5,
               22, 9,
             ],
-            // Resolve from LINES config so map, legend, and found list stay
-            // in lockstep — `routes.json` ships baked colours that can drift.
             'line-color': [
               'match',
               ['get', 'line'],
@@ -229,17 +220,13 @@ export default function GamePage({
             'line-offset': 0,
           },
           layout: {
-            // Higher-order lines render on top. Underground tube lines (order
-            // 0-10) sit beneath Elizabeth/DLR/Overground/Thameslink/National
-            // Rail (11-22), so where Thameslink runs alongside Met/Circle/H&C
-            // it stays visible instead of being buried.
             'line-sort-key': ['get', 'order'],
             'line-cap': 'round',
             'line-join': 'round',
           },
         })
 
-        // White core stripe (solid) — Overground / Elizabeth / DLR / etc.
+        // White core stripe (solid)
         m.addLayer({
           id: 'lines-stripe-solid',
           type: 'line',
@@ -250,7 +237,6 @@ export default function GamePage({
             ['literal', solidStripeLineKeys],
           ] as unknown as maplibregl.FilterSpecification,
           paint: {
-            // ~1/3 of the colored line-width.
             'line-width': [
               'interpolate', ['linear'], ['zoom'],
               8.763, 0.9,
@@ -268,8 +254,7 @@ export default function GamePage({
           },
         })
 
-        // White core stripe (dashed) — Thameslink / Gatwick Express. Gaps
-        // reveal the line color through the dashes.
+        // White core stripe (dashed)
         m.addLayer({
           id: 'lines-stripe-dashed',
           type: 'line',
@@ -299,36 +284,56 @@ export default function GamePage({
         })
       }
 
-      // Always-visible base layer: hollow circle for every un-found station,
-      // hidden once that station is found so the colored stations-circles
-      // takes over cleanly. Radii here and on stations-circles are kept in
-      // lockstep so the colored marker exactly replaces the empty one.
+      // ----------------------------------------------------------------
+      // v2 HUB SIZE RAMP — stations-base (empty / un-found markers).
+      //
+      // Radius formula at each zoom stop:
+      //   r = BASE * (1 + 0.35 * (lineCount - 1))
+      //
+      // The zoom interpolate is the OUTERMOST expression. At each zoom
+      // stop the value is the lineCount-scaled expression, so MapLibre
+      // evaluates zoom first, then scales by lineCount.
+      //
+      // lineCount 1 → multiplier 1.0  (smallest)
+      // lineCount 2 → multiplier 1.35
+      // lineCount 3 → multiplier 1.70
+      // lineCount 4 → multiplier 2.05
+      // lineCount 5 → multiplier 2.40
+      // lineCount 6 → multiplier 2.75  (largest — King's Cross, Stratford, etc.)
+      // ----------------------------------------------------------------
+      const sizeExpr = (base: number) =>
+        [
+          '*',
+          base,
+          ['+', 1, ['*', 0.35, ['-', ['get', 'lineCount'], 1]]],
+        ] as unknown as maplibregl.ExpressionSpecification
+
       m.addLayer({
         id: 'stations-base',
         type: 'circle',
         source: 'features',
         layout: { visibility: 'visible' },
         paint: {
+          // Zoom-outer, lineCount-scaled radius. Single-line stops are small;
+          // major interchanges are substantially larger.
           'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
-            9, 3.6,
-            13, 6.4,
-            16, 9.6,
-            22, 16,
-          ],
-          // Found stations: collapse to a 0-radius dot (and 0 stroke). Won't
-          // be visible — the colored stations-circles renders on top.
+            9,  sizeExpr(2.8),
+            13, sizeExpr(5.0),
+            16, sizeExpr(7.5),
+            22, sizeExpr(12.0),
+          ] as unknown as maplibregl.ExpressionSpecification,
           'circle-color': '#ffffff',
           'circle-stroke-color': '#1d2835',
-          // The zoom interpolator MUST be the outermost expression; nesting it
-          // inside `case` makes MapLibre reject the whole layer (which is why
-          // the empty markers never rendered). Found stations collapse to a
-          // 0-width stroke via the per-stop case.
+          // Ring thickness: slightly thicker for interchanges (lineCount >= 2).
+          // zoom-outer, case-inner — allowed because case is not interpolate.
           'circle-stroke-width': [
             'interpolate', ['linear'], ['zoom'],
-            8, ['case', ['to-boolean', ['feature-state', 'found']], 0, 1.4],
-            22, ['case', ['to-boolean', ['feature-state', 'found']], 0, 2.8],
-          ],
+            8,  ['case', ['to-boolean', ['feature-state', 'found']], 0,
+                  ['case', ['>=', ['get', 'lineCount'], 2], 2.0, 1.4]],
+            22, ['case', ['to-boolean', ['feature-state', 'found']], 0,
+                  ['case', ['>=', ['get', 'lineCount'], 2], 3.5, 2.4]],
+          ] as unknown as maplibregl.ExpressionSpecification,
           'circle-opacity': [
             'case',
             ['to-boolean', ['feature-state', 'found']],
@@ -356,7 +361,7 @@ export default function GamePage({
         },
       })
 
-      // Found-state layer: colored dot, only renders when feature-state.found.
+      // Found-state layer: colored dot scaled by lineCount, only when found.
       m.addLayer({
         id: 'stations-circles',
         type: 'circle',
@@ -364,11 +369,11 @@ export default function GamePage({
         paint: {
           'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
-            9, ['case', ['to-boolean', ['feature-state', 'found']], 3.6, 0],
-            13, ['case', ['to-boolean', ['feature-state', 'found']], 5.6, 0],
-            16, ['case', ['to-boolean', ['feature-state', 'found']], 8.8, 0],
-            22, ['case', ['to-boolean', ['feature-state', 'found']], 14.4, 0],
-          ],
+            9,  ['case', ['to-boolean', ['feature-state', 'found']], sizeExpr(2.8), 0],
+            13, ['case', ['to-boolean', ['feature-state', 'found']], sizeExpr(5.0), 0],
+            16, ['case', ['to-boolean', ['feature-state', 'found']], sizeExpr(7.5), 0],
+            22, ['case', ['to-boolean', ['feature-state', 'found']], sizeExpr(12.0), 0],
+          ] as unknown as maplibregl.ExpressionSpecification,
           'circle-color': [
             'match',
             ['get', 'line'],
@@ -402,8 +407,6 @@ export default function GamePage({
           'text-field': ['to-string', ['get', 'name']],
           'text-font': ['Noto Sans Regular'],
           'text-anchor': 'bottom',
-          // Raise text bottom by ~0.8× the current circle diameter (1.5em on
-          // a ~12px label ≈ 18px lift) so the label clears the marker.
           'text-offset': [0, -1.5],
           'text-size': ['interpolate', ['linear'], ['zoom'], 11, 12, 22, 14],
         },
@@ -472,8 +475,6 @@ export default function GamePage({
     return () => {
       m.remove()
     }
-    // We deliberately depend only on fc/routes/MAP_CONFIG so settings changes
-    // don't tear the map down — they're applied via setFilter/setLayoutProperty.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fc, routes, MAP_CONFIG])
 
@@ -484,7 +485,6 @@ export default function GamePage({
       if (map.getLayer(layer)) map.setFilter(layer, lineFilter)
     }
     if (map.getLayer('lines')) map.setFilter('lines', lineFilter)
-    // Stripe layers keep both the enabled-lines filter AND their stripe-type filter.
     const allowed = allLineKeys.filter((k) => enabledLines[k])
     if (map.getLayer('lines-stripe-solid')) {
       map.setFilter('lines-stripe-solid', [
@@ -509,9 +509,7 @@ export default function GamePage({
     dashedStripeLineKeys,
   ])
 
-  // Toggle base layer visibility. `undefined` (pre-localStorage hydration)
-  // is treated as the default (visible) — otherwise the layer briefly hides
-  // until the LS read resolves.
+  // Toggle base layer visibility.
   useEffect(() => {
     if (!map || !map.getLayer('stations-base')) return
     map.setLayoutProperty(
@@ -521,7 +519,7 @@ export default function GamePage({
     )
   }, [map, showAllStations])
 
-  // Toggle found-station map labels (same default-true treatment).
+  // Toggle found-station map labels.
   useEffect(() => {
     if (!map || !map.getLayer('stations-labels')) return
     map.setLayoutProperty(
