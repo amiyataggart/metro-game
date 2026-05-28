@@ -40,6 +40,7 @@
 
 const fs = require('fs')
 const path = require('path')
+const { weldEndpoints } = require('./weld-endpoints')
 
 const DATA_DIR = path.join(
   __dirname,
@@ -1073,6 +1074,13 @@ function main() {
     weldStations(features, stationCoordsByLine, weldedSet)
   } catch (e) {
     console.warn('  (warn) weldStations failed, continuing:', e.message)
+  }
+
+  console.log('\n--- 2c. Same-line endpoint weld (close junction gaps, #1) ---')
+  try {
+    weldEndpoints(features)
+  } catch (e) {
+    console.warn('  (warn) weldEndpoints failed, continuing:', e.message)
   }
 
   console.log('\n--- 3. Chaikin smoothing (pin-aware, BEFORE baking) ---')
