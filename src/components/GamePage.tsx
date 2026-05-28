@@ -191,16 +191,16 @@ export default function GamePage({
       })
 
       if (routes) {
-        // Offset per feature for parallel-ribbon rendering. MapLibre requires
-        // the zoom interpolator to be the OUTERMOST expression in a
-        // data-driven paint property.
-        const offsetExpr = [
-          'interpolate', ['linear'], ['zoom'],
-          8.763, ['*', ['coalesce', ['get', 'offset'], 0], 2.6],
-          13, ['*', ['coalesce', ['get', 'offset'], 0], 5],
-          18, ['*', ['coalesce', ['get', 'offset'], 0], 8],
-          22, ['*', ['coalesce', ['get', 'offset'], 0], 11],
-        ] as unknown as maplibregl.ExpressionSpecification
+        // BAKED OFFSETS. The parallel-ribbon separation is baked directly into
+        // routes.json coordinates at BUILD time (true geometric parallel offset
+        // along per-vertex miter normals — see scripts/bake-offsets.js). The
+        // runtime `line-offset` paint property — which pushes each line along
+        // its OWN local tangent and therefore diverges / flips order where
+        // co-running geometries differ even slightly — is set to a constant 0.
+        // What renders is purely the baked geometry, so co-running lines stay
+        // exactly parallel and never reorder across zoom. Tradeoff: the offset
+        // is in GROUND units, so ribbon spacing reads tighter when zoomed out
+        // and wider when zoomed in (vs the old screen-pixel offset).
 
         m.addSource('lines', { type: 'geojson', data: routes })
         m.addLayer({
@@ -226,7 +226,7 @@ export default function GamePage({
               '#888',
             ] as unknown as maplibregl.ExpressionSpecification,
             'line-opacity': 0.95,
-            'line-offset': offsetExpr,
+            'line-offset': 0,
           },
           layout: {
             // Higher-order lines render on top. Underground tube lines (order
@@ -259,7 +259,7 @@ export default function GamePage({
               22, 3,
             ],
             'line-color': '#ffffff',
-            'line-offset': offsetExpr,
+            'line-offset': 0,
           },
           layout: {
             'line-sort-key': ['get', 'order'],
@@ -289,7 +289,7 @@ export default function GamePage({
             ],
             'line-color': '#ffffff',
             'line-dasharray': [3, 2.5],
-            'line-offset': offsetExpr,
+            'line-offset': 0,
           },
           layout: {
             'line-sort-key': ['get', 'order'],
