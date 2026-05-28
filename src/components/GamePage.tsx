@@ -320,15 +320,14 @@ export default function GamePage({
           // be visible — the colored stations-circles renders on top.
           'circle-color': '#ffffff',
           'circle-stroke-color': '#1d2835',
+          // The zoom interpolator MUST be the outermost expression; nesting it
+          // inside `case` makes MapLibre reject the whole layer (which is why
+          // the empty markers never rendered). Found stations collapse to a
+          // 0-width stroke via the per-stop case.
           'circle-stroke-width': [
-            'case',
-            ['to-boolean', ['feature-state', 'found']],
-            0,
-            [
-              'interpolate', ['linear'], ['zoom'],
-              8, 1.4,
-              22, 2.8,
-            ],
+            'interpolate', ['linear'], ['zoom'],
+            8, ['case', ['to-boolean', ['feature-state', 'found']], 0, 1.4],
+            22, ['case', ['to-boolean', ['feature-state', 'found']], 0, 2.8],
           ],
           'circle-opacity': [
             'case',
