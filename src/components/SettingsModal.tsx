@@ -16,6 +16,8 @@ export default function SettingsModal({
   setShowAllStations,
   showFoundLabels,
   setShowFoundLabels,
+  smoothLines,
+  setSmoothLines,
   revealAll,
 }: {
   open: boolean
@@ -26,6 +28,8 @@ export default function SettingsModal({
   setShowAllStations: (v: boolean) => void
   showFoundLabels: boolean
   setShowFoundLabels: (v: boolean) => void
+  smoothLines: boolean
+  setSmoothLines: (v: boolean) => void
   revealAll: () => void
 }) {
   const { LINES } = useConfig()
@@ -54,11 +58,19 @@ export default function SettingsModal({
         'When off, found stations show their dot but not their name on the map or sidebar.',
       value: showFoundLabels,
     },
+    {
+      id: 'smoothLines',
+      label: 'Smooth line curves (experimental)',
+      description:
+        'Round off sharp bends in the rail lines with curves. Purely visual — station and line positions are unchanged.',
+      value: smoothLines,
+    },
   ]
 
   const onToggle = (id: string) => {
     if (id === 'showAllStations') setShowAllStations(!showAllStations)
     if (id === 'showFoundLabels') setShowFoundLabels(!showFoundLabels)
+    if (id === 'smoothLines') setSmoothLines(!smoothLines)
   }
 
   return (

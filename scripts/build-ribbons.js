@@ -165,6 +165,11 @@ const SPINE_ORDER = {}
 const ORDER_OVERRIDES = [
   // Embankment: Circle interior to the subsurface loop (the brief §4 case).
   { name: 'Embankment', at: [-0.1223, 51.5073], radius: 400, top: ['Circle', 'District'] },
+  // Edgware Road: the Circle loop closes here and on the approach/junction bundle
+  // the Circle tail renders NORTH of District/H&C — inconsistent with the rest of
+  // the Circle line. Force Circle to the SOUTH of both (it feeds two west branches:
+  // Circle+District → Praed St, Circle+H&C → Bishop's Rd).
+  { name: 'EdgwareRd', at: [-0.1685, 51.5197], radius: 200, top: ['HammersmithAndCity', 'District', 'Circle'] },
   // Mile End: Central top, H&C middle, District bottom (note: "northern" in the
   // request = Central — the only red/black-ish tube here; Mile End has no Northern).
   { name: 'Mile End', at: [-0.0333, 51.5251], radius: 500, top: ['Central', 'HammersmithAndCity', 'District'] },
@@ -174,14 +179,9 @@ const ORDER_OVERRIDES = [
   { name: 'Jubilee/Met', at: [-0.2300, 51.5550], radius: 5000, top: ['Jubilee', 'Metropolitan'] },
   // Euston: Victoria connects from BELOW the Northern line (don't snap to its top).
   { name: 'Euston', at: [-0.1335, 51.5280], radius: 650, top: ['Northern', 'Victoria'] },
-  // King's Cross St Pancras: a 5-line stack on the (E–W) subsurface corridor with
-  // Victoria & Northern force-snapped onto its north side. Top→bottom: Northern,
-  // Victoria, Met, H&C, Circle — Northern stays on the north/top of Victoria through
-  // the station and just east of it; the two only cross AFTERWARDS as they branch
-  // off (Victoria NE to Highbury, Northern SE to Angel). `noFlip` (rides the §4
-  // Circle-loop spine; list written S→N to match its locked sign — rank-0 = south).
-  // Thameslink & Piccadilly excluded (own tracks).
-  { name: 'KingsCross', at: [-0.1240, 51.5304], radius: 260, noFlip: true, top: ['Circle', 'HammersmithAndCity', 'Metropolitan', 'Victoria', 'Northern'] },
+  // (King's Cross: Northern & Victoria are NOT stacked onto the subsurface — they
+  // run straight through on their own tube track and simply cross the Circle/H&C/Met
+  // stack once; see FORCE_SNAP / the removed KX stack note below.)
   // Farringdon: pin Thameslink to the WEST of the Circle/H&C/Met bundle AT the
   // station (and just south). North of here it reverts to the default EAST lane, so
   // TL crosses west→east just north of Farringdon (as in real life) and then follows
@@ -204,10 +204,13 @@ const NO_SNAP = [
   // Thameslink approaches Farringdon on its own track and only joins the subsurface
   // bundle AT the station marker (not ~30 m south of it) — hold it solo just south.
   { line: 'Thameslink', at: [-0.1048, 51.5188], radius: 180 },
-  // Victoria south of Euston (Warren St → Euston): keep it on its own track — it
-  // crosses the Northern line at Warren St and runs in its true (different) location
-  // up to Euston, only snapping under Northern FROM Euston (see FORCE_SNAP).
+  // Victoria from Warren St through King's Cross: keep it on its OWN track — it
+  // crosses the Northern line at Warren St and runs independently (each on its true
+  // track, simply crossing) rather than snapping parallel to / bundling with the
+  // Northern line. Two discs cover Warren St→Euston and Euston→KX; without these it
+  // weaves across the Thameslink/Piccadilly spines through the junction.
   { line: 'Victoria', at: [-0.1357, 51.5263], radius: 200 },
+  { line: 'Victoria', at: [-0.1288, 51.5295], radius: 420 },
 ]
 // FORCE_SNAP — the inverse of NO_SNAP. Within `radius` of `at`, bind the named
 // line onto the nearest existing spine (within `dist`, ignoring the tangent-angle
@@ -216,21 +219,11 @@ const NO_SNAP = [
 // Use where two lines run together but their OSM tracks weave past the geometric
 // snap radius through a junction (e.g. Thameslink ↔ Piccadilly/Victoria at
 // Finsbury Park). Pair with an ORDER_OVERRIDE to fix which lane it takes.
-const FORCE_SNAP = [
-  // Euston → King's Cross: bind Victoria under the Northern line (Northern City
-  // branch) so it rides cleanly just below it (lane order set by the `Euston`
-  // ORDER_OVERRIDE) instead of weaving onto the Thameslink/Piccadilly spines, the
-  // whole way to the KX stack. (South of Euston, the Victoria NO_SNAP keeps it on
-  // its own track.)
-  { line: 'Victoria', at: [-0.1290, 51.5290], radius: 340, dist: 200, onto: 'Northern' },
-  // King's Cross St Pancras 5-line stack: snap Victoria and Northern onto the
-  // subsurface (Circle) corridor's north side, spanning both sides of the station
-  // so the KX-West / KX-East ORDER_OVERRIDEs can swap them across it. Listed after
-  // the Euston bind so the KX target wins where they overlap. (Thameslink is NOT
-  // here — it passes through on its own track to St Pancras International.)
-  { line: 'Northern', at: [-0.1240, 51.5305], radius: 260, dist: 220, onto: 'Circle' },
-  { line: 'Victoria', at: [-0.1240, 51.5305], radius: 260, dist: 220, onto: 'Circle' },
-]
+// (Currently unused — Northern & Victoria are NOT bound together at King's Cross;
+// each runs on its own track via the Victoria NO_SNAP above. Kept as the mechanism
+// for binding co-runners onto a corridor where their OSM tracks weave past the
+// geometric snap radius.)
+const FORCE_SNAP = []
 // Lateral nudge (kept available, currently unused): shift the listed lines'
 // rendered centreline by a metre vector (east=+, north=+) within `radius` of
 // `at`, cosine-ramped to 0 at the edge. A last-resort COSMETIC shift — it does

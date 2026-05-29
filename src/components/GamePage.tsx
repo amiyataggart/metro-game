@@ -19,6 +19,7 @@ import {
 import Input from '@/components/Input'
 import SettingsModal from '@/components/SettingsModal'
 import { useConfig } from '@/lib/configContext'
+import { smoothRoutes } from '@/lib/smoothRoutes'
 import useTranslation from '@/hooks/useTranslation'
 import FoundList from '@/components/FoundList'
 import useNormalizeString from '@/hooks/useNormalizeString'
@@ -81,6 +82,20 @@ export default function GamePage({
       defaultValue: true,
       initializeWithValue: false,
     })
+  // EXPLORATORY: render-time line smoothing (centripetal Catmull-Rom). Curves
+  // the path around bends without moving any data — see lib/smoothRoutes.ts.
+  const { value: smoothLines, set: setSmoothLines } =
+    useLocalStorageValue<boolean>(`${CITY_NAME}-smooth-lines`, {
+      defaultValue: false,
+      initializeWithValue: false,
+    })
+
+  // The geometry actually fed to the 'lines' source: original, or a smoothed
+  // copy. Memoised so we only recompute when the toggle flips (routes is static).
+  const displayRoutes = useMemo(
+    () => (smoothLines && routes ? smoothRoutes(routes) : routes),
+    [smoothLines, routes],
+  )
 
   // Subsets restricted to enabled lines.
   const enabledFeatures = useMemo(
@@ -756,6 +771,17 @@ export default function GamePage({
     )
   }, [map, showFoundLabels])
 
+  // Swap the line geometry between original and smoothed without re-initialising
+  // the map. Runs once after the source exists (applying the stored toggle) and
+  // again whenever the toggle flips. `line-offset`/`laneOff` separation is
+  // re-applied by the existing paint expressions to the new geometry.
+  useEffect(() => {
+    if (!map || !displayRoutes) return
+    const src = map.getSource('lines') as maplibregl.GeoJSONSource | undefined
+    if (!src) return
+    src.setData(displayRoutes as any)
+  }, [map, displayRoutes])
+
   // Hovered source.
   useEffect(() => {
     if (!map) return
@@ -875,6 +901,8 @@ export default function GamePage({
         setShowAllStations={setShowAllStations}
         showFoundLabels={showFoundLabels ?? true}
         setShowFoundLabels={setShowFoundLabels}
+        smoothLines={smoothLines ?? false}
+        setSmoothLines={setSmoothLines}
         revealAll={revealAll}
       />
     </div>
