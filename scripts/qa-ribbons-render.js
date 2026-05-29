@@ -80,8 +80,7 @@ function renderFile(routesPath, tag) {
 
 renderFile(arg, 'new')
 if (withBaseline) {
-  const base = fs.existsSync(path.join(DATA, 'routes.preribbons.json'))
-    ? path.join(DATA, 'routes.preribbons.json')
-    : path.join(DATA, 'routes.json')
-  renderFile(base, 'old')
+  // 'old' baseline = the pristine raw-OSM source the build was made from
+  const base = path.join(DATA, 'routes.osm.json')
+  if (fs.existsSync(base)) renderFile(base, 'src')
 }

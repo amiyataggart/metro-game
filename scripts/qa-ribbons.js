@@ -13,7 +13,7 @@
  *  C. Bakerloo/Lioness both present & separated on the Watford DC line.
  *
  * Usage: node scripts/qa-ribbons.js [routesFile] [--baseline FILE]
- *   default routesFile: routes.ribbons.json ; baseline: routes.preribbons.json
+ *   default routesFile: routes.json ; baseline: routes.osm.json (the build source)
  */
 const fs = require('fs')
 const path = require('path')
@@ -22,7 +22,9 @@ const DATA = path.join(__dirname, '..', 'src', 'app', '(game)', 'london', 'data'
 const file = process.argv[2] && !process.argv[2].startsWith('--')
   ? process.argv[2]
   : path.join(DATA, 'routes.json')
-let baseline = path.join(DATA, 'routes.preribbons.json')
+// Integrity baseline = the pristine raw-OSM source the build is made from, so
+// the check measures BUILD fidelity (did build-ribbons preserve the geometry?).
+let baseline = path.join(DATA, 'routes.osm.json')
 const bi = process.argv.indexOf('--baseline')
 if (bi >= 0) baseline = process.argv[bi + 1]
 if (!fs.existsSync(baseline)) baseline = path.join(DATA, 'routes.json')

@@ -58,10 +58,12 @@
  *
  * Deterministic: no Math.random / Date. Every tunable is in CONFIG below.
  *
- * Usage:
- *   node scripts/build-ribbons.js [--in FILE] [--out FILE] [--report]
- * Defaults: reads & writes src/app/(game)/london/data/routes.json in place,
- * backing the original up to routes.preribbons.json the first time.
+ * Usage (build from the pristine raw-OSM source, never from routes.json):
+ *   node scripts/build-ribbons.js \
+ *     --in src/app/(game)/london/data/routes.osm.json \
+ *     --out src/app/(game)/london/data/routes.json
+ * `routes.osm.json` is produced by scripts/fetch-osm-routes.js. build-ribbons
+ * refuses an already-processed input (one carrying `laneOff`).
  */
 
 const fs = require('fs')
@@ -481,8 +483,8 @@ function main() {
   if (alreadyProcessed && !args.force) {
     console.error(
       `Refusing to build from ${path.basename(args.in)} — it is already ribbon-processed ` +
-        `(has 'laneOff'). Build from the pristine source, e.g.\n  --in ` +
-        `src/app/(game)/london/data/routes.preribbons.json --out src/app/(game)/london/data/routes.json\n` +
+        `(has 'laneOff'). Build from the pristine raw-OSM source, e.g.\n  --in ` +
+        `src/app/(game)/london/data/routes.osm.json --out src/app/(game)/london/data/routes.json\n` +
         `(use --force to override).`,
     )
     process.exit(1)
@@ -1034,13 +1036,6 @@ function main() {
     })
   }
   const out = { ...raw, features: outFeatures }
-
-  // back up the original once
-  const backup = path.join(path.dirname(args.out), 'routes.preribbons.json')
-  if (args.out === args.in && !fs.existsSync(backup)) {
-    fs.copyFileSync(args.in, backup)
-    console.log('Backed up original ->', path.relative(process.cwd(), backup))
-  }
   fs.writeFileSync(args.out, JSON.stringify(out))
   console.log(
     `Wrote ${path.relative(process.cwd(), args.out)} [mode=${args.mode}]: ` +

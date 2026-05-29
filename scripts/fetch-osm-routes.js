@@ -27,8 +27,11 @@ const fs = require('fs')
 const path = require('path')
 
 const DATA_DIR = path.join(__dirname, '..', 'src', 'app', '(game)', 'london', 'data')
-const ROUTES_DST = path.join(DATA_DIR, 'routes.json')
-const STATIONS_DST = path.join(DATA_DIR, 'stations-extras.json')
+// Output paths can be overridden so a re-fetch doesn't clobber committed data:
+//   node scripts/fetch-osm-routes.js --out FILE --stations-out FILE
+const _argOut = (flag) => { const i = process.argv.indexOf(flag); return i >= 0 ? process.argv[i + 1] : null }
+const ROUTES_DST = _argOut('--out') || path.join(DATA_DIR, 'routes.json')
+const STATIONS_DST = _argOut('--stations-out') || path.join(DATA_DIR, 'stations-extras.json')
 
 const LINE_COLORS = {
   Bakerloo: '#b36305',

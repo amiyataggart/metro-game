@@ -81,22 +81,25 @@ wrangler.jsonc                     # Cloudflare static-assets deploy config
 ## Data pipeline
 
 `routes.json` / `features.json` are committed pre-built snapshots.
-`routes.preribbons.json` is the pristine pre-offset input; **always regenerate
-`routes.json` from it** (never from `routes.json` itself — `build-ribbons`
-refuses that, since the output is already processed):
+`routes.osm.json` is the **pristine raw-OSM source** (chained per-branch
+centrelines, double-track-averaged, platform/siding-stripped — straight from
+Overpass, no welds). **Always build `routes.json` from `routes.osm.json`**, never
+from `routes.json` itself (`build-ribbons` refuses already-processed input):
 
 ```sh
-# build parallel-ribbon geometry (offset mode): pristine input -> routes.json
+# 1. (only when OSM / line set changes) re-fetch the pristine source from Overpass
+node scripts/fetch-osm-routes.js \
+  --out "src/app/(game)/london/data/routes.osm.json" \
+  --stations-out "src/app/(game)/london/data/stations-extras.osm.json"
+
+# 2. build parallel-ribbon geometry (offset mode): pristine source -> routes.json
 node scripts/build-ribbons.js \
-  --in "src/app/(game)/london/data/routes.preribbons.json" \
+  --in "src/app/(game)/london/data/routes.osm.json" \
   --out "src/app/(game)/london/data/routes.json"
 
 node scripts/transform-data.js        # build features.json (stations; splits Overground, aliases, TOC merge)
 node scripts/rename-stations.js       # drop redundant "London " name prefixes (keep as aliases)
 ```
-
-(`scripts/fetch-osm-routes.js` re-fetches raw geometry from Overpass when the
-network or line set changes.)
 
 **Parallel ribbons (`build-ribbons.js`).** Co-running lines (e.g.
 Circle/District/H&C/Met on the subsurface trunk) must render as distinct,

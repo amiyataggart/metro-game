@@ -1,8 +1,10 @@
 # Parallel-ribbons verification report
 
 Rebuild of `routes.json` by `scripts/build-ribbons.js` (replaces the archived
-weld/Chaikin/miter pipeline — see `PARALLEL-RIBBONS-BRIEF.md` §7). Built from the
-pristine `routes.preribbons.json`. **Default = offset mode**: lines are emitted
+weld/Chaikin/miter pipeline — see `PARALLEL-RIBBONS-BRIEF.md` §7). Built from
+**`routes.osm.json`** — the pristine raw-OSM source re-fetched from Overpass
+(chained per-branch centrelines, double-track-averaged, platform-stripped, no
+legacy welds). **Default = offset mode**: lines are emitted
 on their shared corridor centreline carrying a signed `laneOff`, and the map
 (`GamePage.tsx`) renders the separation at runtime with
 `line-offset = laneOff × line-width(zoom)`.
@@ -40,7 +42,7 @@ In offset mode the scorecard **simulates the render** (applies `laneOff` before
 the ordering checks, since the stored geometry is the coincident centreline).
 
 ```
-A. Integrity vs routes.preribbons.json — all 23 lines preserved. In offset mode
+A. Integrity vs routes.osm.json (the build source) — all 23 lines preserved. In offset mode
    geometry IS the centreline, so bbox edge shift is ~0–9 m and length within
    ~1.5%. Circle loop intact (27.3 → 26.9 km, no lost arcs / collapse).
 
@@ -94,6 +96,12 @@ the per-spot helpers to see the offset applied.)
   dense 8-line junction. Open.
 - **National-Rail mega-corridors** (Thameslink/GreatNorthern/Southern/Gatwick,
   hidden/off by default) bundle via the same mechanism; spot-checked.
-- **Source provenance:** `routes.preribbons.json` is the *old* pipeline's output
-  (Overpass → weld → Chaikin), so it carries legacy welds + real-OSM artifacts
-  we then clean. A from-first-principles re-fetch of raw OSM is the next step.
+- **Markers float off the clean lines:** OSM models running lines offset from
+  platform stop-nodes, so e.g. Angel's marker sits ~69 m off its (now smooth)
+  line. The old welds masked this by pulling the line to the marker. Needs a
+  marker strategy (Idea B cluster-snap so interchanges stay one pie / accept /
+  per-line dots). Open.
+- **Source = raw OSM (done):** `routes.osm.json` is re-fetched from Overpass; the
+  legacy welds (Angel) and the St Pancras Thameslink triangle are gone. Minor
+  current-OSM extent differences at some termini/depots (mostly hidden National
+  Rail; Victoria +~600 m terminus tail) vs the old snapshot — accepted.
