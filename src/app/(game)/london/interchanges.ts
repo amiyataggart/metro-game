@@ -21,8 +21,13 @@ type LineMap = { [k: string]: Line }
 const M_LAT = 111320
 const M_LNG = 69300 // ~51.5N
 // Services within this distance (same name) count as the same physical
-// interchange; farther apart they're treated as separate locations.
-const CLUSTER_M = 150
+// interchange (one segmented pie); farther apart they're separate markers, so a
+// multi-platform station (Finsbury Park, Wimbledon, Farringdon, …) shows a pie
+// only over the lines actually sharing a platform and a plain dot for the
+// others — instead of one combined pie duplicated at every platform. Same-
+// platform lines are coincident (~0 m) in the data; different platforms are
+// 34 m+ apart, so 30 m cleanly separates them (see the distance histogram).
+const CLUSTER_M = 30
 
 export function annotateInterchanges(
   fc: DataFeatureCollection,

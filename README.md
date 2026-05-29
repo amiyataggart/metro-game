@@ -99,7 +99,13 @@ node scripts/build-ribbons.js \
 
 node scripts/transform-data.js        # build features.json (stations; splits Overground, aliases, TOC merge)
 node scripts/rename-stations.js       # drop redundant "London " name prefixes (keep as aliases)
+node scripts/marker-overrides.js      # hand-curated marker co-location fixes (e.g. Farringdon Elizabeth -> Thameslink level)
 ```
+
+**Interchange pies** (`interchanges.ts`) group markers by name + co-location
+(`CLUSTER_M = 30 m`); same-platform lines (coincident in the data) share one
+segmented pie, while a multi-platform station (Finsbury Park, Wimbledon,
+Farringdon, …) shows a pie per platform and plain dots elsewhere.
 
 **Parallel ribbons (`build-ribbons.js`).** Co-running lines (e.g.
 Circle/District/H&C/Met on the subsurface trunk) must render as distinct,
