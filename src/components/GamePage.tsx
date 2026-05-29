@@ -387,12 +387,17 @@ export default function GamePage({
         source: 'features',
         layout: { visibility: 'visible' },
         paint: {
-          // Scales down at low zoom (extra stop at z6) so markers shrink when
-          // zoomed out and don't overcrowd the map.
+          // Markers shrink hard as you scroll OUT. z12 and up are pinned to the
+          // OLD curve's values (z12 = its old interpolated 5.7), so regular play
+          // zoom is unchanged; only the scroll-out range below z12 is affected.
+          // ~half-size by z9 (whole network in frame — the most you can scroll
+          // out within maxBounds) and smaller still below. (Old: 6→1.3, 9→3.6,
+          // 13→6.4 — the shrink used to barely register in reach.)
           'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
-            6, 1.3,
-            9, 3.6,
+            6, 0.6,
+            9, 1.8,
+            12, 5.7,
             13, 6.4,
             16, 9.6,
             22, 16,
@@ -405,9 +410,14 @@ export default function GamePage({
           // inside `case` makes MapLibre reject the whole layer (which is why
           // the empty markers never rendered). Found stations collapse to a
           // 0-width stroke via the per-stop case.
+          // Stroke shrinks with the radius below z12 (so the ring is genuinely
+          // ~half-WIDTH when scrolled out, not just half-radius). z12→z22 sits
+          // on the OLD z8→z22 line, so regular zoom is unchanged.
           'circle-stroke-width': [
             'interpolate', ['linear'], ['zoom'],
-            8, ['case', ['to-boolean', ['feature-state', 'found']], 0, 1.4],
+            6, ['case', ['to-boolean', ['feature-state', 'found']], 0, 0.4],
+            9, ['case', ['to-boolean', ['feature-state', 'found']], 0, 0.75],
+            12, ['case', ['to-boolean', ['feature-state', 'found']], 0, 1.8],
             22, ['case', ['to-boolean', ['feature-state', 'found']], 0, 2.8],
           ],
           'circle-opacity': [
@@ -445,10 +455,13 @@ export default function GamePage({
         source: 'features',
         filter: ['!', ['get', 'interchange']] as unknown as maplibregl.FilterSpecification,
         paint: {
+          // Matches stations-base's curve (z12 = its old interpolated 5.1):
+          // unchanged at z12+, ~half by z9, smaller below.
           'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
-            6, ['case', ['to-boolean', ['feature-state', 'found']], 1.3, 0],
-            9, ['case', ['to-boolean', ['feature-state', 'found']], 3.6, 0],
+            6, ['case', ['to-boolean', ['feature-state', 'found']], 0.6, 0],
+            9, ['case', ['to-boolean', ['feature-state', 'found']], 1.8, 0],
+            12, ['case', ['to-boolean', ['feature-state', 'found']], 5.1, 0],
             13, ['case', ['to-boolean', ['feature-state', 'found']], 5.6, 0],
             16, ['case', ['to-boolean', ['feature-state', 'found']], 8.8, 0],
             22, ['case', ['to-boolean', ['feature-state', 'found']], 14.4, 0],
@@ -465,7 +478,9 @@ export default function GamePage({
           'circle-stroke-color': '#1d2835',
           'circle-stroke-width': [
             'interpolate', ['linear'], ['zoom'],
-            8, ['case', ['to-boolean', ['feature-state', 'found']], 1.4, 0],
+            6, ['case', ['to-boolean', ['feature-state', 'found']], 0.4, 0],
+            9, ['case', ['to-boolean', ['feature-state', 'found']], 0.75, 0],
+            12, ['case', ['to-boolean', ['feature-state', 'found']], 1.8, 0],
             22, ['case', ['to-boolean', ['feature-state', 'found']], 2.8, 0],
           ],
         },
@@ -531,10 +546,14 @@ export default function GamePage({
           'icon-image': ['get', 'pieKey'] as unknown as maplibregl.ExpressionSpecification,
           // Sized so the pie disc radius matches the station-circle radius
           // (disc r ≈ 14.5px per icon-size unit), so the ring layer aligns.
+          // Same curve as the circle layers ÷14.5, so the pie shrinks on
+          // scroll-out in lockstep with the rings: unchanged at z12+, ~half by
+          // z9, smaller below.
           'icon-size': [
             'interpolate', ['linear'], ['zoom'],
-            6, 0.09,
-            9, 0.248,
+            6, 0.041,
+            9, 0.124,
+            12, 0.352,
             13, 0.386,
             16, 0.607,
             22, 0.993,
@@ -560,10 +579,13 @@ export default function GamePage({
         source: 'features',
         filter: ['get', 'interchange'] as unknown as maplibregl.FilterSpecification,
         paint: {
+          // Matches stations-base's curve (z12 = its old interpolated 5.1):
+          // unchanged at z12+, ~half by z9, smaller below.
           'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
-            6, ['case', ['to-boolean', ['feature-state', 'found']], 1.3, 0],
-            9, ['case', ['to-boolean', ['feature-state', 'found']], 3.6, 0],
+            6, ['case', ['to-boolean', ['feature-state', 'found']], 0.6, 0],
+            9, ['case', ['to-boolean', ['feature-state', 'found']], 1.8, 0],
+            12, ['case', ['to-boolean', ['feature-state', 'found']], 5.1, 0],
             13, ['case', ['to-boolean', ['feature-state', 'found']], 5.6, 0],
             16, ['case', ['to-boolean', ['feature-state', 'found']], 8.8, 0],
             22, ['case', ['to-boolean', ['feature-state', 'found']], 14.4, 0],
@@ -572,7 +594,9 @@ export default function GamePage({
           'circle-stroke-color': '#1d2835',
           'circle-stroke-width': [
             'interpolate', ['linear'], ['zoom'],
-            8, ['case', ['to-boolean', ['feature-state', 'found']], 1.4, 0],
+            6, ['case', ['to-boolean', ['feature-state', 'found']], 0.4, 0],
+            9, ['case', ['to-boolean', ['feature-state', 'found']], 0.75, 0],
+            12, ['case', ['to-boolean', ['feature-state', 'found']], 1.8, 0],
             22, ['case', ['to-boolean', ['feature-state', 'found']], 2.8, 0],
           ],
         },
