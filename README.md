@@ -142,6 +142,15 @@ zoom. `build-ribbons.js`:
   the map renders with `line-offset: 0`. Zoom-stable but the separation shrinks
   to sub-pixel at the overview zoom (co-runners overlap when zoomed out).
 
+**Declarative cartography overrides** (top of `build-ribbons.js`, re-applied on
+every build so they survive a TfL/OSM re-fetch):
+- `ORDER_OVERRIDES` — force the cross-track order (screen top→bottom) of named
+  lines near a point, e.g. Mile End = Central / H&C / District, Jubilee above
+  Metropolitan, Suffragette below Victoria. Drives both the local lane ranking
+  and a sign assertion that flips the shared spine if rendered upside-down.
+- `NO_SNAP` — keep a line out of bundles near a point so it passes over the
+  others at its own geometry (e.g. Mildmay over West Hampstead / Brondesbury).
+
 Loops (Circle) and branches are preserved (a spine's own laying feature is
 reconstructed by identity — no self-overlap projection — and offsets/lane ramp
 to 0 where a branch leaves a trunk). All tunables are documented in the script's

@@ -140,7 +140,37 @@ const CONFIG = {
   MIN_SHARED_NODES: 2, // a line bundles onto a spine only if they share at
   // least this many CONSECUTIVE station nodes (>=2 ⇒ they co-run a segment,
   // not just cross at one station).
+  OFFSET_SMOOTH_WIN: 24, // offset-mode: window (samples) for smoothing laneOff
+  // along a feature. Larger = steadier offset through dense junctions (less
+  // "wobble", e.g. Thameslink at Finsbury Park) at the cost of longer ramps.
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// DECLARATIVE CARTOGRAPHY OVERRIDES — re-applied on every build, so they
+// survive a from-scratch OSM/TfL re-fetch. Coords are [lng, lat]; radius is m.
+// ──────────────────────────────────────────────────────────────────────────
+// Force the cross-track order (screen top→bottom, by latitude) of the listed
+// lines wherever they share a corridor within `radius` of `at`. `top` lists the
+// lines top→bottom; lines not listed keep their config-`order` rank after them.
+// Drives BOTH the per-bin lane ranking near `at` and a sign assertion that flips
+// the shared spine if the rendered order is upside-down.
+const ORDER_OVERRIDES = [
+  // Embankment: Circle interior to the subsurface loop (the brief §4 case).
+  { name: 'Embankment', at: [-0.1223, 51.5073], radius: 400, top: ['Circle', 'District'] },
+  // Mile End: Central top, H&C middle, District bottom (note: "northern" in the
+  // request = Central — the only red/black-ish tube here; Mile End has no Northern).
+  { name: 'Mile End', at: [-0.0333, 51.5251], radius: 500, top: ['Central', 'HammersmithAndCity', 'District'] },
+  // Blackhorse Road: Suffragette below the Victoria line where they run parallel.
+  { name: 'Blackhorse Road', at: [-0.0410, 51.5870], radius: 1200, top: ['Victoria', 'Suffragette'] },
+  // Finchley Rd → Wembley Park: Jubilee above the Metropolitan line.
+  { name: 'Jubilee/Met', at: [-0.2300, 51.5550], radius: 5000, top: ['Jubilee', 'Metropolitan'] },
+]
+// Keep a line OUT of corridor bundles within `radius` of `at` — it renders at
+// its own geometry (no offset), passing over the others unaffected.
+const NO_SNAP = [
+  // Mildmay over West Hampstead / Brondesbury — don't snap to the parallel ribbons.
+  { line: 'Mildmay', at: [-0.1970, 51.5460], radius: 1100 },
+]
 
 // ──────────────────────────────────────────────────────────────────────────
 // metric frame (flat-earth, fine at city scale; matches scripts/qa-geometry.js)
@@ -476,6 +506,8 @@ function parseArgs() {
 
 function main() {
   const args = parseArgs()
+  ORDER_OVERRIDES.forEach((o) => (o.atXY = toXY(o.at)))
+  NO_SNAP.forEach((o) => (o.atXY = toXY(o.at)))
   const raw = JSON.parse(fs.readFileSync(args.in, 'utf8'))
   // Footgun guard: always build from the pristine pre-offset source, never from
   // an already-processed routes.json (that double-snaps / double-offsets).
@@ -703,6 +735,13 @@ function main() {
     const clean2 = hysteresis(clean, f.xy)
     for (let i = 0; i < n; i++) clean[i] = clean2[i]
 
+    // NO_SNAP overrides: keep this line OUT of bundles near the given points so
+    // it passes over the others at its own geometry (e.g. Mildmay @ W. Hampstead).
+    for (const o of NO_SNAP) {
+      if (o.line !== f.line) continue
+      for (let i = 0; i < n; i++) if (clean[i] >= 0 && dist(f.xy[i], o.atXY) < o.radius) clean[i] = -1
+    }
+
     // 2) walk runs: snapped runs -> member; solo runs >= MIN_SPINE -> new spine
     for (const [val, lo, hi] of runs(clean)) {
       const segLen = f.cum[hi] - f.cum[lo]
@@ -781,6 +820,8 @@ function main() {
     sp.mcount = new Int16Array(nb) // # co-runners present per bin
     const memberLines = [...sp.members.keys()]
     for (const line of memberLines) sp.lanes.set(line, new Float64Array(nb).fill(NaN))
+    // order-overrides this spine passes through (vertex within radius)
+    const spOv = ORDER_OVERRIDES.filter((o) => sp.xy.some((v) => dist(v, o.atXY) < o.radius))
     for (let b = 0; b < nb; b++) {
       const mid = (b + 0.5) * CONFIG.BIN
       const present = []
@@ -788,7 +829,18 @@ function main() {
         const segs = sp.members.get(line)
         if (segs.some(([a, c]) => mid >= a - CONFIG.BIN && mid <= c + CONFIG.BIN)) present.push(line)
       }
-      present.sort((a, c) => (ORDER[a] ?? 999) - (ORDER[c] ?? 999) || (a < c ? -1 : 1))
+      // near an order-override, rank present lines by its top→bottom list
+      // (unlisted lines keep config order, after the listed ones)
+      let top = null
+      if (spOv.length) {
+        const pt = spineAt(sp, mid).pt
+        const ov = spOv.find((o) => dist(pt, o.atXY) < o.radius)
+        if (ov) top = ov.top
+      }
+      const keyOf = top
+        ? (l) => { const i = top.indexOf(l); return i >= 0 ? i : top.length + (ORDER[l] ?? 999) }
+        : (l) => ORDER[l] ?? 999
+      present.sort((a, c) => keyOf(a) - keyOf(c) || (a < c ? -1 : 1))
       const m = present.length
       sp.mcount[b] = m
       for (let r = 0; r < m; r++) {
@@ -901,8 +953,7 @@ function main() {
     // showed as a discontinuity at junctions, e.g. Ealing/Acton). Then split
     // into runs of quantised laneOff: stable corridors stay one segment; a ramp
     // becomes a few short segments whose tiny offset steps read as a smooth ease.
-    const win = Math.round(CONFIG.TAPER / CONFIG.S)
-    const offS = smoothScalar(offv, win)
+    const offS = smoothScalar(offv, CONFIG.OFFSET_SMOOTH_WIN)
     const Q = CONFIG.OFFSET_QUANT
     const out = []
     let start = 0
@@ -935,10 +986,9 @@ function main() {
   // For each ordering assertion, if it fails, flip the sign of the spine that
   // the two named lines share at that probe, and re-evaluate. Deterministic;
   // converges in a couple of passes (only the loop spine actually needs it).
-  const ASSERTS = [
-    // [probe lng,lat], northLine, southLine  (northLine must end up N of southLine)
-    [[-0.1223, 51.5073], 'Circle', 'District'], // Embankment (south trunk)
-  ]
+  // Derived from ORDER_OVERRIDES: at each override, the first (top) line must
+  // render north of the last (bottom) line; if not, flip the shared spine's sign.
+  const ASSERTS = ORDER_OVERRIDES.map((o) => [o.at, o.top[0], o.top[o.top.length - 1]])
   function bakedLLForLineNear(probeLL, line) {
     // returns the baked latitude of `line` nearest the probe
     let best = Infinity
