@@ -45,6 +45,31 @@ function byLine(fc) {
   }
   return m
 }
+const OFFSET_M = 12 // nominal metres per lane unit when simulating the render
+// Offset mode: geometry is the shared centreline; separation is applied at
+// render via line-offset = laneOff × width. Simulate that (displace each vertex
+// by laneOff × OFFSET_M along the right-normal of travel, matching MapLibre's
+// "+offset = right") so the ordering/separation checks measure the RENDERED
+// ribbons rather than coincident centrelines.
+function byLineRendered(fc) {
+  const m = new Map()
+  for (const f of fc.features) {
+    if (!f.geometry || f.geometry.type !== 'LineString') continue
+    const off = (f.properties && f.properties.laneOff) || 0
+    const c = f.geometry.coordinates
+    const coords = !off ? c : c.map((p, i) => {
+      const a = c[Math.max(0, i - 1)], b = c[Math.min(c.length - 1, i + 1)]
+      const dx = (b[0] - a[0]) * M_LNG, dy = (b[1] - a[1]) * M_LAT
+      const L = Math.hypot(dx, dy) || 1
+      const rx = dy / L, ry = -dx / L // right-normal of travel direction
+      return [p[0] + (off * OFFSET_M * rx) / M_LNG, p[1] + (off * OFFSET_M * ry) / M_LAT]
+    })
+    const l = f.properties.line
+    if (!m.has(l)) m.set(l, [])
+    m.get(l).push(coords)
+  }
+  return m
+}
 function bbox(polys) {
   let W = Infinity, S = Infinity, E = -Infinity, N = -Infinity
   for (const c of polys) for (const p of c) {
@@ -94,8 +119,12 @@ function corridorSamples(refPolys, aLL, bLL, step) {
   return out
 }
 
-const cur = byLine(load(file))
+const fcCur = load(file)
+const cur = byLine(fcCur) // raw stored geometry (centreline in offset mode) — for integrity
 const base = byLine(load(baseline))
+const OFFSET_MODE = fcCur.features.some((f) => f.properties && 'laneOff' in f.properties)
+// rendered geometry (offset applied) — for ordering/separation checks
+const curR = OFFSET_MODE ? byLineRendered(fcCur) : cur
 
 console.log(`\n=== A. Integrity vs ${path.basename(baseline)} (bbox & length preserved) ===`)
 let integrityFail = 0
@@ -144,9 +173,9 @@ const PROBES = [
   },
 ]
 
-console.log('\n=== B. §4 ordering probes ===')
+console.log(`\n=== B. §4 ordering probes ${OFFSET_MODE ? '(render simulated: laneOff applied)' : ''} ===`)
 for (const pr of PROBES) {
-  const ref = cur.get(pr.ref)
+  const ref = curR.get(pr.ref)
   const samples = corridorSamples(ref, pr.a, pr.b, 20)
   // for each sample, nearest pt on each member; signed cross-track via the
   // reference left-normal; also record latitude.
@@ -155,7 +184,7 @@ for (const pr of PROBES) {
     const ln = [-s.tan[1], s.tan[0]] // left normal of ref tangent
     const row = {}
     for (const line of pr.order) {
-      const polys = cur.get(line)
+      const polys = curR.get(line)
       if (!polys) continue
       const nr = nearest(s.pt, polys)
       if (nr.d > 120) continue // member not actually in this corridor here
@@ -203,7 +232,7 @@ console.log('\n=== C. Watford DC (Bakerloo + Lioness both visible) ===')
 {
   const probe = [-0.2143, 51.5341] // Queen's Park
   const a = [X(probe), Y(probe)]
-  const bk = cur.get('Bakerloo'), li = cur.get('Lioness')
+  const bk = curR.get('Bakerloo'), li = curR.get('Lioness')
   const nb = nearest(a, bk), nl = nearest(a, li)
   const sep = Math.hypot(nb.pt[0] - nl.pt[0], nb.pt[1] - nl.pt[1])
   console.log(`    near Queen's Park: Bakerloo d=${nb.d.toFixed(0)}m, Lioness d=${nl.d.toFixed(0)}m, separation=${sep.toFixed(1)}m  ${sep > 8 ? 'OK' : 'FAIL'}`)

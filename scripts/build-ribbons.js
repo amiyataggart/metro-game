@@ -100,6 +100,9 @@ const CONFIG = {
   // shared nodes are farther apart than this (m) along the line — i.e. the
   // lines genuinely diverge (real branch) rather than just skipping a stop.
   BIN: 10, // lane-packing bin width along a spine (m). == S keeps it crisp.
+  OFFSET_QUANT: 0.1, // offset-mode: quantise the (smoothed) laneOff into this
+  // many lane-unit steps when splitting segments — smaller = smoother junction
+  // ramps but more features.
   SMOOTH_WIN: 2, // final gentle moving-average window (samples, ~±S·win/2 m)
   // on output coords, endpoints pinned — rounds raw-OSM spikes without
   // collapsing curves or the loop. 0 disables.
@@ -122,6 +125,11 @@ const CONFIG = {
   // Catches an out-and-back tracing both running tracks (Piccadilly's Heathrow
   // branch) but leaves genuine one-way loops (Heathrow T4, Circle): their sides
   // aren't close+anti-parallel over a long arc, so no long duplicate run forms.
+  WELD_R: 42, // de-weld radius (m): near a station node, blend the line toward
+  // a heavily-smoothed version to flatten "weld bulges" (the line pulled to a
+  // platform point and back, e.g. Angel). Falls to 0 weight at WELD_R, so
+  // geometry between stations is untouched (stays faithful).
+  WELD_WIN: 11, // heavy-smoothing window (samples) used by the de-weld blend.
   R_NODE: 45, // a station node attaches to a line if its geometry passes within
   // this (m). Shared stations sit ~1-13m off each serving line (OSM noise).
   CLUSTER: 30, // station points within this (m) merge into one physical node.
@@ -450,6 +458,7 @@ function parseArgs() {
     in: path.join(DATA, 'routes.json'),
     out: path.join(DATA, 'routes.json'),
     report: false,
+    mode: 'offset', // 'offset' (render-time line-offset; default) | 'baked'
   }
   for (let i = 0; i < a.length; i++) {
     if (a[i] === '--in') o.in = a[++i]
@@ -457,6 +466,8 @@ function parseArgs() {
     else if (a[i] === '--report') o.report = true
     else if (a[i] === '--debug') o.debug = a[++i].split(',').map(Number)
     else if (a[i] === '--debug-line') o.debugLine = a[++i]
+    else if (a[i] === '--mode') o.mode = a[++i] // 'offset' (default) | 'baked'
+    else if (a[i] === '--force') o.force = true // allow building from processed input
   }
   return o
 }
@@ -464,6 +475,18 @@ function parseArgs() {
 function main() {
   const args = parseArgs()
   const raw = JSON.parse(fs.readFileSync(args.in, 'utf8'))
+  // Footgun guard: always build from the pristine pre-offset source, never from
+  // an already-processed routes.json (that double-snaps / double-offsets).
+  const alreadyProcessed = raw.features.some((f) => f.properties && 'laneOff' in f.properties)
+  if (alreadyProcessed && !args.force) {
+    console.error(
+      `Refusing to build from ${path.basename(args.in)} — it is already ribbon-processed ` +
+        `(has 'laneOff'). Build from the pristine source, e.g.\n  --in ` +
+        `src/app/(game)/london/data/routes.preribbons.json --out src/app/(game)/london/data/routes.json\n` +
+        `(use --force to override).`,
+    )
+    process.exit(1)
+  }
   const ORDER = require('./line-order.js') // {lineKey: order}
 
   // ---- load features ----
@@ -506,6 +529,33 @@ function main() {
   nodes.forEach((p, i) => nodeGrid.add(i, i, p[0], p[1], 0, 0))
   // For each feature, the ordered sequence of nodes it passes (within R_NODE).
   for (const f of lineFeats) f.nodes = projectNodes(f.xy, f.cum)
+
+  // De-weld: flatten station-weld bulges (the source pulled vertices to platform
+  // points, e.g. Angel). Blend each vertex toward a heavily-smoothed copy with a
+  // weight that's 1 at a station node and 0 by WELD_R — so a short bulge at a
+  // through-station gets flattened, but sustained real curvature (a junction,
+  // or geometry between stations) is left faithful. Recompute tangents/arc/nodes.
+  for (const f of lineFeats) {
+    f.xy = deWeld(f.xy)
+    f.tan = smoothTangents(tangents(f.xy))
+    f.cum = cumlen(f.xy)
+    f.nodes = projectNodes(f.xy, f.cum)
+  }
+  function deWeld(xy) {
+    const n = xy.length
+    if (n < CONFIG.WELD_WIN + 2) return xy
+    const heavy = smoothVecs(xy, CONFIG.WELD_WIN)
+    const out = xy.map((p, i) => {
+      const e = nodeGrid.nearest(p, null, CONFIG.WELD_R, 0)
+      if (!e) return p
+      const d = Math.hypot(e.x - p[0], e.y - p[1])
+      const w = Math.max(0, 1 - d / CONFIG.WELD_R) // 1 at node -> 0 at WELD_R
+      return [p[0] + (heavy[i][0] - p[0]) * w, p[1] + (heavy[i][1] - p[1]) * w]
+    })
+    out[0] = xy[0]
+    out[n - 1] = xy[n - 1]
+    return out
+  }
 
   // returns ordered [{node, vertIdx, arc}] for nodes within R_NODE of the line
   function projectNodes(xy, cum) {
@@ -725,7 +775,8 @@ function main() {
     const total = sp.cum.at(-1)
     const nb = Math.max(1, Math.ceil(total / CONFIG.BIN))
     sp.nb = nb
-    sp.lanes = new Map() // line -> Float array length nb (NaN where absent)
+    sp.lanes = new Map() // line -> Float array of LANE INDEX (NaN where absent)
+    sp.mcount = new Int16Array(nb) // # co-runners present per bin
     const memberLines = [...sp.members.keys()]
     for (const line of memberLines) sp.lanes.set(line, new Float64Array(nb).fill(NaN))
     for (let b = 0; b < nb; b++) {
@@ -737,14 +788,18 @@ function main() {
       }
       present.sort((a, c) => (ORDER[a] ?? 999) - (ORDER[c] ?? 999) || (a < c ? -1 : 1))
       const m = present.length
-      const spacing = CONFIG.LANE_SPACING[m] ?? CONFIG.LANE_SPACING_DEFAULT
+      sp.mcount[b] = m
       for (let r = 0; r < m; r++) {
-        // store the signed cross-track OFFSET in metres (lane index * spacing)
-        sp.lanes.get(present[r])[b] = (r - (m - 1) / 2) * spacing
+        sp.lanes.get(present[r])[b] = r - (m - 1) / 2 // signed lane INDEX
       }
     }
   }
-  // signed cross-track offset (metres) for a line at spine arc s
+  const spacingFor = (m) => CONFIG.LANE_SPACING[m] ?? CONFIG.LANE_SPACING_DEFAULT
+  function mcountAt(sp, s) {
+    let b = Math.floor(s / CONFIG.BIN)
+    return sp.mcount[Math.max(0, Math.min(sp.nb - 1, b))] || 1
+  }
+  // signed lane INDEX for a line at spine arc s (rank centred on the stack)
   function laneAt(sp, line, s) {
     const arr = sp.lanes.get(line)
     if (!arr) return 0
@@ -782,7 +837,7 @@ function main() {
           spt = r.pt
           normal = r.normal
         }
-        const lane = laneAt(sp, f.line, s) * sp.sign // signed offset in metres
+        const lane = laneAt(sp, f.line, s) * spacingFor(mcountAt(sp, s)) * sp.sign // metres
         off[i] = [spt[0] - f.xy[i][0] + lane * normal[0], spt[1] - f.xy[i][1] + lane * normal[1]]
       }
     }
@@ -793,6 +848,83 @@ function main() {
     if (CONFIG.SMOOTH_WIN >= 2 && out.length > CONFIG.SMOOTH_WIN + 2) {
       const s = smoothVecs(out, CONFIG.SMOOTH_WIN)
       out = out.map((p, i) => (i === 0 || i === out.length - 1 ? p : s[i]))
+    }
+    return out
+  }
+
+  // ---- OFFSET MODE: emit shared-centreline geometry + a per-segment lane
+  // offset (in lane units), to be separated at render time by `line-offset`.
+  // Geometry eases onto the shared centreline (smoothed snap, no lane term);
+  // the cross-track separation is the runtime offset. Co-runners share ~the
+  // same centreline so their tangents match and they stay parallel. A feature
+  // is split where its lane changes (junctions) — each piece carries a constant
+  // laneOff. MapLibre: +offset = right of line direction, so we flip per the
+  // emitted tangent (dir) and spine sign. Returns [{coords(metric), off}].
+  function offsetSegments(f) {
+    const n = f.xy.length
+    const snap = []
+    for (let i = 0; i < n; i++) snap.push([0, 0])
+    const offv = new Float64Array(n)
+    for (const seg of f.segments) {
+      if (seg.kind === 'solo') continue
+      const sp = spines[seg.spineId]
+      let dir = 1
+      if (seg.kind !== 'own') {
+        const s0 = projectArc(sp, f.xy[seg.lo])
+        const s1 = projectArc(sp, f.xy[seg.hi])
+        dir = s1 - s0 >= 0 ? 1 : -1
+      }
+      for (let i = seg.lo; i <= seg.hi; i++) {
+        let spt, s
+        if (seg.kind === 'own') {
+          const k = i - seg.base
+          spt = sp.xy[k]
+          s = sp.cum[k]
+        } else {
+          s = projectArc(sp, f.xy[i])
+          spt = spineAt(sp, s).pt
+        }
+        snap[i] = [spt[0] - f.xy[i][0], spt[1] - f.xy[i][1]]
+        offv[i] = -laneAt(sp, f.line, s) * sp.sign * dir // lane units, render-side
+      }
+    }
+    const sm = smoothVecs(snap, Math.round(CONFIG.TAPER / CONFIG.S))
+    let pos = f.xy.map((p, i) => [p[0] + sm[i][0], p[1] + sm[i][1]])
+    if (CONFIG.SMOOTH_WIN >= 2 && pos.length > CONFIG.SMOOTH_WIN + 2) {
+      const sp2 = smoothVecs(pos, CONFIG.SMOOTH_WIN)
+      pos = pos.map((p, i) => (i === 0 || i === pos.length - 1 ? p : sp2[i]))
+    }
+    // Smooth the per-vertex laneOff over a taper so it RAMPS where a line joins
+    // / leaves a stack instead of stepping (line-offset can't taper, so the jump
+    // showed as a discontinuity at junctions, e.g. Ealing/Acton). Then split
+    // into runs of quantised laneOff: stable corridors stay one segment; a ramp
+    // becomes a few short segments whose tiny offset steps read as a smooth ease.
+    const win = Math.round(CONFIG.TAPER / CONFIG.S)
+    const offS = smoothScalar(offv, win)
+    const Q = CONFIG.OFFSET_QUANT
+    const out = []
+    let start = 0
+    const keyAt = (i) => Math.round(offS[i] / Q)
+    for (let i = 1; i <= n; i++) {
+      if (i === n || keyAt(i) !== keyAt(start)) {
+        out.push({ coords: pos.slice(start, Math.min(n, i + 1)), off: keyAt(start) * Q })
+        start = i
+      }
+    }
+    return out
+  }
+  // 1D moving average (endpoints clamped) — used to ramp laneOff at junctions.
+  function smoothScalar(arr, win) {
+    const n = arr.length
+    if (win < 1) return Array.from(arr)
+    const half = Math.floor(win / 2)
+    const pre = [0]
+    for (let i = 0; i < n; i++) pre.push(pre[i] + arr[i])
+    const out = new Array(n)
+    for (let i = 0; i < n; i++) {
+      const lo = Math.max(0, i - half)
+      const hi = Math.min(n - 1, i + half)
+      out[i] = (pre[hi + 1] - pre[lo]) / (hi - lo + 1)
     }
     return out
   }
@@ -866,23 +998,41 @@ function main() {
     bakeAll()
   }
 
-  // ---- write output, preserving schema & feature order ----
+  // ---- write output, preserving schema ----
+  const k = Math.pow(10, CONFIG.COORD_DP)
+  const round = (v) => Math.round(v * k) / k
+  const toOut = (coords) => coords.map((p) => [round(p[0] / M_LNG), round(p[1] / M_LAT)])
   let fi = 0
-  const outFeatures = raw.features.map((orig) => {
-    if (!orig.geometry || orig.geometry.type !== 'LineString') return orig
-    const f = lineFeats[fi++]
-    const simp = simplifyDP(f._baked, CONFIG.SIMPLIFY_EPS)
-    const k = Math.pow(10, CONFIG.COORD_DP)
-    const round = (v) => Math.round(v * k) / k
-    return {
-      type: 'Feature',
-      properties: { ...orig.properties, offset: 0 }, // keep line/color/order; offset now baked
-      geometry: {
-        type: 'LineString',
-        coordinates: simp.map((p) => [round(p[0] / M_LNG), round(p[1] / M_LAT)]),
-      },
+  let outFeatures
+  if (args.mode === 'offset') {
+    // each line -> one feature per constant-laneOff segment (centreline geom +
+    // laneOff property); separation is applied at render via line-offset.
+    outFeatures = []
+    for (const orig of raw.features) {
+      if (!orig.geometry || orig.geometry.type !== 'LineString') { outFeatures.push(orig); continue }
+      const f = lineFeats[fi++]
+      for (const seg of offsetSegments(f)) {
+        const simp = simplifyDP(seg.coords, CONFIG.SIMPLIFY_EPS)
+        if (simp.length < 2) continue
+        outFeatures.push({
+          type: 'Feature',
+          properties: { ...orig.properties, offset: 0, laneOff: round(seg.off) },
+          geometry: { type: 'LineString', coordinates: toOut(simp) },
+        })
+      }
     }
-  })
+  } else {
+    outFeatures = raw.features.map((orig) => {
+      if (!orig.geometry || orig.geometry.type !== 'LineString') return orig
+      const f = lineFeats[fi++]
+      const simp = simplifyDP(f._baked, CONFIG.SIMPLIFY_EPS)
+      return {
+        type: 'Feature',
+        properties: { ...orig.properties, offset: 0, laneOff: 0 }, // baked: no runtime offset
+        geometry: { type: 'LineString', coordinates: toOut(simp) },
+      }
+    })
+  }
   const out = { ...raw, features: outFeatures }
 
   // back up the original once
@@ -893,8 +1043,8 @@ function main() {
   }
   fs.writeFileSync(args.out, JSON.stringify(out))
   console.log(
-    `Wrote ${path.relative(process.cwd(), args.out)}: ${outFeatures.length} features, ` +
-      `${spines.length} spines.`,
+    `Wrote ${path.relative(process.cwd(), args.out)} [mode=${args.mode}]: ` +
+      `${outFeatures.length} features, ${spines.length} spines.`,
   )
 
   if (args.report) printReport(spines, lineFeats)

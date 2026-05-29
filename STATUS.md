@@ -5,13 +5,16 @@ _Updated 2026-05-29 · branch `main` · pushed to `origin` at `c771f4e` · deplo
 ## Where it stands
 
 - **Lines shown by default:** Underground + Overground + Elizabeth + DLR. **Thameslink** off by default (toggleable). **Southern / Great Northern / Gatwick Express** hidden (`HIDDEN_LINES`).
-- **Geometry:** baked parallel-offset ribbons (render with `line-offset: 0`) → co-running lines stay parallel and never flip across zoom. Rebuilt by `scripts/build-ribbons.js` (shared-centreline corridors + station-anchored membership + lane packing by `order`); see README "Data pipeline". Regenerate from `routes.preribbons.json`, never from `routes.json`.
+- **Geometry:** parallel-ribbon corridors rebuilt by `scripts/build-ribbons.js` (shared-centreline corridors + station-anchored membership + lane order by config `order`; de-spike / de-weld / collapse-doubling cleanup). Default **offset mode**: lines sit on the shared centreline carrying a `laneOff`, separated at render by `line-offset = laneOff × line-width(zoom)` → co-runners stay parallel, never flip, separate by a constant screen amount at every zoom (no hiding when zoomed out), geometry stays on the true track. (`--mode baked` available.) See README "Data pipeline". Regenerate from `routes.preribbons.json`, never from `routes.json`.
 - **Stations:** hollow when un-found; colour dot (single-line) or segmented pie (interchange) when found; identical borders; **scale with zoom**.
 - **Map furniture:** operator line picker, draggable timer, Greater London grey-out + border, red-dashed City of London, greener parks / bluer water, default view on Charing Cross (Zone 1).
 - **Verification:** Puppeteer render + browser-free geometry scorecard harness (`scripts/qa-*.js`).
 
 ## Latest changes (action → result)
 
+- **Render-time offset mode (`build-ribbons.js --mode offset` + `line-offset` in GamePage)** → co-running ribbons separate by a constant screen amount at every zoom, so zoomed-out the higher-`order` line no longer hides the lower (fixed Met/H&C/Lioness overlap). Lines stored on the shared centreline (true track); `laneOff` ramps at junctions to avoid offset jogs.
+- **De-weld + de-spike** → flattened station-weld bulges/hairpins (Angel, Oval, Kennington) so lines no longer snap to platform points, while keeping real junction curves faithful. `snap-markers.js` (Idea B) available but not in the default pipeline.
+- **De-doubled Piccadilly's Heathrow out-and-back** (kept the T4 loop); member-count-aware lane spacing for baked mode.
 - **Rebuilt ribbon geometry from scratch (`build-ribbons.js`)** → §4 orderings now correct & zoom-stable: north trunk Met/H&C/Circle, south trunk Circle/District (Circle interior to the loop everywhere, 0 cross-track reversals, ~14m spacing), Bakerloo & Lioness both visible on the Watford DC, District/Piccadilly separated at Earl's Court. Circle loop intact (length 27.3→27.1km). Output 0.34MB (was 0.83MB). Retired the weld/Chaikin/miter pipeline to `archive/scripts/`. Verified with `qa-ribbons.js` + `qa-ribbons-render.js`.
 - Baked offsets into `routes.json` + render at `line-offset: 0` → fixed ribbon ordering flips (ISSUES #2).
 - Welded same-line endpoints → closeable junction gaps 12 → 4 (ISSUES #1, as far as baked geometry allows).

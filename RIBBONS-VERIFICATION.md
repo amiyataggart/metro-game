@@ -2,9 +2,12 @@
 
 Rebuild of `routes.json` by `scripts/build-ribbons.js` (replaces the archived
 weld/Chaikin/miter pipeline — see `PARALLEL-RIBBONS-BRIEF.md` §7). Built from the
-pristine `routes.preribbons.json`; renders at `line-offset: 0`.
+pristine `routes.preribbons.json`. **Default = offset mode**: lines are emitted
+on their shared corridor centreline carrying a signed `laneOff`, and the map
+(`GamePage.tsx`) renders the separation at runtime with
+`line-offset = laneOff × line-width(zoom)`.
 
-## Approach (one paragraph)
+## Approach
 
 Co-running lines come from different OSM ways and bow up to ~60 m apart between
 shared stations, so a fixed-radius geometric corridor detector either misses
@@ -12,74 +15,85 @@ members or grabs the wrong one. Instead: lay **spines** (shared centrelines,
 lowest-`order`-first), then confirm corridor membership along runs of **≥2
 consecutive shared station nodes** (`features.json`, clustered into physical
 nodes — coincident across co-serving lines, so robust). Stations drive
-*detection only* — geometry is never welded to them. Each corridor's lines are
-packed into evenly-spaced **lanes ordered by config `order`**, centred on the
-corridor; each line is baked as `centreline + lane×spacing` along the *shared*
-normal, blended on/off corridors by a smoothed offset vector. Because all
-members are exact parallel offsets of one curve, they cannot cross or flip at
-any zoom. Loops/branches survive (a spine's laying feature is reconstructed by
-identity, avoiding self-overlap projection; offsets taper to 0 at divergences).
+*detection only* — geometry is never welded to them. Raw input is first cleaned
+(`deSpike` near-reversal darts, `deWeld` station-weld bulges, `collapseDoubling`
+out-and-back tracks). Each corridor's lines are ordered into **lanes by config
+`order`** (centred on the corridor); the per-vertex lane is smoothed so it ramps
+(not steps) at junctions.
+
+- **Offset mode (default):** each line is emitted on the shared centreline with a
+  signed `laneOff`; separation is applied at render. Because co-runners share the
+  centreline their tangents match, so the runtime offset keeps them exactly
+  parallel and never flips, separates them by a **constant screen amount at every
+  zoom** (the lower line is never hidden when zoomed out), and leaves geometry on
+  the true track.
+- **Baked mode (`--mode baked`):** lane offset baked into coordinates (ground
+  units), render at `line-offset: 0`. Zoom-stable but co-runners merge at the
+  overview zoom.
+
+Loops/branches survive (a spine's laying feature is reconstructed by identity,
+avoiding self-overlap projection; lane ramps to 0 at divergences).
 
 ## Scorecard (`node scripts/qa-ribbons.js`)
 
-```
-A. Integrity vs routes.preribbons.json — all 23 lines preserved (bbox edge
-   shift < 35 m = the offset itself; length within ~1%). Circle loop intact:
-   27.3 → 27.1 km (no lost arcs / collapse).
+In offset mode the scorecard **simulates the render** (applies `laneOff` before
+the ordering checks, since the stored geometry is the coincident centreline).
 
-B. §4 ordering probes
+```
+A. Integrity vs routes.preribbons.json — all 23 lines preserved. In offset mode
+   geometry IS the centreline, so bbox edge shift is ~0–9 m and length within
+   ~1.5%. Circle loop intact (27.3 → 26.9 km, no lost arcs / collapse).
+
+B. §4 ordering probes (render simulated, ~12 m per lane unit)
    North trunk (Gt Portland St → Euston Sq): top→bottom Metropolitan, H&C,
-     Circle — OK; 0 cross-track reversals; spacing mean ~17 m (3-line corridor).
+     Circle — OK; 0 cross-track reversals; spacing ~12 m.
    South trunk (Westminster → Embankment): top→bottom Circle, District — OK;
-     0 reversals; spacing mean ~22 m (2-line corridor).
+     0 reversals; spacing ~12 m.
    ⇒ Circle is interior to the subsurface loop everywhere.
 
-C. Watford DC (Queen's Park): Bakerloo & Lioness both present, ~22 m apart — OK.
+C. Watford DC (Queen's Park): Bakerloo & Lioness both present, ~12 m apart — OK.
 ```
 
 ## Renders (`node scripts/qa-ribbons-render.js` → `qa/out/`, gitignored)
 
 `north-trunk`, `south-trunk`, `watford-dc`, `edgware-rd`, `earls-court`,
-`central-knot`, `circle-loop` — lowest `order` drawn first (matches the app's
-`line-sort-key`). Confirmed by eye: parallel evenly-spaced ribbons, correct
-ordering, branches reconnect at junctions, Circle loop continuous and interior.
+`central-knot`, `circle-loop` — lowest `order` drawn first. (These render the
+stored geometry; in offset mode that's the centreline, so use the live app or
+the per-spot helpers to see the offset applied.)
 
-## Tunables (`CONFIG` in `build-ribbons.js`)
+## Tunables (`CONFIG` in `build-ribbons.js`, + render in `GamePage.tsx`)
 
 | Key | Value | Meaning |
 |---|---|---|
+| render `line-offset` | `laneOff × line-width(zoom)` | offset-mode separation (GamePage); px-per-lane = the line width |
 | `S` | 10 m | resample step |
-| `LANE_SPACING` | {2:22, 3:17, 4:14, 5+:12} m | lane centre-to-centre by #co-runners — 2-line pairs wider so they separate at a lower zoom; dense stacks stay compact |
-| `D` | 34 m | geometric snap radius (spine seeding) |
-| `D2` | 130 m | corridor ceiling for station-run bundling |
-| `TAPER` | 80 m | offset-vector smoothing window (on/off-corridor easing) |
-| `R_NODE` | 45 m | station-node → line attach radius |
-| `CLUSTER` | 30 m | station-point merge radius (physical nodes) |
-| `MIN_SHARED_NODES` | 2 | consecutive shared stations to bundle |
-| `MAX_NODE_GAP` | 3000 m | split a shared run here (real divergence) |
+| `D` / `D2` | 34 / 130 m | geometric snap radius / corridor ceiling for station-run bundling |
+| `TAPER` | 80 m | on/off-corridor easing + laneOff ramp window |
+| `R_NODE` / `CLUSTER` | 45 / 30 m | station-node attach radius / station-point merge radius |
+| `MIN_SHARED_NODES` / `MAX_NODE_GAP` | 2 / 3000 m | consecutive shared stations to bundle / split a run (real divergence) |
 | `MIN_SPINE` / `MIN_MEMBER` | 120 / 140 m | min run to seed a spine / count as a member |
+| `SPIKE_ANGLE` | 88° | de-spike: drop only near-reversal darts (keeps real sharp curves/loops) |
+| `WELD_R` / `WELD_WIN` | 42 m / 11 | de-weld: flatten station bulges near nodes, keep junctions faithful |
+| `DEDUP_DIST` / `DEDUP_MIN_RUN` | 110 / 1500 m | collapse out-and-back doubling (leaves one-way loops) |
+| `OFFSET_QUANT` | 0.1 | offset-mode: laneOff quantisation when segmenting (smaller = smoother ramps, more features) |
 | `SMOOTH_WIN` | 2 | final gentle coord smoothing (kept low for faithful geometry) |
-| `SPIKE_ANGLE` | 88° | de-spike: drop only near-reversal vertices (station-weld darts); preserves real sharp junction curves / turn-back loops |
-| `DEDUP_DIST` / `DEDUP_MIN_RUN` | 110 m / 1500 m | collapse-doubling: anti-parallel self-overlap radius / min run to remove (de-doubles out-and-back tracks; leaves one-way loops) |
-| `SIMPLIFY_EPS` | 1.5 m | output Douglas–Peucker tolerance (≪ spacing) |
-| `COORD_DP` | 6 | output coordinate precision (≈0.11 m) |
-
-Ground-unit spacing reads as clean ribbons when zoomed in and blends at the z12
-overview — inherent to baked offsets (brief §2). Member-count spacing makes
-2-line pairs separate at a lower zoom; at the far overview they still merge.
+| `LANE_SPACING` | {2:22,3:17,4:14,5+:12} m | **baked mode only**: member-count lane spacing |
+| `SIMPLIFY_EPS` / `COORD_DP` | 1.5 m / 6 | output Douglas–Peucker tolerance / coord precision |
 
 ## Known / unresolved
 
-- **Solo single-line weld spikes** (Kennington, Oval, Marylebone …) were
-  inherited from the committed source. `deSpike` removes only near-reversal
-  darts (`SPIKE_ANGLE=88°`) so the Oval 143° hairpin is gone while genuine sharp
-  junction curves stay — the new geometry tracks the source faithfully (verified
-  by overlaying new-vs-source at Kennington/Oval).
-- **Out-and-back doubling** (one OSM way tracing both running tracks) is
-  collapsed by `collapseDoubling`: Piccadilly's Heathrow branch is now a single
-  line (−12%) with the T4 one-way loop preserved. One Thameslink feature still
-  has partial doubling — its duplicate run isn't a clean removable tail, so the
-  pass conservatively leaves it (Thameslink is off by default); revisit if needed.
-- National-Rail mega-corridors (Thameslink/GreatNorthern/Southern/GatwickExpress,
-  hidden/off by default) bundle via the same mechanism; spot-checked, not yet
-  exhaustively eyeballed.
+- **Markers at weld-bulge stations:** `deWeld` smooths the line off the platform
+  point it was welded to, so at those few stations (Angel, Oval, …) the original
+  marker sits slightly off the smoothed line. `snap-markers.js` (Idea B) snaps
+  markers onto lines but is **not** in the default pipeline (it scattered
+  interchange pies — one-marker-per-station is owned by `features.json`).
+- **Thameslink @ St Pancras:** the source OSM geometry has a small triangular
+  loop / spike just south of the station (an out-and-back / parallel-track
+  artifact, present in source + baked + offset); `collapseDoubling` doesn't catch
+  it (too short for its run threshold), and offset mode adds lane jitter at this
+  dense 8-line junction. Open.
+- **National-Rail mega-corridors** (Thameslink/GreatNorthern/Southern/Gatwick,
+  hidden/off by default) bundle via the same mechanism; spot-checked.
+- **Source provenance:** `routes.preribbons.json` is the *old* pipeline's output
+  (Overpass → weld → Chaikin), so it carries legacy welds + real-OSM artifacts
+  we then clean. A from-first-principles re-fetch of raw OSM is the next step.

@@ -82,10 +82,11 @@ wrangler.jsonc                     # Cloudflare static-assets deploy config
 
 `routes.json` / `features.json` are committed pre-built snapshots.
 `routes.preribbons.json` is the pristine pre-offset input; **always regenerate
-`routes.json` from it** (never from `routes.json` itself, or you double-offset):
+`routes.json` from it** (never from `routes.json` itself — `build-ribbons`
+refuses that, since the output is already processed):
 
 ```sh
-# bake parallel-ribbon offsets: pristine input -> routes.json
+# build parallel-ribbon geometry (offset mode): pristine input -> routes.json
 node scripts/build-ribbons.js \
   --in "src/app/(game)/london/data/routes.preribbons.json" \
   --out "src/app/(game)/london/data/routes.json"
@@ -95,41 +96,52 @@ node scripts/rename-stations.js       # drop redundant "London " name prefixes (
 ```
 
 (`scripts/fetch-osm-routes.js` re-fetches raw geometry from Overpass when the
-network or line set changes — avoid depending on it in the committed pipeline.)
+network or line set changes.)
 
-**Baked parallel ribbons (`build-ribbons.js`).** Co-running lines (e.g.
+**Parallel ribbons (`build-ribbons.js`).** Co-running lines (e.g.
 Circle/District/H&C/Met on the subsurface trunk) must render as distinct,
-correctly-ordered parallel ribbons. MapLibre's runtime `line-offset` takes a
-perpendicular from each line's *own* local tangent, so where two lines'
-geometries differ — they come from different OSM ways and bow up to ~60m apart
-between shared stations — the ribbons cross and flip order across zoom. Instead
-`build-ribbons.js`:
+correctly-ordered parallel ribbons. They come from different OSM ways and bow
+up to ~60 m apart between shared stations, so a naive runtime `line-offset`
+(perpendicular to each line's *own* tangent) makes them cross and flip across
+zoom. `build-ribbons.js`:
 
 0. **Cleans the raw input** per feature: `deSpike` drops near-reversal vertices
-   (station-weld kinks, e.g. Oval/Kennington), and `collapseDoubling` removes a
-   track that an out-and-back OSM way traces twice (e.g. Piccadilly's Heathrow
-   branch up/down rails) while leaving genuine one-way loops (Heathrow T4, the
-   Circle line) intact.
+   (station-weld darts, e.g. the Oval hairpin); `deWeld` flattens station-weld
+   *bulges* (the line pulled to a platform, e.g. Angel) while leaving sustained
+   real curves (junctions) faithful; `collapseDoubling` removes a track an
+   out-and-back OSM way traces twice (e.g. Piccadilly's Heathrow branch) while
+   leaving genuine one-way loops (Heathrow T4, Circle) intact.
 1. Detects shared **corridors** by first-come geometric snapping to **spines**
    (shared centrelines, laid lowest-`order`-first), then extends membership
    along runs of **≥2 consecutive shared station nodes** (`features.json`) — the
-   robust co-running signal that survives the between-station geometry bow.
-   Stations are used for *detection only*; line geometry is never welded to them.
-2. Packs each corridor's lines into evenly-spaced **lanes**, ordered by config
-   `order` (which yields the required cross-track ordering, e.g. Circle interior
-   to the subsurface loop), centred on the corridor.
-3. Bakes each line = its corridor centreline offset by `lane × spacing`, blended
-   smoothly onto/off corridors via a tapered offset, so co-runners are exact
-   parallel offsets of one curve and **never cross or flip**. The map renders
-   with `line-offset: 0`.
+   robust co-running signal that survives the between-station bow. Stations are
+   used for *detection only*; line geometry is never welded to them.
+2. Orders each corridor's lines into **lanes** by config `order` (which yields
+   the required cross-track ordering, e.g. Circle interior to the subsurface
+   loop), centred on the corridor; the per-vertex lane is smoothed so it ramps
+   (not steps) at junctions.
 
-Loops (Circle) and branches are preserved: a spine's own laying feature is
-reconstructed by identity (no self-overlap projection), and offsets taper to 0
-where a branch leaves a trunk. All tunables are documented in the script's
-`CONFIG`. Verify with `scripts/qa-ribbons.js` (scorecard) and
+**Two output modes** (`--mode`, default `offset`):
+- **`offset`** — every line is emitted on its shared corridor **centreline** with
+  a signed `laneOff` property (split into segments where the lane changes). The
+  map (`GamePage.tsx`) renders the separation at runtime with
+  `line-offset = laneOff × line-width(zoom)`. Because co-runners share the
+  centreline, the offset keeps them exactly parallel and never flips, and the
+  separation is a **constant screen amount at every zoom** (so the lower line is
+  never hidden when zoomed out, and the geometry stays on the true track).
+- **`baked`** — the lane offset is baked into the coordinates (ground-units) and
+  the map renders with `line-offset: 0`. Zoom-stable but the separation shrinks
+  to sub-pixel at the overview zoom (co-runners overlap when zoomed out).
+
+Loops (Circle) and branches are preserved (a spine's own laying feature is
+reconstructed by identity — no self-overlap projection — and offsets/lane ramp
+to 0 where a branch leaves a trunk). All tunables are documented in the script's
+`CONFIG`. `scripts/snap-markers.js` (Idea B) can snap station markers onto their
+lines — kept as a utility, not part of the default pipeline. Verify with
+`scripts/qa-ribbons.js` (scorecard; simulates the render in offset mode) and
 `scripts/qa-ribbons-render.js` (PNG renders). The previous weld/Chaikin/
 miter-offset pipeline is retired to `archive/scripts/` (do not reuse — it
-corrupted the Circle loop and never baked offsets into coordinates).
+corrupted the Circle loop).
 
 ## QA / verification
 

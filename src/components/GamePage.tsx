@@ -268,17 +268,17 @@ export default function GamePage({
       }
 
       if (routes) {
-        // BAKED OFFSETS. The parallel-ribbon separation is baked directly into
-        // routes.json coordinates at BUILD time: co-running lines are placed on
-        // a shared corridor centreline and offset by lane (see
-        // scripts/build-ribbons.js). The runtime `line-offset` paint property —
-        // which pushes each line along its OWN local tangent and therefore
-        // diverges / flips order where co-running geometries differ even
-        // slightly — is set to a constant 0.
-        // What renders is purely the baked geometry, so co-running lines stay
-        // exactly parallel and never reorder across zoom. Tradeoff: the offset
-        // is in GROUND units, so ribbon spacing reads tighter when zoomed out
-        // and wider when zoomed in (vs the old screen-pixel offset).
+        // PARALLEL RIBBONS (offset mode). build-ribbons.js --mode offset places
+        // every co-running line on a SHARED corridor centreline (so their
+        // geometries coincide and their tangents match) and stamps each output
+        // segment with a signed `laneOff` (in lane units). The separation is
+        // applied here at render time via `line-offset` (below) = laneOff ×
+        // line-width(zoom). Because the centrelines coincide, the runtime offset
+        // pushes co-runners along the SAME normal — so they stay exactly
+        // parallel, never flip across zoom (the failure that made the original
+        // build bake offsets into coords), AND separate by a CONSTANT screen
+        // amount at every zoom, so the lower line is never hidden when zoomed
+        // out and the geometry stays on the true track.
 
         m.addSource('lines', { type: 'geojson', data: routes })
         m.addLayer({
@@ -305,7 +305,21 @@ export default function GamePage({
               '#888',
             ] as unknown as maplibregl.ExpressionSpecification,
             'line-opacity': 0.95,
-            'line-offset': 0,
+            // Render-time parallel-ribbon separation: each feature carries a
+            // signed `laneOff` (in lane units) baked by build-ribbons --mode
+            // offset; the geometry is the shared corridor centreline. We offset
+            // by laneOff × the zoom-scaled line width, so adjacent ribbons sit
+            // exactly one width apart (edges just touch) at every zoom — they
+            // separate by a CONSTANT screen amount at every zoom
+            // (never hide when zoomed out) while the geometry stays on the true
+            // track. +offset = right of line direction (sign handled at bake).
+            'line-offset': [
+              'interpolate', ['linear'], ['zoom'],
+              8.763, ['*', ['coalesce', ['get', 'laneOff'], 0], 2.925],
+              13, ['*', ['coalesce', ['get', 'laneOff'], 0], 5.0625],
+              18, ['*', ['coalesce', ['get', 'laneOff'], 0], 8.4375],
+              22, ['*', ['coalesce', ['get', 'laneOff'], 0], 10.125],
+            ] as unknown as maplibregl.ExpressionSpecification,
           },
           layout: {
             // Higher-order lines render on top. Underground tube lines (order
@@ -338,7 +352,21 @@ export default function GamePage({
               22, 3.375,
             ],
             'line-color': '#ffffff',
-            'line-offset': 0,
+            // Render-time parallel-ribbon separation: each feature carries a
+            // signed `laneOff` (in lane units) baked by build-ribbons --mode
+            // offset; the geometry is the shared corridor centreline. We offset
+            // by laneOff × the zoom-scaled line width, so adjacent ribbons sit
+            // exactly one width apart (edges just touch) at every zoom — they
+            // separate by a CONSTANT screen amount at every zoom
+            // (never hide when zoomed out) while the geometry stays on the true
+            // track. +offset = right of line direction (sign handled at bake).
+            'line-offset': [
+              'interpolate', ['linear'], ['zoom'],
+              8.763, ['*', ['coalesce', ['get', 'laneOff'], 0], 2.925],
+              13, ['*', ['coalesce', ['get', 'laneOff'], 0], 5.0625],
+              18, ['*', ['coalesce', ['get', 'laneOff'], 0], 8.4375],
+              22, ['*', ['coalesce', ['get', 'laneOff'], 0], 10.125],
+            ] as unknown as maplibregl.ExpressionSpecification,
           },
           layout: {
             'line-sort-key': ['get', 'order'],
@@ -368,7 +396,21 @@ export default function GamePage({
             ],
             'line-color': '#ffffff',
             'line-dasharray': [3, 2.5],
-            'line-offset': 0,
+            // Render-time parallel-ribbon separation: each feature carries a
+            // signed `laneOff` (in lane units) baked by build-ribbons --mode
+            // offset; the geometry is the shared corridor centreline. We offset
+            // by laneOff × the zoom-scaled line width, so adjacent ribbons sit
+            // exactly one width apart (edges just touch) at every zoom — they
+            // separate by a CONSTANT screen amount at every zoom
+            // (never hide when zoomed out) while the geometry stays on the true
+            // track. +offset = right of line direction (sign handled at bake).
+            'line-offset': [
+              'interpolate', ['linear'], ['zoom'],
+              8.763, ['*', ['coalesce', ['get', 'laneOff'], 0], 2.925],
+              13, ['*', ['coalesce', ['get', 'laneOff'], 0], 5.0625],
+              18, ['*', ['coalesce', ['get', 'laneOff'], 0], 8.4375],
+              22, ['*', ['coalesce', ['get', 'laneOff'], 0], 10.125],
+            ] as unknown as maplibregl.ExpressionSpecification,
           },
           layout: {
             'line-sort-key': ['get', 'order'],
