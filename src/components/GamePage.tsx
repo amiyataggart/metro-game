@@ -516,8 +516,12 @@ export default function GamePage({
             ctx.closePath()
             ctx.fillStyle = colors[i]
             ctx.fill()
+            // Stroke each wedge in its OWN colour (was white). Adjacent canvas
+            // fills leave a faint anti-aliased seam where they meet; a matching-
+            // colour stroke covers that seam so segments meet flush, with no
+            // white divider lines between them.
             ctx.lineWidth = 1.5
-            ctx.strokeStyle = 'rgba(255,255,255,0.92)'
+            ctx.strokeStyle = colors[i]
             ctx.stroke()
           }
         }
