@@ -1,6 +1,6 @@
 # STATUS
 
-_Updated 2026-05-29 · branch `main` · pushed to `origin` at `c771f4e` · deploys to Cloudflare as a static export._
+_Updated 2026-05-29 · branch `main` · pushed to `origin` at `b1623f2` · deploys to Cloudflare as a static export._
 
 ## Where it stands
 
@@ -37,6 +37,10 @@ _Updated 2026-05-29 · branch `main` · pushed to `origin` at `c771f4e` · deplo
 
 ## Recent commits
 
+- `b1623f2` **King's Cross stack + Thameslink routing + per-category layer z-order** — 5-line KX stack (Northern/Victoria/Met/H&C/Circle); Thameslink west→east across Farringdon then peeling to St Pancras Int; render z-bands (UG > Elizabeth > DLR > Overground > Thameslink) with subsurface above deep-tube and stripes at each line's depth.
+- `90a6dbf` **Finsbury wobble fix + Victoria/Euston + axis override** — `NO_SNAP` for the Thameslink Finsbury Park S-weave; Victoria below Northern at Euston; `ORDER_OVERRIDES` gains an `axis` (lat/lng).
+- `3a1d67a` **Declarative cartography overrides** — `ORDER_OVERRIDES` / `NO_SNAP` in `build-ribbons.js` (Mile End, Jubilee/Met, Suffragette, Mildmay) + initial Finsbury work.
+- `6a7fda0` **Search aliases** — King's Cross St Pancras / St Pancras International typing shortcuts.
 - `c771f4e` **London map UI overhaul** — line picker, timer, segmented pies + matching borders, boundaries, basemap recolour, Charing Cross default view, zoom-scaled markers, thinner lines, line-visibility defaults, recentred bounds.
 - `6ce2f91` **Scripts** — `bake-offsets`/`weld-endpoints` take a target path; `postprocess-routes` gained station-weld passes; QA render tweaks.
 - `48d5b9d` **Data** — station renames + Thameslink Peterborough branch.
