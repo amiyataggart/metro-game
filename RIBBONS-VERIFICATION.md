@@ -59,6 +59,7 @@ ordering, branches reconnect at junctions, Circle loop continuous and interior.
 | `MAX_NODE_GAP` | 3000 m | split a shared run here (real divergence) |
 | `MIN_SPINE` / `MIN_MEMBER` | 120 / 140 m | min run to seed a spine / count as a member |
 | `SMOOTH_WIN` | 5 | final gentle coord smoothing (spike damping) |
+| `SPIKE_ANGLE` | 55° | de-spike: drop input vertices turning more than this (weld spikes) |
 | `SIMPLIFY_EPS` | 1.5 m | output Douglas–Peucker tolerance (≪ spacing) |
 | `COORD_DP` | 6 | output coordinate precision (≈0.11 m) |
 
@@ -67,11 +68,11 @@ the z12 overview — the accepted tradeoff (brief §2).
 
 ## Known / unresolved
 
-- **Solo single-line weld spikes** at Kennington, Oval (Northern), Marylebone
-  (Bakerloo) etc. are inherited from the committed source (old station-welds
-  baked into coordinates). Bundled lines lost their welds (they follow shared
-  centrelines); solo lines are only resampled + lightly smoothed, so a residual
-  kink remains. Being addressed next (de-spike / stronger local smoothing).
+- **Solo single-line weld spikes** (Kennington, Oval, Marylebone …) were
+  inherited from the committed source. Addressed by the `deSpike` pass (drops
+  near-reversal vertices, `SPIKE_ANGLE`); the Oval 143° hairpin and the
+  Kennington kink are gone. A faint residual jog can remain where two same-line
+  branches converge at a station (e.g. the Kennington/Oval "eye"); harmless.
 - National-Rail mega-corridors (Thameslink/GreatNorthern/Southern/GatwickExpress,
   hidden/off by default) bundle via the same mechanism; spot-checked, not yet
   exhaustively eyeballed.

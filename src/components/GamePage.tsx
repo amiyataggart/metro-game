@@ -286,15 +286,15 @@ export default function GamePage({
           type: 'line',
           source: 'lines',
           paint: {
-            // Thinner than the previous pass — clearer separation when 3-4
-            // lines run in parallel and easier to read when zoomed in.
-            // Widths reduced 25% from the previous pass for a lighter map.
+            // ~50% thicker than the previous pass (all stops ×1.5) so the
+            // ribbons read more boldly; at the z12.4 start zoom a line is ~4.8px
+            // (was ~3.2px). Still grows with zoom; white stripes scale to match.
             'line-width': [
               'interpolate', ['linear'], ['zoom'],
-              8.763, 1.95,
-              13, 3.375,
-              18, 5.625,
-              22, 6.75,
+              8.763, 2.925,
+              13, 5.0625,
+              18, 8.4375,
+              22, 10.125,
             ],
             // Resolve from LINES config so map, legend, and found list stay
             // in lockstep — `routes.json` ships baked colours that can drift.
@@ -329,13 +329,13 @@ export default function GamePage({
             ['literal', solidStripeLineKeys],
           ] as unknown as maplibregl.FilterSpecification,
           paint: {
-            // ~1/3 of the colored line-width.
+            // ~1/3 of the colored line-width (stops ×1.5 to track the bolder lines).
             'line-width': [
               'interpolate', ['linear'], ['zoom'],
-              8.763, 0.675,
-              13, 1.125,
-              18, 1.875,
-              22, 2.25,
+              8.763, 1.0125,
+              13, 1.6875,
+              18, 2.8125,
+              22, 3.375,
             ],
             'line-color': '#ffffff',
             'line-offset': 0,
@@ -361,10 +361,10 @@ export default function GamePage({
           paint: {
             'line-width': [
               'interpolate', ['linear'], ['zoom'],
-              8.763, 0.675,
-              13, 1.125,
-              18, 1.875,
-              22, 2.25,
+              8.763, 1.0125,
+              13, 1.6875,
+              18, 2.8125,
+              22, 3.375,
             ],
             'line-color': '#ffffff',
             'line-dasharray': [3, 2.5],

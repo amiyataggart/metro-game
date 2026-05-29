@@ -102,6 +102,9 @@ const CONFIG = {
   // below SPACING (14m) so ribbon shape/separation is untouched; collapses
   // straight runs to keep the output file small.
   COORD_DP: 6, // output coordinate decimal places (6dp ≈ 0.11m).
+  SPIKE_ANGLE: 55, // de-spike: drop an input vertex whose turn angle exceeds
+  // this (deg). Real track curves gradually over many vertices; a near-reversal
+  // at one vertex is a station-weld spike (e.g. the Oval/Kennington kinks).
   R_NODE: 45, // a station node attaches to a line if its geometry passes within
   // this (m). Shared stations sit ~1-13m off each serving line (OSM noise).
   CLUSTER: 30, // station points within this (m) merge into one physical node.
@@ -145,6 +148,36 @@ function resample(xy, step) {
   const last = xy[xy.length - 1]
   if (dist(out[out.length - 1], last) > step * 0.25) out.push(last)
   return out
+}
+
+// Remove "spike" vertices (near-reversals) — station-weld artifacts in the
+// source where a vertex was pulled to a station and back. Iterative; endpoints
+// preserved. A removed vertex's neighbours are re-evaluated against the kept
+// path, so a multi-vertex spike collapses over a few passes.
+function deSpike(xy, angleDeg) {
+  if (xy.length < 3) return xy.slice()
+  const cosT = Math.cos((angleDeg * Math.PI) / 180)
+  let pts = xy
+  for (let pass = 0; pass < 8; pass++) {
+    let changed = false
+    const out = [pts[0]]
+    for (let i = 1; i < pts.length - 1; i++) {
+      const a = out[out.length - 1]
+      const b = pts[i]
+      const c = pts[i + 1]
+      const v1x = b[0] - a[0], v1y = b[1] - a[1]
+      const v2x = c[0] - b[0], v2y = c[1] - b[1]
+      const l1 = Math.hypot(v1x, v1y) || 1
+      const l2 = Math.hypot(v2x, v2y) || 1
+      const cos = (v1x * v2x + v1y * v2y) / (l1 * l2)
+      if (cos < cosT) changed = true // turn angle > threshold -> drop b
+      else out.push(b)
+    }
+    out.push(pts[pts.length - 1])
+    pts = out
+    if (!changed) break
+  }
+  return pts
 }
 
 // Per-vertex unit tangent (central difference), and cumulative arc length.
@@ -352,7 +385,7 @@ function main() {
       continue
     }
     const line = f.properties.line
-    const xy = resample(f.geometry.coordinates.map(toXY), CONFIG.S)
+    const xy = resample(deSpike(f.geometry.coordinates.map(toXY), CONFIG.SPIKE_ANGLE), CONFIG.S)
     feats.push({
       line,
       order: ORDER[line] != null ? ORDER[line] : 999,
