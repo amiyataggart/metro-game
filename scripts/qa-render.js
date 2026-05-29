@@ -145,6 +145,7 @@ async function main() {
   console.log(`Launching Chromium (headless=${HEADLESS})...`)
   const browser = await puppeteer.launch({
     headless: HEADLESS,
+    protocolTimeout: 180000,
     args: [
       '--use-angle=metal',
       '--use-gl=angle',

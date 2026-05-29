@@ -37,6 +37,16 @@ const ROUTES = path.join(
   'data',
   'routes.json',
 )
+const FEATURES = path.join(
+  __dirname,
+  '..',
+  'src',
+  'app',
+  '(game)',
+  'london',
+  'data',
+  'features.json',
+)
 
 // Keep in sync with config.ts. Lower = drawn underneath.
 const LINE_ORDER = {
@@ -272,6 +282,201 @@ function mergeSameLineTrunks(features) {
     `Same-line trunk merge: trimmed/dropped ${trimmedCount} feature(s).`,
   )
   return newFeatures
+}
+
+// ---- Station-anchored vertex welding -------------------------------------
+
+// For every (station, line) pair: find the nearest vertex on every route
+// feature of that line within SEARCH_TOL_DEG of the station and snap it
+// directly onto the station coord. This guarantees connectivity at every
+// station regardless of how OSM models the platform / track / approach
+// geometry — branches converging on a junction station all end up touching
+// the same point, so the eye can't pick up a "gap" between them.
+//
+// Runs BEFORE the proximity-based same-line weld so the station anchor
+// dominates (proximity weld then handles any residual non-station junctions).
+function weldVerticesToStations(routeFeatures, stationFeatures) {
+  // Search radius for a station to "claim" a line vertex. Bigger than the
+  // proximity weld's 40m so we catch vertices that landed on the wrong side
+  // of a platform diversion, smaller than typical inter-station spacing
+  // (~500m even on the tightest lines).
+  const SEARCH_TOL_DEG = 0.0011 // ~120m
+  const SEARCH_TOL_SQ = SEARCH_TOL_DEG * SEARCH_TOL_DEG
+
+  const stationsByLine = new Map()
+  for (const f of stationFeatures) {
+    if (!f.geometry || f.geometry.type !== 'Point') continue
+    const line = f.properties && f.properties.line
+    if (!line) continue
+    if (!stationsByLine.has(line)) stationsByLine.set(line, [])
+    stationsByLine.get(line).push({
+      name: f.properties.name,
+      coords: f.geometry.coordinates,
+    })
+  }
+
+  let totalSnapped = 0
+  const perLine = {}
+  for (const feature of routeFeatures) {
+    const line = feature.properties && feature.properties.line
+    if (!line) continue
+    const stations = stationsByLine.get(line)
+    if (!stations || stations.length === 0) continue
+    const coords = feature.geometry.coordinates
+    if (!Array.isArray(coords)) continue
+
+    for (const s of stations) {
+      let bestIdx = -1
+      let bestD = SEARCH_TOL_SQ
+      for (let i = 0; i < coords.length; i++) {
+        const dx = coords[i][0] - s.coords[0]
+        const dy = coords[i][1] - s.coords[1]
+        const d = dx * dx + dy * dy
+        if (d < bestD) {
+          bestD = d
+          bestIdx = i
+        }
+      }
+      if (bestIdx >= 0) {
+        coords[bestIdx] = [s.coords[0], s.coords[1]]
+        totalSnapped++
+        perLine[line] = (perLine[line] || 0) + 1
+      }
+    }
+  }
+  for (const [line, n] of Object.entries(perLine).sort()) {
+    console.log(`  ${line.padEnd(22)} snapped ${n} vertex(es) to station coords`)
+  }
+  console.log(`Station weld: ${totalSnapped} vertices snapped across all lines.`)
+}
+
+// ---- Cross-line vertex welding -------------------------------------------
+
+// Where vertices from DIFFERENT features land within a tight radius, snap
+// them all to a shared centroid. This is what fixes the "Circle and District
+// swap sides along their shared trunk" / "Farringdon stack flips with zoom"
+// issue — once two lines have identical vertex coords on a shared section,
+// MapLibre computes identical perpendiculars at those vertices, so
+// `line-offset` produces stable parallel ribbons whose ordering can't flip.
+//
+// Also catches same-line cases where OSM models two physically near-identical
+// rails as separate features (Piccadilly T4 loop, Thameslink ECML duplicates):
+// once their trunk vertices snap together, both features render at the same
+// line's offset and visually collapse into one ribbon over the trunk.
+//
+// Tighter tolerance than the within-line weld (40m) so lines that pass
+// each other at different elevations (deep tube vs sub-surface) don't get
+// pulled together.
+function weldCrossFeatureVertices(features) {
+  const TOL_DEG = 0.00022 // ~25m
+  const TOL_SQ = TOL_DEG * TOL_DEG
+
+  // Spatial grid across ALL features.
+  const grid = new Map()
+  const cellKey = (x, y) => `${x},${y}`
+  const cellOf = (c) => [
+    Math.floor(c[0] / TOL_DEG),
+    Math.floor(c[1] / TOL_DEG),
+  ]
+  for (let fi = 0; fi < features.length; fi++) {
+    const c = features[fi].geometry.coordinates
+    for (let vi = 0; vi < c.length; vi++) {
+      const [bx, by] = cellOf(c[vi])
+      const k = cellKey(bx, by)
+      if (!grid.has(k)) grid.set(k, [])
+      grid.get(k).push({ fi, vi })
+    }
+  }
+
+  // Union-Find across all (fi, vi).
+  const parent = new Map()
+  const idKey = (e) => `${e.fi}|${e.vi}`
+  function find(k) {
+    let cur = k
+    while (parent.get(cur) !== cur) {
+      parent.set(cur, parent.get(parent.get(cur)) ?? cur)
+      cur = parent.get(cur)
+    }
+    return cur
+  }
+  function union(a, b) {
+    const ra = find(a)
+    const rb = find(b)
+    if (ra !== rb) parent.set(ra, rb)
+  }
+  for (let fi = 0; fi < features.length; fi++) {
+    const c = features[fi].geometry.coordinates
+    for (let vi = 0; vi < c.length; vi++) {
+      parent.set(idKey({ fi, vi }), idKey({ fi, vi }))
+    }
+  }
+
+  // Union vertex pairs within tolerance, considering same-cell and 8 neighbours.
+  for (const [k] of grid) {
+    const [bx, by] = k.split(',').map(Number)
+    const candidates = []
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const arr = grid.get(cellKey(bx + dx, by + dy))
+        if (arr) candidates.push(...arr)
+      }
+    }
+    for (let i = 0; i < candidates.length; i++) {
+      const a = candidates[i]
+      const ca = features[a.fi].geometry.coordinates[a.vi]
+      for (let j = i + 1; j < candidates.length; j++) {
+        const b = candidates[j]
+        const cb = features[b.fi].geometry.coordinates[b.vi]
+        const dxc = ca[0] - cb[0]
+        const dyc = ca[1] - cb[1]
+        if (dxc * dxc + dyc * dyc < TOL_SQ) {
+          union(idKey(a), idKey(b))
+        }
+      }
+    }
+  }
+
+  // Snap clusters that span 2+ different features.
+  const groups = new Map()
+  for (const key of parent.keys()) {
+    const r = find(key)
+    if (!groups.has(r)) groups.set(r, [])
+    groups.get(r).push(key)
+  }
+  let totalSnapped = 0
+  let crossLineClusters = 0
+  let crossFeatureClusters = 0
+  for (const [, members] of groups) {
+    if (members.length < 2) continue
+    const featureSet = new Set()
+    const lineSet = new Set()
+    const parsed = members.map((m) => {
+      const [fi, vi] = m.split('|').map(Number)
+      featureSet.add(fi)
+      lineSet.add(features[fi].properties.line)
+      return { fi, vi }
+    })
+    if (featureSet.size < 2) continue
+
+    let sx = 0, sy = 0
+    for (const { fi, vi } of parsed) {
+      const c = features[fi].geometry.coordinates[vi]
+      sx += c[0]
+      sy += c[1]
+    }
+    const ax = sx / members.length
+    const ay = sy / members.length
+    for (const { fi, vi } of parsed) {
+      features[fi].geometry.coordinates[vi] = [ax, ay]
+      totalSnapped++
+    }
+    crossFeatureClusters++
+    if (lineSet.size >= 2) crossLineClusters++
+  }
+  console.log(
+    `Cross-feature weld: ${totalSnapped} vertices snapped into ${crossFeatureClusters} cluster(s) ` +
+    `(${crossLineClusters} cross-line, ${crossFeatureClusters - crossLineClusters} same-line).`,
+  )
 }
 
 // ---- Same-line vertex welding --------------------------------------------
@@ -572,6 +777,12 @@ function smoothAll(features) {
 function main() {
   const fc = JSON.parse(fs.readFileSync(ROUTES, 'utf8'))
   console.log(`Loaded ${fc.features.length} feature(s) from ${path.relative(process.cwd(), ROUTES)}.`)
+  const featuresFc = fs.existsSync(FEATURES)
+    ? JSON.parse(fs.readFileSync(FEATURES, 'utf8'))
+    : { features: [] }
+  console.log(
+    `Loaded ${featuresFc.features.length} station feature(s) from ${path.relative(process.cwd(), FEATURES)}.`,
+  )
 
   // Note: same-line trunk merging was tried but it severs branches from the
   // trunk at every junction (Earl's Court, Harrow on the Hill, Kennington
@@ -582,13 +793,19 @@ function main() {
   // (Piccadilly main vs T4 loop) is the lesser evil compared to broken
   // visual connectivity at every fork.
 
-  console.log('\n--- 1. Same-line vertex weld ---')
+  console.log('\n--- 1. Station-anchored vertex weld ---')
+  weldVerticesToStations(fc.features, featuresFc.features)
+
+  console.log('\n--- 2. Cross-feature vertex weld ---')
+  weldCrossFeatureVertices(fc.features)
+
+  console.log('\n--- 3. Same-line proximity vertex weld ---')
   weldSameLineVertices(fc.features)
 
-  console.log('\n--- 2. Global offset assignment ---')
+  console.log('\n--- 4. Global offset assignment ---')
   assignOffsets(fc.features)
 
-  console.log('\n--- 3. Chaikin smoothing ---')
+  console.log('\n--- 5. Chaikin smoothing ---')
   smoothAll(fc.features)
 
   fs.writeFileSync(ROUTES, JSON.stringify(fc))

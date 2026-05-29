@@ -94,7 +94,9 @@ function weldEndpoints(features) {
 module.exports = { weldEndpoints }
 
 if (require.main === module) {
-  const ROUTES = path.join(__dirname, '..', 'src', 'app', '(game)', 'london', 'data', 'routes.json')
+  const ROUTES = process.argv[2]
+    ? path.resolve(process.argv[2])
+    : path.join(__dirname, '..', 'src', 'app', '(game)', 'london', 'data', 'routes.json')
   const fc = JSON.parse(fs.readFileSync(ROUTES, 'utf8'))
   weldEndpoints(fc.features)
   let bad = 0

@@ -51,10 +51,14 @@ const DATA_DIR = path.join(
   'london',
   'data',
 )
-const ROUTES_SRC = path.join(DATA_DIR, 'routes.json')
+// Bakes the default routes.json, or a path passed as argv[2] (in place).
+const TARGET = process.argv[2]
+  ? path.resolve(process.argv[2])
+  : path.join(DATA_DIR, 'routes.json')
+const ROUTES_SRC = TARGET
 const FEATURES_SRC = path.join(DATA_DIR, 'features.json')
 const STATIONS_EXTRAS_SRC = path.join(DATA_DIR, 'stations-extras.json')
-const ROUTES_DST = path.join(DATA_DIR, 'routes.json')
+const ROUTES_DST = TARGET
 
 // Keep in sync with config.ts. Lower = drawn underneath. (Copied verbatim.)
 const LINE_ORDER = {
