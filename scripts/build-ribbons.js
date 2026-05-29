@@ -42,7 +42,7 @@
  *    everywhere, so nothing ever crosses.
  *
  * 4. BAKE + SMOOTH. For each feature point we compute a target offset VECTOR:
- *    on a spine -> (sharedCentrelinePoint - ownPoint) + lane*SPACING*normal;
+ *    on a spine -> (sharedCentrelinePoint - ownPoint) + laneOffset*normal;
  *    solo       -> 0. The (centreline - own) term snaps the line off its noisy
  *    OSM vertices onto the shared centreline so co-runners are truly parallel.
  *    We then MOVING-AVERAGE the offset vector over a TAPER window and add it to
@@ -77,9 +77,14 @@ const CONFIG = {
   // spreads co-running centrelines ~20-30m); genuinely-separate railways are
   // usually >40m apart, so the tangent test still keeps them distinct.
   ANG_COS: Math.cos((32 * Math.PI) / 180), // ...AND tangents are this parallel.
-  SPACING: 14, // centre-to-centre lane spacing (m, ground units). ~1 line
-  // width at z13-14; reads as clean parallel ribbons when zoomed in, blends
-  // when zoomed right out (accepted ground-unit tradeoff, brief §2).
+  // Centre-to-centre lane spacing (m, ground units) BY number of co-running
+  // lines in a corridor bin. Fewer lines => wider spacing, so a 2-line pair
+  // (Bakerloo/Lioness, H&C/District, Met/Jubilee) visually separates at a lower
+  // zoom instead of the higher-order line hiding the other; dense 3-4 line
+  // stacks (the subsurface trunk) stay compact and on-track. Ground-unit
+  // offsets still blend at the far overview zoom — inherent to baked offsets.
+  LANE_SPACING: { 1: 0, 2: 22, 3: 17, 4: 14 },
+  LANE_SPACING_DEFAULT: 12, // 5+ co-runners
   TAPER: 80, // offset-vector smoothing window (m): corridor entry/exit easing.
   MIN_SPINE: 120, // a solo run shorter than this does NOT seed a new spine
   // (it still renders as its own geometry; it's just not offered to snap to).
@@ -95,16 +100,17 @@ const CONFIG = {
   // shared nodes are farther apart than this (m) along the line — i.e. the
   // lines genuinely diverge (real branch) rather than just skipping a stop.
   BIN: 10, // lane-packing bin width along a spine (m). == S keeps it crisp.
-  SMOOTH_WIN: 5, // final gentle moving-average window (samples, ~±S·win/2 m)
+  SMOOTH_WIN: 2, // final gentle moving-average window (samples, ~±S·win/2 m)
   // on output coords, endpoints pinned — rounds raw-OSM spikes without
   // collapsing curves or the loop. 0 disables.
   SIMPLIFY_EPS: 1.5, // Douglas-Peucker tolerance (m) on the final coords. Well
-  // below SPACING (14m) so ribbon shape/separation is untouched; collapses
+  // below the lane spacing so ribbon shape/separation is untouched; collapses
   // straight runs to keep the output file small.
   COORD_DP: 6, // output coordinate decimal places (6dp ≈ 0.11m).
-  SPIKE_ANGLE: 55, // de-spike: drop an input vertex whose turn angle exceeds
-  // this (deg). Real track curves gradually over many vertices; a near-reversal
-  // at one vertex is a station-weld spike (e.g. the Oval/Kennington kinks).
+  SPIKE_ANGLE: 88, // de-spike: drop an input vertex whose turn angle exceeds
+  // this (deg) = a near-reversal, i.e. a station-weld dart (the line jumps to a
+  // station point and back). Kept high so genuine sharp junction curves (and
+  // tight turn-back loops like Kennington) are preserved — faithful geometry.
   DEDUP_DIST: 110, // collapse-doubling: a vertex duplicates an earlier part of
   // the SAME feature if within this (m)... (wide, because the two running tracks
   // bow apart between stations, like co-running lines do).
@@ -731,11 +737,14 @@ function main() {
       }
       present.sort((a, c) => (ORDER[a] ?? 999) - (ORDER[c] ?? 999) || (a < c ? -1 : 1))
       const m = present.length
+      const spacing = CONFIG.LANE_SPACING[m] ?? CONFIG.LANE_SPACING_DEFAULT
       for (let r = 0; r < m; r++) {
-        sp.lanes.get(present[r])[b] = r - (m - 1) / 2
+        // store the signed cross-track OFFSET in metres (lane index * spacing)
+        sp.lanes.get(present[r])[b] = (r - (m - 1) / 2) * spacing
       }
     }
   }
+  // signed cross-track offset (metres) for a line at spine arc s
   function laneAt(sp, line, s) {
     const arr = sp.lanes.get(line)
     if (!arr) return 0
@@ -773,7 +782,7 @@ function main() {
           spt = r.pt
           normal = r.normal
         }
-        const lane = laneAt(sp, f.line, s) * CONFIG.SPACING * sp.sign
+        const lane = laneAt(sp, f.line, s) * sp.sign // signed offset in metres
         off[i] = [spt[0] - f.xy[i][0] + lane * normal[0], spt[1] - f.xy[i][1] + lane * normal[1]]
       }
     }
@@ -921,7 +930,7 @@ function debugProbe(probeLL, lineFeats, spines, laneAt, projectArc, ORDER) {
       const sp = spines[bestSeg.spineId]
       const s = bestSeg.kind === 'own' ? sp.cum[bestI - bestSeg.base] : projectArc(sp, f.xy[bestI])
       const lane = laneAt(sp, f.line, s)
-      info = `spine#${bestSeg.spineId}(${bestSeg.kind}) members=[${[...sp.members.keys()].join(',')}] lane=${lane} sign=${sp.sign}`
+      info = `spine#${bestSeg.spineId}(${bestSeg.kind}) members=[${[...sp.members.keys()].join(',')}] offsetM=${lane} sign=${sp.sign}`
     }
     rows.push({ line: f.line, order: ORDER[f.line], d: best, bakedLat, info })
   }

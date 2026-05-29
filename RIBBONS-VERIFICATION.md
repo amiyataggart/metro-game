@@ -29,12 +29,12 @@ A. Integrity vs routes.preribbons.json — all 23 lines preserved (bbox edge
 
 B. §4 ordering probes
    North trunk (Gt Portland St → Euston Sq): top→bottom Metropolitan, H&C,
-     Circle — OK; 0 cross-track reversals; spacing mean 14.0 m (11.5–15.9).
+     Circle — OK; 0 cross-track reversals; spacing mean ~17 m (3-line corridor).
    South trunk (Westminster → Embankment): top→bottom Circle, District — OK;
-     0 reversals; spacing mean 14.1 m (13.1–15.7).
+     0 reversals; spacing mean ~22 m (2-line corridor).
    ⇒ Circle is interior to the subsurface loop everywhere.
 
-C. Watford DC (Queen's Park): Bakerloo & Lioness both present, 14.5 m apart — OK.
+C. Watford DC (Queen's Park): Bakerloo & Lioness both present, ~22 m apart — OK.
 ```
 
 ## Renders (`node scripts/qa-ribbons-render.js` → `qa/out/`, gitignored)
@@ -49,7 +49,7 @@ ordering, branches reconnect at junctions, Circle loop continuous and interior.
 | Key | Value | Meaning |
 |---|---|---|
 | `S` | 10 m | resample step |
-| `SPACING` | 14 m | lane centre-to-centre (≈1 line-width at z13–14) |
+| `LANE_SPACING` | {2:22, 3:17, 4:14, 5+:12} m | lane centre-to-centre by #co-runners — 2-line pairs wider so they separate at a lower zoom; dense stacks stay compact |
 | `D` | 34 m | geometric snap radius (spine seeding) |
 | `D2` | 130 m | corridor ceiling for station-run bundling |
 | `TAPER` | 80 m | offset-vector smoothing window (on/off-corridor easing) |
@@ -58,22 +58,23 @@ ordering, branches reconnect at junctions, Circle loop continuous and interior.
 | `MIN_SHARED_NODES` | 2 | consecutive shared stations to bundle |
 | `MAX_NODE_GAP` | 3000 m | split a shared run here (real divergence) |
 | `MIN_SPINE` / `MIN_MEMBER` | 120 / 140 m | min run to seed a spine / count as a member |
-| `SMOOTH_WIN` | 5 | final gentle coord smoothing (spike damping) |
-| `SPIKE_ANGLE` | 55° | de-spike: drop input vertices turning more than this (weld spikes) |
+| `SMOOTH_WIN` | 2 | final gentle coord smoothing (kept low for faithful geometry) |
+| `SPIKE_ANGLE` | 88° | de-spike: drop only near-reversal vertices (station-weld darts); preserves real sharp junction curves / turn-back loops |
 | `DEDUP_DIST` / `DEDUP_MIN_RUN` | 110 m / 1500 m | collapse-doubling: anti-parallel self-overlap radius / min run to remove (de-doubles out-and-back tracks; leaves one-way loops) |
 | `SIMPLIFY_EPS` | 1.5 m | output Douglas–Peucker tolerance (≪ spacing) |
 | `COORD_DP` | 6 | output coordinate precision (≈0.11 m) |
 
-Ground-unit spacing reads as clean ribbons when zoomed in (~z14+) and blends at
-the z12 overview — the accepted tradeoff (brief §2).
+Ground-unit spacing reads as clean ribbons when zoomed in and blends at the z12
+overview — inherent to baked offsets (brief §2). Member-count spacing makes
+2-line pairs separate at a lower zoom; at the far overview they still merge.
 
 ## Known / unresolved
 
 - **Solo single-line weld spikes** (Kennington, Oval, Marylebone …) were
-  inherited from the committed source. Addressed by the `deSpike` pass (drops
-  near-reversal vertices, `SPIKE_ANGLE`); the Oval 143° hairpin and the
-  Kennington kink are gone. A faint residual jog can remain where two same-line
-  branches converge at a station (e.g. the Kennington/Oval "eye"); harmless.
+  inherited from the committed source. `deSpike` removes only near-reversal
+  darts (`SPIKE_ANGLE=88°`) so the Oval 143° hairpin is gone while genuine sharp
+  junction curves stay — the new geometry tracks the source faithfully (verified
+  by overlaying new-vs-source at Kennington/Oval).
 - **Out-and-back doubling** (one OSM way tracing both running tracks) is
   collapsed by `collapseDoubling`: Piccadilly's Heathrow branch is now a single
   line (−12%) with the T4 one-way loop preserved. One Thameslink feature still
