@@ -164,12 +164,19 @@ const ORDER_OVERRIDES = [
   { name: 'Blackhorse Road', at: [-0.0410, 51.5870], radius: 1200, top: ['Victoria', 'Suffragette'] },
   // Finchley Rd → Wembley Park: Jubilee above the Metropolitan line.
   { name: 'Jubilee/Met', at: [-0.2300, 51.5550], radius: 5000, top: ['Jubilee', 'Metropolitan'] },
+  // Euston: Victoria connects from BELOW the Northern line (don't snap to its top).
+  { name: 'Euston', at: [-0.1335, 51.5280], radius: 650, top: ['Northern', 'Victoria'] },
 ]
 // Keep a line OUT of corridor bundles within `radius` of `at` — it renders at
 // its own geometry (no offset), passing over the others unaffected.
 const NO_SNAP = [
   // Mildmay over West Hampstead / Brondesbury — don't snap to the parallel ribbons.
   { line: 'Mildmay', at: [-0.1970, 51.5460], radius: 1100 },
+  // Thameslink through Finsbury Park — its lane packing oscillates across the
+  // Piccadilly/Victoria pair through this junction (it shares almost no centreline
+  // with them, so an order override can't bind it). Keep it solo here so it rides
+  // its own smooth centreline just west of the pair instead of S-weaving.
+  { line: 'Thameslink', at: [-0.1068, 51.5644], radius: 750 },
 ]
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -988,11 +995,15 @@ function main() {
   // converges in a couple of passes (only the loop spine actually needs it).
   // Derived from ORDER_OVERRIDES: at each override, the first (top) line must
   // render north of the last (bottom) line; if not, flip the shared spine's sign.
-  const ASSERTS = ORDER_OVERRIDES.map((o) => [o.at, o.top[0], o.top[o.top.length - 1]])
+  // [probe, topLine, bottomLine, axis]. axis 'lat' (default): topLine must render
+  // NORTH (higher lat). axis 'lng': topLine must render WEST (lower lng) — used on
+  // N–S corridors where "cross-track" is the east/west axis (e.g. Finsbury Park).
+  const ASSERTS = ORDER_OVERRIDES.map((o) => [o.at, o.top[0], o.top[o.top.length - 1], o.axis || 'lat'])
   function bakedLLForLineNear(probeLL, line) {
-    // returns the baked latitude of `line` nearest the probe
+    // returns the baked lat+lng of `line` nearest the probe
     let best = Infinity
     let lat = null
+    let lng = null
     const p = toXY(probeLL)
     for (const f of lineFeats) {
       if (f.line !== line) continue
@@ -1002,10 +1013,11 @@ function main() {
         if (d < best) {
           best = d
           lat = q[1] / M_LAT
+          lng = q[0] / M_LNG
         }
       }
     }
-    return { lat, d: best }
+    return { lat, lng, d: best }
   }
   function spineNear(probeLL, line) {
     // which spine does `line` use nearest the probe?
@@ -1033,11 +1045,12 @@ function main() {
   bakeAll()
   for (let pass = 0; pass < 6; pass++) {
     let changed = false
-    for (const [probe, nLine, sLine] of ASSERTS) {
+    for (const [probe, nLine, sLine, axis] of ASSERTS) {
       const a = bakedLLForLineNear(probe, nLine)
       const b = bakedLLForLineNear(probe, sLine)
       if (a.lat == null || b.lat == null) continue
-      if (a.lat <= b.lat) {
+      const wrong = axis === 'lng' ? a.lng >= b.lng : a.lat <= b.lat
+      if (wrong) {
         // wrong: flip the spine shared at the probe
         const sid = spineNear(probe, nLine)
         if (sid >= 0) {

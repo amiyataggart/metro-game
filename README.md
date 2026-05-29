@@ -146,10 +146,17 @@ zoom. `build-ribbons.js`:
 every build so they survive a TfL/OSM re-fetch):
 - `ORDER_OVERRIDES` — force the cross-track order (screen top→bottom) of named
   lines near a point, e.g. Mile End = Central / H&C / District, Jubilee above
-  Metropolitan, Suffragette below Victoria. Drives both the local lane ranking
-  and a sign assertion that flips the shared spine if rendered upside-down.
-- `NO_SNAP` — keep a line out of bundles near a point so it passes over the
-  others at its own geometry (e.g. Mildmay over West Hampstead / Brondesbury).
+  Metropolitan, Suffragette below Victoria, Victoria below Northern at Euston.
+  Drives both the local lane ranking and a sign assertion that flips the shared
+  spine if rendered upside-down. An optional `axis: 'lng'` (default `'lat'`)
+  orients that assertion east/west instead of north/south, for N–S corridors
+  where the cross-track direction is longitude. Only binds lines that actually
+  share a spine — lines on separate spines need `NO_SNAP` instead.
+- `NO_SNAP` — keep a line out of bundles near a point so it rides its own smooth
+  geometry (no offset) instead of the oscillating per-bin lane packing — e.g.
+  Mildmay over West Hampstead / Brondesbury, and Thameslink through Finsbury Park
+  (where it shares almost no centreline with the Piccadilly/Victoria pair, so its
+  packed `laneOff` oscillated and it S-weaved across them).
 
 Loops (Circle) and branches are preserved (a spine's own laying feature is
 reconstructed by identity — no self-overlap projection — and offsets/lane ramp
