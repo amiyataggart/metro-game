@@ -154,9 +154,18 @@ every build so they survive a TfL/OSM re-fetch):
   share a spine — lines on separate spines need `NO_SNAP` instead.
 - `NO_SNAP` — keep a line out of bundles near a point so it rides its own smooth
   geometry (no offset) instead of the oscillating per-bin lane packing — e.g.
-  Mildmay over West Hampstead / Brondesbury, and Thameslink through Finsbury Park
-  (where it shares almost no centreline with the Piccadilly/Victoria pair, so its
-  packed `laneOff` oscillated and it S-weaved across them).
+  Mildmay over West Hampstead / Brondesbury, and Thameslink along the whole
+  St Pancras → New Southgate corridor (it shares almost no centreline with the
+  Piccadilly/Victoria pair, so left to snap it S-weaved across them; held off,
+  it rides its true National-Rail track while Piccadilly & Victoria stay bundled).
+- `FORCE_SNAP` — the inverse of `NO_SNAP`: bind a line *onto* a corridor
+  (`onto: 'Line'`, within `dist`), reassigning even a rival parallel spine, so it
+  co-runs as a true lane member. Present but currently unused.
+- `SPINE_ORDER` — override which line lays a corridor's shared centreline
+  (spine-laying priority) without touching config `order` (lane rank/colour).
+  Present but currently unused.
+- `NUDGE` — a last-resort cosmetic lateral shift (metre vector, ramped) that does
+  NOT use the corridor/lane mechanism; prefer the above. Present but unused.
 
 Loops (Circle) and branches are preserved (a spine's own laying feature is
 reconstructed by identity — no self-overlap projection — and offsets/lane ramp

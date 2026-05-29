@@ -154,6 +154,14 @@ const CONFIG = {
 // lines top→bottom; lines not listed keep their config-`order` rank after them.
 // Drives BOTH the per-bin lane ranking near `at` and a sign assertion that flips
 // the shared spine if the rendered order is upside-down.
+// Spine-laying priority override (currently unused). Normally a corridor's shared
+// centreline is laid by whichever co-running line has the LOWEST config `order` (so
+// it's processed first); the others snap onto it. SPINE_ORDER lets a line lay
+// spines earlier or later WITHOUT changing its config `order` (which still drives
+// lane ranking and colour). Lower = processed sooner. e.g. `{ Thameslink: 7.5 }`
+// would make Thameslink lay corridor spines just before Piccadilly/Victoria.
+const SPINE_ORDER = {}
+
 const ORDER_OVERRIDES = [
   // Embankment: Circle interior to the subsurface loop (the brief §4 case).
   { name: 'Embankment', at: [-0.1223, 51.5073], radius: 400, top: ['Circle', 'District'] },
@@ -166,18 +174,68 @@ const ORDER_OVERRIDES = [
   { name: 'Jubilee/Met', at: [-0.2300, 51.5550], radius: 5000, top: ['Jubilee', 'Metropolitan'] },
   // Euston: Victoria connects from BELOW the Northern line (don't snap to its top).
   { name: 'Euston', at: [-0.1335, 51.5280], radius: 650, top: ['Northern', 'Victoria'] },
+  // King's Cross St Pancras: a 5-line stack on the (E–W) subsurface corridor with
+  // Victoria & Northern force-snapped onto its north side. Top→bottom: Northern,
+  // Victoria, Met, H&C, Circle — Northern stays on the north/top of Victoria through
+  // the station and just east of it; the two only cross AFTERWARDS as they branch
+  // off (Victoria NE to Highbury, Northern SE to Angel). `noFlip` (rides the §4
+  // Circle-loop spine; list written S→N to match its locked sign — rank-0 = south).
+  // Thameslink & Piccadilly excluded (own tracks).
+  { name: 'KingsCross', at: [-0.1240, 51.5304], radius: 260, noFlip: true, top: ['Circle', 'HammersmithAndCity', 'Metropolitan', 'Victoria', 'Northern'] },
+  // Farringdon: pin Thameslink to the WEST of the Circle/H&C/Met bundle AT the
+  // station (and just south). North of here it reverts to the default EAST lane, so
+  // TL crosses west→east just north of Farringdon (as in real life) and then follows
+  // the east side of the bundle all the way to King's Cross. Small radius so the
+  // crossover sits just north of the station. `noFlip` (shared §4 Circle-loop spine).
+  { name: 'Thameslink/Farringdon', at: [-0.1053, 51.5203], radius: 400, noFlip: true, top: ['Thameslink', 'Circle', 'HammersmithAndCity', 'Metropolitan'] },
 ]
 // Keep a line OUT of corridor bundles within `radius` of `at` — it renders at
 // its own geometry (no offset), passing over the others unaffected.
 const NO_SNAP = [
   // Mildmay over West Hampstead / Brondesbury — don't snap to the parallel ribbons.
   { line: 'Mildmay', at: [-0.1970, 51.5460], radius: 1100 },
-  // Thameslink through Finsbury Park — its lane packing oscillates across the
-  // Piccadilly/Victoria pair through this junction (it shares almost no centreline
-  // with them, so an order override can't bind it). Keep it solo here so it rides
-  // its own smooth centreline just west of the pair instead of S-weaving.
-  { line: 'Thameslink', at: [-0.1068, 51.5644], radius: 750 },
+  // Thameslink NORTH of King's Cross only: from KX up to New Southgate it rides its
+  // own track (peeling off the subsurface to run directly north to St Pancras
+  // International, then up the corridor — never snapping to the tube lines through
+  // Finsbury Park). SOUTH of KX it is NOT here, so it snaps onto the WEST side of
+  // the Circle/H&C/Met bundle from Farringdon (pinned by the `Thameslink/sub`
+  // ORDER_OVERRIDE). Circle centred so KX is ~the southern edge (the peel point).
+  { line: 'Thameslink', at: [-0.1350, 51.5750], radius: 5000 },
+  // Thameslink approaches Farringdon on its own track and only joins the subsurface
+  // bundle AT the station marker (not ~30 m south of it) — hold it solo just south.
+  { line: 'Thameslink', at: [-0.1048, 51.5188], radius: 180 },
+  // Victoria south of Euston (Warren St → Euston): keep it on its own track — it
+  // crosses the Northern line at Warren St and runs in its true (different) location
+  // up to Euston, only snapping under Northern FROM Euston (see FORCE_SNAP).
+  { line: 'Victoria', at: [-0.1357, 51.5263], radius: 200 },
 ]
+// FORCE_SNAP — the inverse of NO_SNAP. Within `radius` of `at`, bind the named
+// line onto the nearest existing spine (within `dist`, ignoring the tangent-angle
+// gate) wherever it would otherwise go solo, so it becomes a true lane member of
+// that corridor (constant offset, stays parallel) instead of drifting in and out.
+// Use where two lines run together but their OSM tracks weave past the geometric
+// snap radius through a junction (e.g. Thameslink ↔ Piccadilly/Victoria at
+// Finsbury Park). Pair with an ORDER_OVERRIDE to fix which lane it takes.
+const FORCE_SNAP = [
+  // Euston → King's Cross: bind Victoria under the Northern line (Northern City
+  // branch) so it rides cleanly just below it (lane order set by the `Euston`
+  // ORDER_OVERRIDE) instead of weaving onto the Thameslink/Piccadilly spines, the
+  // whole way to the KX stack. (South of Euston, the Victoria NO_SNAP keeps it on
+  // its own track.)
+  { line: 'Victoria', at: [-0.1290, 51.5290], radius: 340, dist: 200, onto: 'Northern' },
+  // King's Cross St Pancras 5-line stack: snap Victoria and Northern onto the
+  // subsurface (Circle) corridor's north side, spanning both sides of the station
+  // so the KX-West / KX-East ORDER_OVERRIDEs can swap them across it. Listed after
+  // the Euston bind so the KX target wins where they overlap. (Thameslink is NOT
+  // here — it passes through on its own track to St Pancras International.)
+  { line: 'Northern', at: [-0.1240, 51.5305], radius: 260, dist: 220, onto: 'Circle' },
+  { line: 'Victoria', at: [-0.1240, 51.5305], radius: 260, dist: 220, onto: 'Circle' },
+]
+// Lateral nudge (kept available, currently unused): shift the listed lines'
+// rendered centreline by a metre vector (east=+, north=+) within `radius` of
+// `at`, cosine-ramped to 0 at the edge. A last-resort COSMETIC shift — it does
+// NOT use the corridor/lane mechanism, so prefer FORCE_SNAP/ORDER_OVERRIDE.
+const NUDGE = []
 
 // ──────────────────────────────────────────────────────────────────────────
 // metric frame (flat-earth, fine at city scale; matches scripts/qa-geometry.js)
@@ -515,6 +573,8 @@ function main() {
   const args = parseArgs()
   ORDER_OVERRIDES.forEach((o) => (o.atXY = toXY(o.at)))
   NO_SNAP.forEach((o) => (o.atXY = toXY(o.at)))
+  FORCE_SNAP.forEach((o) => (o.atXY = toXY(o.at)))
+  NUDGE.forEach((o) => (o.atXY = toXY(o.at)))
   const raw = JSON.parse(fs.readFileSync(args.in, 'utf8'))
   // Footgun guard: always build from the pristine pre-offset source, never from
   // an already-processed routes.json (that double-snaps / double-offsets).
@@ -622,9 +682,14 @@ function main() {
   }
 
   // ---- processing order: lowest config order first, then longest first ----
+  // SPINE_ORDER overrides ONLY the spine-laying priority (not config `order`,
+  // which still drives lane ranking/colour). Thameslink is bumped just ahead of
+  // Piccadilly/Victoria so it lays the Finsbury Park corridor spine first and the
+  // tube pair can snap onto IT (its true National-Rail track) — see FORCE_SNAP.
+  const procOrderKey = (f) => SPINE_ORDER[f.line] ?? f.order
   const procOrder = lineFeats
     .map((f, i) => ({ f, i }))
-    .sort((a, b) => a.f.order - b.f.order || b.f.cum.at(-1) - a.f.cum.at(-1))
+    .sort((a, b) => procOrderKey(a.f) - procOrderKey(b.f) || b.f.cum.at(-1) - a.f.cum.at(-1))
 
   // ---- spines ----
   const spines = [] // {id, xy, tan, cum, members:Map(line->[[s0,s1]]), sign}
@@ -738,6 +803,34 @@ function main() {
           if (clean[i] === -1 && grid.nearest(f.xy[i], null, CONFIG.D2, 0, X.id)) clean[i] = X.id
       }
     }
+    // FORCE_SNAP overrides: bind this line onto a corridor near the given points,
+    // so it co-runs as a true lane member even where its OSM track weaves past the
+    // geometric radius. With `onto`, target the (nearest) spine carrying that line
+    // and REASSIGN even vertices already snapped to a rival parallel spine.
+    for (const o of FORCE_SNAP) {
+      if (o.line !== f.line) continue
+      let target = -1
+      if (o.onto) {
+        let best = Infinity
+        for (const sp of spines) {
+          if (!sp.members.has(o.onto)) continue
+          for (const v of sp.xy) {
+            const d = dist(v, o.atXY)
+            if (d < best) { best = d; target = sp.id }
+          }
+        }
+      }
+      for (let i = 0; i < n; i++) {
+        if (dist(f.xy[i], o.atXY) >= o.radius) continue
+        if (target >= 0) {
+          if (grid.nearest(f.xy[i], null, o.dist || CONFIG.D2, 0, target)) clean[i] = target
+        } else if (clean[i] < 0) {
+          const e = grid.nearest(f.xy[i], null, o.dist || CONFIG.D2, 0)
+          if (e) clean[i] = e.spineId
+        }
+      }
+    }
+
     // re-clean (drop any tiny snapped blips the extension left, bridge gaps)
     const clean2 = hysteresis(clean, f.xy)
     for (let i = 0; i < n; i++) clean[i] = clean2[i]
@@ -910,7 +1003,27 @@ function main() {
       const s = smoothVecs(out, CONFIG.SMOOTH_WIN)
       out = out.map((p, i) => (i === 0 || i === out.length - 1 ? p : s[i]))
     }
-    return out
+    return applyNudge(f.line, out)
+  }
+
+  // Apply NUDGE overrides to a feature's coords (XY metres): add a cosine-ramped
+  // metre vector (east=+x, north=+y) within each override's radius. Peaks at the
+  // vertex nearest `at`, eases to 0 at the radius edge → a smooth bow, no kink.
+  function applyNudge(line, coords) {
+    const ovs = NUDGE.filter((o) => o.lines.includes(line))
+    if (!ovs.length) return coords
+    return coords.map((p) => {
+      let dx = 0
+      let dy = 0
+      for (const o of ovs) {
+        const d = dist(p, o.atXY)
+        if (d >= o.radius) continue
+        const ramp = 0.5 * (1 + Math.cos((Math.PI * d) / o.radius))
+        dx += (o.east || 0) * ramp
+        dy += (o.north || 0) * ramp
+      }
+      return dx || dy ? [p[0] + dx, p[1] + dy] : p
+    })
   }
 
   // ---- OFFSET MODE: emit shared-centreline geometry + a per-segment lane
@@ -955,6 +1068,7 @@ function main() {
       const sp2 = smoothVecs(pos, CONFIG.SMOOTH_WIN)
       pos = pos.map((p, i) => (i === 0 || i === pos.length - 1 ? p : sp2[i]))
     }
+    pos = applyNudge(f.line, pos)
     // Smooth the per-vertex laneOff over a taper so it RAMPS where a line joins
     // / leaves a stack instead of stepping (line-offset can't taper, so the jump
     // showed as a discontinuity at junctions, e.g. Ealing/Acton). Then split
@@ -998,7 +1112,10 @@ function main() {
   // [probe, topLine, bottomLine, axis]. axis 'lat' (default): topLine must render
   // NORTH (higher lat). axis 'lng': topLine must render WEST (lower lng) — used on
   // N–S corridors where "cross-track" is the east/west axis (e.g. Finsbury Park).
-  const ASSERTS = ORDER_OVERRIDES.map((o) => [o.at, o.top[0], o.top[o.top.length - 1], o.axis || 'lat'])
+  // `noFlip` overrides only rank lanes; they do NOT assert a spine sign (used when
+  // the override rides a spine whose sign is already locked by another assert, e.g.
+  // the §4 Circle loop at King's Cross — fighting it would oscillate / break §4).
+  const ASSERTS = ORDER_OVERRIDES.filter((o) => !o.noFlip).map((o) => [o.at, o.top[0], o.top[o.top.length - 1], o.axis || 'lat'])
   function bakedLLForLineNear(probeLL, line) {
     // returns the baked lat+lng of `line` nearest the probe
     let best = Infinity

@@ -176,14 +176,23 @@ export default function GamePage({
     return ['in', ['get', 'line'], ['literal', allowed]] as unknown as maplibregl.FilterSpecification
   }, [allLineKeys, enabledLines])
 
-  const solidStripeLineKeys = useMemo(
-    () => allLineKeys.filter((k) => LINES[k].stripe === 'solid'),
-    [allLineKeys, LINES],
-  )
-  const dashedStripeLineKeys = useMemo(
-    () => allLineKeys.filter((k) => LINES[k].stripe === 'dashed'),
-    [allLineKeys, LINES],
-  )
+  // Category z-bands, BOTTOM → TOP. Each band is drawn as its own base line layer
+  // plus its white-stripe layer(s) stacked immediately above it, so a line's dashes
+  // stay at that line's depth instead of floating over lower categories. Desired
+  // stacking: Underground (top) > Elizabeth > DLR > Overground > Thameslink/National
+  // Rail (bottom) — so e.g. Thameslink (and its dashes) pass UNDER the tube ribbons.
+  const zBands = useMemo(() => {
+    const ug = allLineKeys.filter((k) => (LINES[k].order ?? 99) <= 10)
+    return [
+      { id: 'nr', keys: ['Thameslink', 'GreatNorthern', 'Southern', 'GatwickExpress'] },
+      { id: 'og', keys: ['Lioness', 'Mildmay', 'Windrush', 'Weaver', 'Suffragette', 'Liberty'] },
+      { id: 'dlr', keys: ['DLR'] },
+      { id: 'eliz', keys: ['ElizabethLine'] },
+      { id: 'ug', keys: ug },
+    ]
+      .map((b) => ({ ...b, keys: b.keys.filter((k) => allLineKeys.includes(k)) }))
+      .filter((b) => b.keys.length)
+  }, [allLineKeys, LINES])
 
   // -------- Map setup --------
   useEffect(() => {
@@ -281,143 +290,95 @@ export default function GamePage({
         // out and the geometry stays on the true track.
 
         m.addSource('lines', { type: 'geojson', data: routes })
-        m.addLayer({
-          id: 'lines',
-          type: 'line',
-          source: 'lines',
-          paint: {
-            // ~50% thicker than the previous pass (all stops ×1.5) so the
-            // ribbons read more boldly; at the z12.4 start zoom a line is ~4.8px
-            // (was ~3.2px). Still grows with zoom; white stripes scale to match.
-            'line-width': [
-              'interpolate', ['linear'], ['zoom'],
-              8.763, 2.925,
-              13, 5.0625,
-              18, 8.4375,
-              22, 10.125,
-            ],
-            // Resolve from LINES config so map, legend, and found list stay
-            // in lockstep — `routes.json` ships baked colours that can drift.
-            'line-color': [
-              'match',
-              ['get', 'line'],
-              ...allLineKeys.flatMap((line) => [[line], LINES[line].color]),
-              '#888',
-            ] as unknown as maplibregl.ExpressionSpecification,
-            'line-opacity': 0.95,
-            // Render-time parallel-ribbon separation: each feature carries a
-            // signed `laneOff` (in lane units) baked by build-ribbons --mode
-            // offset; the geometry is the shared corridor centreline. We offset
-            // by laneOff × the zoom-scaled line width, so adjacent ribbons sit
-            // exactly one width apart (edges just touch) at every zoom — they
-            // separate by a CONSTANT screen amount at every zoom
-            // (never hide when zoomed out) while the geometry stays on the true
-            // track. +offset = right of line direction (sign handled at bake).
-            'line-offset': [
-              'interpolate', ['linear'], ['zoom'],
-              8.763, ['*', ['coalesce', ['get', 'laneOff'], 0], 2.925],
-              13, ['*', ['coalesce', ['get', 'laneOff'], 0], 5.0625],
-              18, ['*', ['coalesce', ['get', 'laneOff'], 0], 8.4375],
-              22, ['*', ['coalesce', ['get', 'laneOff'], 0], 10.125],
-            ] as unknown as maplibregl.ExpressionSpecification,
-          },
-          layout: {
-            // Higher-order lines render on top. Underground tube lines (order
-            // 0-10) sit beneath Elizabeth/DLR/Overground/Thameslink/National
-            // Rail (11-22), so where Thameslink runs alongside Met/Circle/H&C
-            // it stays visible instead of being buried.
-            'line-sort-key': ['get', 'order'],
-            'line-cap': 'round',
-            'line-join': 'round',
-          },
-        })
+        // Render-time parallel-ribbon separation, shared by every base + stripe
+        // layer: each feature carries a signed `laneOff` (lane units); we offset by
+        // laneOff × the zoom-scaled line width so adjacent ribbons sit one width
+        // apart — a CONSTANT screen amount at every zoom (never hide when zoomed
+        // out) while geometry stays on the true track. +offset = right of line dir.
+        const lineOffset = [
+          'interpolate', ['linear'], ['zoom'],
+          8.763, ['*', ['coalesce', ['get', 'laneOff'], 0], 2.925],
+          13, ['*', ['coalesce', ['get', 'laneOff'], 0], 5.0625],
+          18, ['*', ['coalesce', ['get', 'laneOff'], 0], 8.4375],
+          22, ['*', ['coalesce', ['get', 'laneOff'], 0], 10.125],
+        ] as unknown as maplibregl.ExpressionSpecification
+        // ~50% thicker than the previous pass; white stripes ~1/3 of that.
+        const lineWidth = [
+          'interpolate', ['linear'], ['zoom'],
+          8.763, 2.925, 13, 5.0625, 18, 8.4375, 22, 10.125,
+        ] as unknown as maplibregl.ExpressionSpecification
+        const stripeWidth = [
+          'interpolate', ['linear'], ['zoom'],
+          8.763, 1.0125, 13, 1.6875, 18, 2.8125, 22, 3.375,
+        ] as unknown as maplibregl.ExpressionSpecification
+        // Resolve colour from LINES config so map, legend, and found list stay in
+        // lockstep — `routes.json` ships baked colours that can drift.
+        const lineColor = [
+          'match', ['get', 'line'],
+          ...allLineKeys.flatMap((line) => [[line], LINES[line].color]),
+          '#888',
+        ] as unknown as maplibregl.ExpressionSpecification
+        // Within a band, higher config `order` draws on top (matters where lines
+        // genuinely cross at interchanges). Cross-band order is set by the band stack.
+        const sortKey = ['get', 'order'] as unknown as maplibregl.ExpressionSpecification
+        // …except inside the Underground band, where the SUBSURFACE (cut-and-cover)
+        // lines must draw ABOVE the deep-tube lines. Boost their sort-key by 100 so
+        // all subsurface lines outrank every deep-tube line (config order kept within
+        // each group). Underground as a whole still sits above Elizabeth/DLR/etc.
+        const SUBSURFACE = ['Circle', 'District', 'HammersmithAndCity', 'Metropolitan']
+        const ugSortKey = [
+          '+', ['get', 'order'], ['match', ['get', 'line'], SUBSURFACE, 100, 0],
+        ] as unknown as maplibregl.ExpressionSpecification
+        const inKeys = (keys: string[]) =>
+          ['in', ['get', 'line'], ['literal', keys]] as unknown as maplibregl.FilterSpecification
 
-        // White core stripe (solid) — Overground / Elizabeth / DLR / etc.
-        m.addLayer({
-          id: 'lines-stripe-solid',
-          type: 'line',
-          source: 'lines',
-          filter: [
-            'in',
-            ['get', 'line'],
-            ['literal', solidStripeLineKeys],
-          ] as unknown as maplibregl.FilterSpecification,
-          paint: {
-            // ~1/3 of the colored line-width (stops ×1.5 to track the bolder lines).
-            'line-width': [
-              'interpolate', ['linear'], ['zoom'],
-              8.763, 1.0125,
-              13, 1.6875,
-              18, 2.8125,
-              22, 3.375,
-            ],
-            'line-color': '#ffffff',
-            // Render-time parallel-ribbon separation: each feature carries a
-            // signed `laneOff` (in lane units) baked by build-ribbons --mode
-            // offset; the geometry is the shared corridor centreline. We offset
-            // by laneOff × the zoom-scaled line width, so adjacent ribbons sit
-            // exactly one width apart (edges just touch) at every zoom — they
-            // separate by a CONSTANT screen amount at every zoom
-            // (never hide when zoomed out) while the geometry stays on the true
-            // track. +offset = right of line direction (sign handled at bake).
-            'line-offset': [
-              'interpolate', ['linear'], ['zoom'],
-              8.763, ['*', ['coalesce', ['get', 'laneOff'], 0], 2.925],
-              13, ['*', ['coalesce', ['get', 'laneOff'], 0], 5.0625],
-              18, ['*', ['coalesce', ['get', 'laneOff'], 0], 8.4375],
-              22, ['*', ['coalesce', ['get', 'laneOff'], 0], 10.125],
-            ] as unknown as maplibregl.ExpressionSpecification,
-          },
-          layout: {
-            'line-sort-key': ['get', 'order'],
-            'line-cap': 'round',
-            'line-join': 'round',
-          },
-        })
-
-        // White core stripe (dashed) — Thameslink / Gatwick Express. Gaps
-        // reveal the line color through the dashes.
-        m.addLayer({
-          id: 'lines-stripe-dashed',
-          type: 'line',
-          source: 'lines',
-          filter: [
-            'in',
-            ['get', 'line'],
-            ['literal', dashedStripeLineKeys],
-          ] as unknown as maplibregl.FilterSpecification,
-          paint: {
-            'line-width': [
-              'interpolate', ['linear'], ['zoom'],
-              8.763, 1.0125,
-              13, 1.6875,
-              18, 2.8125,
-              22, 3.375,
-            ],
-            'line-color': '#ffffff',
-            'line-dasharray': [3, 2.5],
-            // Render-time parallel-ribbon separation: each feature carries a
-            // signed `laneOff` (in lane units) baked by build-ribbons --mode
-            // offset; the geometry is the shared corridor centreline. We offset
-            // by laneOff × the zoom-scaled line width, so adjacent ribbons sit
-            // exactly one width apart (edges just touch) at every zoom — they
-            // separate by a CONSTANT screen amount at every zoom
-            // (never hide when zoomed out) while the geometry stays on the true
-            // track. +offset = right of line direction (sign handled at bake).
-            'line-offset': [
-              'interpolate', ['linear'], ['zoom'],
-              8.763, ['*', ['coalesce', ['get', 'laneOff'], 0], 2.925],
-              13, ['*', ['coalesce', ['get', 'laneOff'], 0], 5.0625],
-              18, ['*', ['coalesce', ['get', 'laneOff'], 0], 8.4375],
-              22, ['*', ['coalesce', ['get', 'laneOff'], 0], 10.125],
-            ] as unknown as maplibregl.ExpressionSpecification,
-          },
-          layout: {
-            'line-sort-key': ['get', 'order'],
-            'line-cap': 'butt',
-            'line-join': 'round',
-          },
-        })
+        // Draw bands BOTTOM → TOP; within each band, the base line then its white
+        // stripe(s) immediately above it. This keeps a line's dashes at the line's
+        // own depth, so (e.g.) Thameslink and its dashes pass UNDER the tube ribbons
+        // instead of the dashes floating on top of them.
+        for (const band of zBands) {
+          const bandSortKey = band.id === 'ug' ? ugSortKey : sortKey
+          m.addLayer({
+            id: `lines-${band.id}`,
+            type: 'line',
+            source: 'lines',
+            filter: inKeys(band.keys),
+            paint: {
+              'line-color': lineColor,
+              'line-opacity': 0.95,
+              'line-width': lineWidth,
+              'line-offset': lineOffset,
+            },
+            layout: { 'line-sort-key': bandSortKey, 'line-cap': 'round', 'line-join': 'round' },
+          })
+          const solids = band.keys.filter((k) => LINES[k].stripe === 'solid')
+          const dashes = band.keys.filter((k) => LINES[k].stripe === 'dashed')
+          if (solids.length) {
+            m.addLayer({
+              id: `lines-${band.id}-stripe-solid`,
+              type: 'line',
+              source: 'lines',
+              filter: inKeys(solids),
+              paint: { 'line-color': '#ffffff', 'line-width': stripeWidth, 'line-offset': lineOffset },
+              layout: { 'line-sort-key': bandSortKey, 'line-cap': 'round', 'line-join': 'round' },
+            })
+          }
+          if (dashes.length) {
+            m.addLayer({
+              id: `lines-${band.id}-stripe-dashed`,
+              type: 'line',
+              source: 'lines',
+              filter: inKeys(dashes),
+              paint: {
+                'line-color': '#ffffff',
+                'line-width': stripeWidth,
+                'line-dasharray': [3, 2.5],
+                'line-offset': lineOffset,
+              },
+              layout: { 'line-sort-key': bandSortKey, 'line-cap': 'butt', 'line-join': 'round' },
+            })
+          }
+        }
       }
 
       // Always-visible base layer: hollow circle for every un-found station,
@@ -752,31 +713,26 @@ export default function GamePage({
           'all', lineFilter, ['get', 'interchange'],
         ] as unknown as maplibregl.FilterSpecification)
     }
-    if (map.getLayer('lines')) map.setFilter('lines', lineFilter)
-    // Stripe layers keep both the enabled-lines filter AND their stripe-type filter.
+    // Per-band line + stripe layers: each keeps the enabled-lines filter AND its
+    // own band-key (and stripe-type) filter, so toggling lines hides them in place.
     const allowed = allLineKeys.filter((k) => enabledLines[k])
-    if (map.getLayer('lines-stripe-solid')) {
-      map.setFilter('lines-stripe-solid', [
-        'all',
-        ['in', ['get', 'line'], ['literal', allowed]],
-        ['in', ['get', 'line'], ['literal', solidStripeLineKeys]],
-      ] as unknown as maplibregl.FilterSpecification)
+    const allowedIn = ['in', ['get', 'line'], ['literal', allowed]]
+    for (const band of zBands) {
+      const solids = band.keys.filter((k) => LINES[k].stripe === 'solid')
+      const dashes = band.keys.filter((k) => LINES[k].stripe === 'dashed')
+      const set = (id: string, keys: string[]) => {
+        if (map.getLayer(id))
+          map.setFilter(id, [
+            'all',
+            allowedIn,
+            ['in', ['get', 'line'], ['literal', keys]],
+          ] as unknown as maplibregl.FilterSpecification)
+      }
+      set(`lines-${band.id}`, band.keys)
+      if (solids.length) set(`lines-${band.id}-stripe-solid`, solids)
+      if (dashes.length) set(`lines-${band.id}-stripe-dashed`, dashes)
     }
-    if (map.getLayer('lines-stripe-dashed')) {
-      map.setFilter('lines-stripe-dashed', [
-        'all',
-        ['in', ['get', 'line'], ['literal', allowed]],
-        ['in', ['get', 'line'], ['literal', dashedStripeLineKeys]],
-      ] as unknown as maplibregl.FilterSpecification)
-    }
-  }, [
-    map,
-    lineFilter,
-    allLineKeys,
-    enabledLines,
-    solidStripeLineKeys,
-    dashedStripeLineKeys,
-  ])
+  }, [map, lineFilter, allLineKeys, enabledLines, zBands, LINES])
 
   // Toggle base layer visibility. `undefined` (pre-localStorage hydration)
   // is treated as the default (visible) — otherwise the layer briefly hides
