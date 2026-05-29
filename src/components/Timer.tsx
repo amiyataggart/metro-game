@@ -105,7 +105,13 @@ export default function Timer() {
       </button>
       <button
         type="button"
-        onClick={() => setRunning((r) => !r)}
+        onClick={() => {
+          // On Start/Resume (currently not running), focus the station box so
+          // you can type immediately. The click is a user gesture, so this also
+          // brings up the keyboard on mobile.
+          if (!running) document.getElementById('input')?.focus()
+          setRunning((r) => !r)
+        }}
         className={`rounded-full px-3 py-1 text-sm font-bold text-white transition-colors ${
           running ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700'
         }`}
