@@ -1,5 +1,7 @@
 import data from './data/features.json'
 import routesData from './data/routes.json'
+import maskData from './data/london-mask.json'
+import cityData from './data/city-of-london.json'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import 'react-circular-progressbar/dist/styles.css'
 import { DataFeatureCollection, RoutesFeatureCollection } from '@/lib/types'
@@ -29,12 +31,15 @@ const visConfig = { ...config, LINES: visLines }
 
 // annotateInterchanges stamps lineCount / interchange on each station so the
 // map can size multi-line interchanges larger than single-line stops.
-const fc = annotateInterchanges({
-  ...data,
-  features: visibleStationFeatures(
-    data.features.filter((f) => !!visLines[f.properties.line]) as any,
-  ),
-} as unknown as DataFeatureCollection)
+const fc = annotateInterchanges(
+  {
+    ...data,
+    features: visibleStationFeatures(
+      data.features.filter((f) => !!visLines[f.properties.line]) as any,
+    ),
+  } as unknown as DataFeatureCollection,
+  visLines,
+)
 
 const routes = {
   ...(routesData as object),
@@ -47,7 +52,12 @@ export default function London() {
   return (
     <Provider value={visConfig}>
       <Main className={`${font.className} min-h-screen`}>
-        <GamePage fc={fc} routes={routes} />
+        <GamePage
+          fc={fc}
+          routes={routes}
+          maskData={maskData}
+          cityData={cityData}
+        />
       </Main>
     </Provider>
   )

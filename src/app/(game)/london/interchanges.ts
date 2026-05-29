@@ -1,49 +1,93 @@
 /*
- * Interchange classification — shared by the interchange-presentation variants.
+ * Interchange classification — shared by the interchange presentation.
  *
  * A physical station appears in features.json as one Point per (station, line)
- * pair, all sharing the same `name`. A station is a multi-line INTERCHANGE if
- * its name is served by >= 2 distinct lines; otherwise it's a single-line stop.
+ * pair. Services are grouped by NAME and then sub-clustered by LOCATION (so a
+ * renamed station whose services sit at genuinely different places — e.g.
+ * Blackfriars Tube vs the Thameslink platforms ~300m south — yields one cluster
+ * per location rather than one merged blob). Each cluster of >= 2 lines is an
+ * INTERCHANGE drawn as a segmented pie of its lines' colours.
  *
  * annotateInterchanges() stamps every feature with:
- *   - lineCount:   number of distinct lines serving that station name
+ *   - lineCount:   distinct lines in this feature's (name, location) cluster
  *   - interchange: lineCount >= 2
- * so MapLibre paint/layout can branch on ['get','lineCount'] / ['get','interchange'].
+ *   - pieColors:   that cluster's line colours, ordered by line order
+ *   - pieKey:      joined colours, used to register/look up the pie icon
  */
-import type { DataFeatureCollection } from '@/lib/types'
+import type { DataFeatureCollection, Line } from '@/lib/types'
 
-export function buildLineCountByName(
-  fc: DataFeatureCollection,
-): Map<string, number> {
-  const linesByName = new Map<string, Set<string>>()
-  for (const f of fc.features) {
-    if (f.geometry.type !== 'Point') continue
-    const name = f.properties.name
-    const line = f.properties.line
-    if (!name || !line) continue
-    if (!linesByName.has(name)) linesByName.set(name, new Set())
-    linesByName.get(name)!.add(line)
-  }
-  const out = new Map<string, number>()
-  for (const [name, set] of linesByName) out.set(name, set.size)
-  return out
-}
+type LineMap = { [k: string]: Line }
+
+const M_LAT = 111320
+const M_LNG = 69300 // ~51.5N
+// Services within this distance (same name) count as the same physical
+// interchange; farther apart they're treated as separate locations.
+const CLUSTER_M = 150
 
 export function annotateInterchanges(
   fc: DataFeatureCollection,
+  lines: LineMap,
 ): DataFeatureCollection {
-  const countByName = buildLineCountByName(fc)
+  // group point features (by name) -> their indices/coords/lines
+  const byName = new Map<string, { i: number; coord: number[]; line: string }[]>()
+  fc.features.forEach((f, i) => {
+    if (f.geometry.type !== 'Point') return
+    const name = f.properties.name
+    const line = f.properties.line
+    if (!name || !line) return
+    if (!byName.has(name)) byName.set(name, [])
+    byName.get(name)!.push({ i, coord: f.geometry.coordinates, line })
+  })
+
+  // feature index -> { colors, key, count } for its location cluster
+  const info = new Map<number, { colors: string[]; key: string; count: number }>()
+  for (const items of byName.values()) {
+    // union-find clustering by distance within the name
+    const parent = items.map((_, k) => k)
+    const find = (x: number): number => {
+      while (parent[x] !== x) {
+        parent[x] = parent[parent[x]]
+        x = parent[x]
+      }
+      return x
+    }
+    for (let a = 0; a < items.length; a++) {
+      for (let b = a + 1; b < items.length; b++) {
+        const dx = (items[a].coord[0] - items[b].coord[0]) * M_LNG
+        const dy = (items[a].coord[1] - items[b].coord[1]) * M_LAT
+        if (dx * dx + dy * dy <= CLUSTER_M * CLUSTER_M) parent[find(a)] = find(b)
+      }
+    }
+    const clusterLines = new Map<number, Set<string>>()
+    items.forEach((it, k) => {
+      const r = find(k)
+      if (!clusterLines.has(r)) clusterLines.set(r, new Set())
+      clusterLines.get(r)!.add(it.line)
+    })
+    const clusterInfo = new Map<number, { colors: string[]; key: string; count: number }>()
+    for (const [r, set] of clusterLines) {
+      const ordered = [...set]
+        .filter((l) => lines[l])
+        .sort((a, b) => (lines[a].order ?? 99) - (lines[b].order ?? 99))
+      const colors = ordered.map((l) => lines[l].color)
+      clusterInfo.set(r, { colors, key: colors.join('|'), count: ordered.length })
+    }
+    items.forEach((it, k) => info.set(it.i, clusterInfo.get(find(k))!))
+  }
+
   return {
     ...fc,
-    features: fc.features.map((f) => {
-      const name = f.properties.name
-      const lineCount = name ? countByName.get(name) ?? 1 : 1
+    features: fc.features.map((f, i) => {
+      const ci = info.get(i)
+      const lineCount = ci ? ci.count : 1
       return {
         ...f,
         properties: {
           ...f.properties,
           lineCount,
           interchange: lineCount >= 2,
+          pieColors: ci ? ci.colors : [],
+          pieKey: ci ? ci.key : '',
         } as any,
       }
     }),

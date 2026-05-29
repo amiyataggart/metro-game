@@ -201,13 +201,17 @@ export const MAP_STYLE =
 
 export const MAP_CONFIG: Omit<MapOptions, 'container'> = {
   style: MAP_STYLE,
-  bounds: [
-    [-0.619997, 51.323273],
-    [0.35504, 51.68869],
-  ],
+  // Default view: centred on Charing Cross with most of Zone 1 in frame.
+  // (The user can still zoom/pan out to the full network within maxBounds.)
+  center: [-0.1247, 51.5085],
+  zoom: 12.4,
+  // Fit the currently-visible network with a slight margin (Great Northern's
+  // King's Lynn is deprecated). Thameslink sets the N–S extent (Peterborough
+  // ≈ 52.58°N to Brighton ≈ 50.83°N); the Elizabeth line (Reading ≈ -0.97°W)
+  // sets the western edge, so the box is slightly wider west than Thameslink.
   maxBounds: [
-    [-2.058488, 50.738554],
-    [1.841659, 52.201223],
+    [-1.1, 50.75],
+    [0.73, 52.66],
   ],
   minZoom: 6,
   fadeDuration: 50,

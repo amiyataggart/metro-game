@@ -9,13 +9,19 @@
 import type { LineString, MultiLineString, Point, Position } from 'geojson'
 import type { Line } from '@/lib/types'
 
-// 1. Whole services hidden from the map, legend, settings and score.
-export const HIDDEN_LINES = new Set<string>(['GatwickExpress', 'GreatNorthern'])
+// 1. Whole services hard-hidden from the map, legend, settings, picker and
+//    score. Southern, Great Northern and Gatwick Express are fully disabled
+//    (remove from this set to bring them back).
+export const HIDDEN_LINES = new Set<string>([
+  'Southern',
+  'GreatNorthern',
+  'GatwickExpress',
+])
 
 // 2. Thameslink: keep only the core network, trimming each branch at the named
 //    boundary station. "Beyond" = farther from central London, along that
 //    branch's bearing, than the boundary station.
-export const THAMESLINK_TRIM = true
+export const THAMESLINK_TRIM = false
 const THAMESLINK = 'Thameslink'
 
 // Central reference (Farringdon-ish) and a flat-earth km metric (fine at city scale).

@@ -3,6 +3,7 @@
 import classNames from 'classnames'
 import { useState } from 'react'
 import ProgressBars from './ProgressBars'
+import LinePicker from './LinePicker'
 import { MaximizeIcon } from './MaximizeIcon'
 import { MinimizeIcon } from './MinimizeIcon'
 import useTranslation from '@/hooks/useTranslation'
@@ -14,6 +15,8 @@ const FoundSummary = ({
   foundProportion,
   minimizable = false,
   defaultMinimized = false,
+  enabledLines,
+  setEnabledLines,
 }: {
   className?: string
   foundStationsPerLine: Record<string, number>
@@ -21,6 +24,8 @@ const FoundSummary = ({
   foundProportion: number
   minimizable?: boolean
   defaultMinimized?: boolean
+  enabledLines?: Record<string, boolean>
+  setEnabledLines?: (next: Record<string, boolean>) => void
 }) => {
   const { t } = useTranslation()
   const [minimized, setMinimized] = useState<boolean>(defaultMinimized)
@@ -45,18 +50,28 @@ const FoundSummary = ({
           stationsPerLine={stationsPerLine}
         />
       </div>
-      {minimizable && (
-        <div className="absolute bottom-0 right-0">
-          <button
-            onClick={() => setMinimized(!minimized)}
-            className="mx-2 my-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-500 shadow"
-          >
-            {minimized ? (
-              <MaximizeIcon className="h-4 w-4" />
-            ) : (
-              <MinimizeIcon className="h-4 w-4" />
-            )}
-          </button>
+      {(minimizable || (enabledLines && setEnabledLines)) && (
+        <div className="absolute bottom-0 right-0 flex flex-col items-end">
+          {enabledLines && setEnabledLines && (
+            <div className="mx-2 my-1">
+              <LinePicker
+                enabledLines={enabledLines}
+                setEnabledLines={setEnabledLines}
+              />
+            </div>
+          )}
+          {minimizable && (
+            <button
+              onClick={() => setMinimized(!minimized)}
+              className="mx-2 my-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-500 shadow"
+            >
+              {minimized ? (
+                <MaximizeIcon className="h-4 w-4" />
+              ) : (
+                <MinimizeIcon className="h-4 w-4" />
+              )}
+            </button>
+          )}
         </div>
       )}
     </div>
