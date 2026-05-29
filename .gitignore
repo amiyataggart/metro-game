@@ -45,3 +45,7 @@ public/stats/*
 
 # QA render output (screenshots + reports)
 /qa/
+
+# Archived / deprecated build tooling (kept on disk as prior art, not tracked).
+# See PARALLEL-RIBBONS-BRIEF.md for what lives here and why it was retired.
+/archive/
