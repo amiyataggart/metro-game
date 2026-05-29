@@ -60,6 +60,7 @@ ordering, branches reconnect at junctions, Circle loop continuous and interior.
 | `MIN_SPINE` / `MIN_MEMBER` | 120 / 140 m | min run to seed a spine / count as a member |
 | `SMOOTH_WIN` | 5 | final gentle coord smoothing (spike damping) |
 | `SPIKE_ANGLE` | 55° | de-spike: drop input vertices turning more than this (weld spikes) |
+| `DEDUP_DIST` / `DEDUP_MIN_RUN` | 110 m / 1500 m | collapse-doubling: anti-parallel self-overlap radius / min run to remove (de-doubles out-and-back tracks; leaves one-way loops) |
 | `SIMPLIFY_EPS` | 1.5 m | output Douglas–Peucker tolerance (≪ spacing) |
 | `COORD_DP` | 6 | output coordinate precision (≈0.11 m) |
 
@@ -73,6 +74,11 @@ the z12 overview — the accepted tradeoff (brief §2).
   near-reversal vertices, `SPIKE_ANGLE`); the Oval 143° hairpin and the
   Kennington kink are gone. A faint residual jog can remain where two same-line
   branches converge at a station (e.g. the Kennington/Oval "eye"); harmless.
+- **Out-and-back doubling** (one OSM way tracing both running tracks) is
+  collapsed by `collapseDoubling`: Piccadilly's Heathrow branch is now a single
+  line (−12%) with the T4 one-way loop preserved. One Thameslink feature still
+  has partial doubling — its duplicate run isn't a clean removable tail, so the
+  pass conservatively leaves it (Thameslink is off by default); revisit if needed.
 - National-Rail mega-corridors (Thameslink/GreatNorthern/Southern/GatwickExpress,
   hidden/off by default) bundle via the same mechanism; spot-checked, not yet
   exhaustively eyeballed.

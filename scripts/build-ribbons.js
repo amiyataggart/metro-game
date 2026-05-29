@@ -105,6 +105,17 @@ const CONFIG = {
   SPIKE_ANGLE: 55, // de-spike: drop an input vertex whose turn angle exceeds
   // this (deg). Real track curves gradually over many vertices; a near-reversal
   // at one vertex is a station-weld spike (e.g. the Oval/Kennington kinks).
+  DEDUP_DIST: 110, // collapse-doubling: a vertex duplicates an earlier part of
+  // the SAME feature if within this (m)... (wide, because the two running tracks
+  // bow apart between stations, like co-running lines do).
+  DEDUP_ANTICOS: -0.45, // ...AND anti-parallel (tangent dot below this)...
+  DEDUP_MIN_ARC: 800, // ...AND that earlier part is >= this far back (m).
+  DEDUP_CLOSE: 600, // merge duplicate runs separated by gaps shorter than this
+  // (m) so the bowing return becomes one contiguous run.
+  DEDUP_MIN_RUN: 1500, // only collapse a duplicate run at least this long (m).
+  // Catches an out-and-back tracing both running tracks (Piccadilly's Heathrow
+  // branch) but leaves genuine one-way loops (Heathrow T4, Circle): their sides
+  // aren't close+anti-parallel over a long arc, so no long duplicate run forms.
   R_NODE: 45, // a station node attaches to a line if its geometry passes within
   // this (m). Shared stations sit ~1-13m off each serving line (OSM noise).
   CLUSTER: 30, // station points within this (m) merge into one physical node.
@@ -178,6 +189,79 @@ function deSpike(xy, angleDeg) {
     if (!changed) break
   }
   return pts
+}
+
+// Collapse an out-and-back feature that traces both running tracks as one
+// polyline (the up & down rails, ~10-20m apart, run anti-parallel). Keeps the
+// FIRST pass and drops the later duplicate. A genuine one-way loop (Heathrow
+// T4, the Circle line) is untouched: its sides are not both close AND
+// anti-parallel over a long arc gap. Reverts if removal would splice a gap.
+function collapseDoubling(xy, opts) {
+  const n = xy.length
+  if (n < 20) return xy
+  const cum = cumlen(xy)
+  if (cum[n - 1] < opts.minArc * 1.5) return xy
+  const tan = (i) => {
+    const a = xy[Math.max(0, i - 1)]
+    const b = xy[Math.min(n - 1, i + 1)]
+    const dx = b[0] - a[0], dy = b[1] - a[1]
+    const L = Math.hypot(dx, dy) || 1
+    return [dx / L, dy / L]
+  }
+  const tans = []
+  for (let i = 0; i < n; i++) tans.push(tan(i))
+  const cell = opts.dist
+  const grid = new Map()
+  for (let i = 0; i < n; i++) {
+    const k = Math.floor(xy[i][0] / cell) + ',' + Math.floor(xy[i][1] / cell)
+    if (!grid.has(k)) grid.set(k, [])
+    grid.get(k).push(i)
+  }
+  const dup = new Uint8Array(n)
+  for (let i = 0; i < n; i++) {
+    const cx = Math.floor(xy[i][0] / cell), cy = Math.floor(xy[i][1] / cell)
+    let hit = false
+    for (let gx = cx - 1; gx <= cx + 1 && !hit; gx++)
+      for (let gy = cy - 1; gy <= cy + 1 && !hit; gy++) {
+        const arr = grid.get(gx + ',' + gy)
+        if (!arr) continue
+        for (const j of arr) {
+          if (cum[j] >= cum[i] || cum[i] - cum[j] < opts.minArc) continue // partner must be earlier & far back
+          if (dist(xy[i], xy[j]) > opts.dist) continue
+          if (tans[i][0] * tans[j][0] + tans[i][1] * tans[j][1] > opts.antiCos) continue // anti-parallel
+          dup[i] = 1; hit = true; break
+        }
+      }
+  }
+  // Close short non-duplicate gaps so the bowing return becomes one run, then
+  // mark for removal only duplicate runs at least DEDUP_MIN_RUN long.
+  const isDup = Array.from(dup)
+  let s = 0
+  for (let i = 1; i <= n; i++) {
+    if (i === n || isDup[i] !== isDup[s]) {
+      if (!isDup[s] && s > 0 && i < n && cum[i - 1] - cum[s] < opts.closeArc)
+        for (let k = s; k < i; k++) isDup[k] = 1 // bridge a short gap between dup runs
+      s = i
+    }
+  }
+  const remove = new Uint8Array(n)
+  s = 0
+  for (let i = 1; i <= n; i++) {
+    if (i === n || isDup[i] !== isDup[s]) {
+      if (isDup[s] && cum[i - 1] - cum[s] >= opts.minRun)
+        for (let k = s; k < i; k++) remove[k] = 1
+      s = i
+    }
+  }
+  let removed = 0
+  for (let i = 0; i < n; i++) removed += remove[i]
+  if (!removed || removed > n * 0.55) return xy // nothing to do / safety
+  const keep = []
+  for (let i = 0; i < n; i++) if (!remove[i]) keep.push(i)
+  // revert if removal would splice a visible mid-feature gap
+  for (let k = 1; k < keep.length; k++)
+    if (keep[k] - keep[k - 1] > 1 && dist(xy[keep[k]], xy[keep[k - 1]]) > 60) return xy
+  return keep.length >= 2 ? keep.map((i) => xy[i]) : xy
 }
 
 // Per-vertex unit tangent (central difference), and cumulative arc length.
@@ -385,7 +469,11 @@ function main() {
       continue
     }
     const line = f.properties.line
-    const xy = resample(deSpike(f.geometry.coordinates.map(toXY), CONFIG.SPIKE_ANGLE), CONFIG.S)
+    const collapsed = collapseDoubling(f.geometry.coordinates.map(toXY), {
+      dist: CONFIG.DEDUP_DIST, antiCos: CONFIG.DEDUP_ANTICOS, minArc: CONFIG.DEDUP_MIN_ARC,
+      closeArc: CONFIG.DEDUP_CLOSE, minRun: CONFIG.DEDUP_MIN_RUN,
+    })
+    const xy = resample(deSpike(collapsed, CONFIG.SPIKE_ANGLE), CONFIG.S)
     feats.push({
       line,
       order: ORDER[line] != null ? ORDER[line] : 999,

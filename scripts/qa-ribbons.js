@@ -111,8 +111,12 @@ for (const l of lines) {
   const maxShift = Math.max(dW, dS, dE, dN)
   const lenC = len(c), lenB = len(b)
   const lenPct = (100 * (lenC - lenB)) / lenB
-  // bbox edge should move < ~80m (offset+resample); length within ~6%
-  const bad = maxShift > 90 || Math.abs(lenPct) > 8
+  // Extent (bbox) is the real corruption signal — a collapsed loop / lost arc
+  // shrinks the bbox. Length may legitimately DROP from de-spiking and from
+  // de-doubling an out-and-back (e.g. Piccadilly's Heathrow branch, ~-12%), so
+  // we allow shrinkage down to -30% but still flag length GROWTH (>8%) and any
+  // large extent shift.
+  const bad = maxShift > 90 || lenPct > 8 || lenPct < -30
   if (bad) integrityFail++
   if (bad || ['Circle', 'District', 'Metropolitan', 'HammersmithAndCity', 'Bakerloo', 'Lioness'].includes(l))
     console.log(

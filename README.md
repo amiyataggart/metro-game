@@ -105,6 +105,11 @@ geometries differ — they come from different OSM ways and bow up to ~60m apart
 between shared stations — the ribbons cross and flip order across zoom. Instead
 `build-ribbons.js`:
 
+0. **Cleans the raw input** per feature: `deSpike` drops near-reversal vertices
+   (station-weld kinks, e.g. Oval/Kennington), and `collapseDoubling` removes a
+   track that an out-and-back OSM way traces twice (e.g. Piccadilly's Heathrow
+   branch up/down rails) while leaving genuine one-way loops (Heathrow T4, the
+   Circle line) intact.
 1. Detects shared **corridors** by first-come geometric snapping to **spines**
    (shared centrelines, laid lowest-`order`-first), then extends membership
    along runs of **≥2 consecutive shared station nodes** (`features.json`) — the
