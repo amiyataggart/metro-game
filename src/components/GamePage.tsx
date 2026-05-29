@@ -269,11 +269,12 @@ export default function GamePage({
 
       if (routes) {
         // BAKED OFFSETS. The parallel-ribbon separation is baked directly into
-        // routes.json coordinates at BUILD time (true geometric parallel offset
-        // along per-vertex miter normals — see scripts/bake-offsets.js). The
-        // runtime `line-offset` paint property — which pushes each line along
-        // its OWN local tangent and therefore diverges / flips order where
-        // co-running geometries differ even slightly — is set to a constant 0.
+        // routes.json coordinates at BUILD time: co-running lines are placed on
+        // a shared corridor centreline and offset by lane (see
+        // scripts/build-ribbons.js). The runtime `line-offset` paint property —
+        // which pushes each line along its OWN local tangent and therefore
+        // diverges / flips order where co-running geometries differ even
+        // slightly — is set to a constant 0.
         // What renders is purely the baked geometry, so co-running lines stay
         // exactly parallel and never reorder across zoom. Tradeoff: the offset
         // is in GROUND units, so ribbon spacing reads tighter when zoomed out
