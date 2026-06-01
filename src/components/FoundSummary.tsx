@@ -23,7 +23,7 @@ const FoundSummary = ({
   stationsPerLine,
   foundProportion,
   minimizable = false,
-  defaultMinimized = false,
+  defaultDensity = 'full',
   enabledLines,
   setEnabledLines,
   showTimer,
@@ -34,16 +34,14 @@ const FoundSummary = ({
   stationsPerLine: Record<string, number>
   foundProportion: number
   minimizable?: boolean
-  defaultMinimized?: boolean
+  defaultDensity?: LegendDensity
   enabledLines?: Record<string, boolean>
   setEnabledLines?: (next: Record<string, boolean>) => void
   showTimer?: boolean
   setShowTimer?: (v: boolean) => void
 }) => {
   const { t } = useTranslation()
-  const [density, setDensity] = useState<LegendDensity>(
-    defaultMinimized ? 'large' : 'full',
-  )
+  const [density, setDensity] = useState<LegendDensity>(defaultDensity)
 
   const hasTimerToggle = showTimer !== undefined && setShowTimer
 

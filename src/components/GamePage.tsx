@@ -110,10 +110,10 @@ export default function GamePage({
       defaultValue: true,
       initializeWithValue: false,
     })
-  // Whether the draggable stopwatch shows over the map. On by default.
+  // Whether the draggable stopwatch shows over the map. Off by default.
   const { value: showTimer, set: setShowTimer } =
     useLocalStorageValue<boolean>(`${CITY_NAME}-show-timer`, {
-      defaultValue: true,
+      defaultValue: false,
       initializeWithValue: false,
     })
   // EXPLORATORY: render-time line smoothing (centripetal Catmull-Rom). Curves
@@ -944,18 +944,18 @@ export default function GamePage({
     <div className="flex h-screen flex-row items-top justify-between">
       <div className="relative flex h-screen grow justify-center">
         <div className="absolute left-0 top-0 h-screen w-full" id="map" />
-        <Timer hidden={!(showTimer ?? true)} />
+        <Timer hidden={!(showTimer ?? false)} />
         <div className="absolute top-4 h-12 w-96 max-w-full px-1 lg:top-32">
           <FoundSummary
             className="mb-4 rounded-lg bg-white p-4 shadow-md lg:hidden"
             foundProportion={foundProportion}
             foundStationsPerLine={foundStationsPerLine}
             stationsPerLine={stationsPerLine}
-            defaultMinimized
+            defaultDensity="small"
             minimizable
             enabledLines={enabledLines}
             setEnabledLines={setEnabledLines}
-            showTimer={showTimer ?? true}
+            showTimer={showTimer ?? false}
             setShowTimer={setShowTimer}
           />
           <div className="flex gap-2 lg:gap-4">
@@ -981,10 +981,10 @@ export default function GamePage({
           foundStationsPerLine={foundStationsPerLine}
           stationsPerLine={stationsPerLine}
           minimizable
-          defaultMinimized
+          defaultDensity="full"
           enabledLines={enabledLines}
           setEnabledLines={setEnabledLines}
-          showTimer={showTimer ?? true}
+          showTimer={showTimer ?? false}
           setShowTimer={setShowTimer}
         />
         <hr className="my-4 w-full border-b border-zinc-100" />
