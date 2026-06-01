@@ -7,14 +7,22 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 // Start/Stop, then the time. Starts near the top, level with "% stations found".
 const MARGIN = 12 // px inset from the map edges while dragging
 const TOP_INIT = 24 // px from the top — matches the "% stations found" offset
+const BOTTOM_INIT = 28 // px gap from the bottom for the mobile default position
 
-export default function Timer() {
+export default function Timer({ hidden = false }: { hidden?: boolean }) {
   const [running, setRunning] = useState(false)
   const [elapsed, setElapsed] = useState(0) // ms
   const baseRef = useRef(0)
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
   const dragOff = useRef<{ x: number; y: number } | null>(null)
+
+  // Hiding the timer pauses it and preserves the elapsed time; the component
+  // stays mounted (rendered with display:none) so showing it again resumes from
+  // exactly where it left off, still paused.
+  useEffect(() => {
+    if (hidden) setRunning(false)
+  }, [hidden])
 
   // tick
   useEffect(() => {
@@ -30,13 +38,19 @@ export default function Timer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running])
 
-  // initial position: horizontally centred in the map area, near the top
+  // initial position: horizontally centred in the map area. On desktop it sits
+  // near the top (level with "% stations found"); on mobile it defaults to the
+  // bottom of the screen, out of the way of the controls at the top.
   useEffect(() => {
     if (pos || !ref.current) return
     const parent = ref.current.offsetParent as HTMLElement | null
     const pw = parent ? parent.clientWidth : window.innerWidth
+    const ph = parent ? parent.clientHeight : window.innerHeight
     const w = ref.current.offsetWidth || 160
-    setPos({ left: Math.max(MARGIN, (pw - w) / 2), top: TOP_INIT })
+    const h = ref.current.offsetHeight || 44
+    const isMobile = window.innerWidth < 1024 // Tailwind lg breakpoint
+    const top = isMobile ? Math.max(MARGIN, ph - h - BOTTOM_INIT) : TOP_INIT
+    setPos({ left: Math.max(MARGIN, (pw - w) / 2), top })
   }, [pos])
 
   const onHandleDown = useCallback((e: React.PointerEvent) => {
@@ -79,11 +93,12 @@ export default function Timer() {
   return (
     <div
       ref={ref}
-      style={
-        pos
+      style={{
+        ...(pos
           ? { left: pos.left, top: pos.top }
-          : { left: '50%', top: TOP_INIT, transform: 'translateX(-50%)' }
-      }
+          : { left: '50%', top: TOP_INIT, transform: 'translateX(-50%)' }),
+        ...(hidden ? { display: 'none' } : null),
+      }}
       className="absolute z-30 flex items-center gap-1.5 rounded-full bg-white px-2 py-1.5 shadow-md"
     >
       <button

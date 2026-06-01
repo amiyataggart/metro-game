@@ -43,10 +43,18 @@ const Input = ({
 
         if (!feature) return
         const [lng, lat] = feature.geometry.coordinates
+        // On mobile the on-screen keyboard covers the lower part of the map, so
+        // a plainly-centred marker lands behind it. The visualViewport shrinks
+        // by the keyboard height when it's open; shift the fly-to target up by
+        // half that so the marker sits midway between the keyboard top and the
+        // top of the screen. On desktop (no keyboard) this is a no-op.
+        const vv = typeof window !== 'undefined' ? window.visualViewport : null
+        const keyboard = vv ? Math.max(0, window.innerHeight - vv.height) : 0
         map.flyTo({
           center: [lng, lat],
           zoom: 13,
           duration: 200,
+          offset: keyboard > 0 ? [0, -keyboard / 2] : [0, 0],
         })
       }
     },

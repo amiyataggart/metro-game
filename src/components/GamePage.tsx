@@ -23,6 +23,24 @@ import { smoothRoutes } from '@/lib/smoothRoutes'
 import useTranslation from '@/hooks/useTranslation'
 import FoundList from '@/components/FoundList'
 import useNormalizeString from '@/hooks/useNormalizeString'
+import { detectCelebrations } from '@/lib/completion'
+import { flashLines } from '@/lib/mapFlash'
+import { useCelebration } from '@/hooks/useCelebration'
+
+// Parallel-ribbon separation + base line width, shared by the ribbon layers
+// (map init) and the completion flash (lib/mapFlash) so the glow tracks the
+// real offset ribbon. Static expressions → module scope.
+const LINE_OFFSET_EXPR = [
+  'interpolate', ['linear'], ['zoom'],
+  8.763, ['*', ['coalesce', ['get', 'laneOff'], 0], 2.925],
+  13, ['*', ['coalesce', ['get', 'laneOff'], 0], 5.0625],
+  18, ['*', ['coalesce', ['get', 'laneOff'], 0], 8.4375],
+  22, ['*', ['coalesce', ['get', 'laneOff'], 0], 10.125],
+] as unknown as maplibregl.ExpressionSpecification
+const LINE_WIDTH_EXPR = [
+  'interpolate', ['linear'], ['zoom'],
+  8.763, 2.925, 13, 5.0625, 18, 8.4375, 22, 10.125,
+] as unknown as maplibregl.ExpressionSpecification
 
 export default function GamePage({
   fc,
@@ -44,6 +62,16 @@ export default function GamePage({
   const [hoveredId, setHoveredId] = useState<number | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false)
+
+  const { celebrateLines, celebrateFinale } = useCelebration()
+  // Completion-celebration baseline. We diff the previous *real play state*
+  // against the current one; the first hydrated state is recorded silently
+  // (baselineReadyRef) so reloading a finished game never celebrates, and
+  // Reveal-all sets suppressCelebrationRef to skip its mass completion.
+  const prevPerLineRef = useRef<Record<string, number>>({})
+  const prevFoundCountRef = useRef<number>(0)
+  const baselineReadyRef = useRef<boolean>(false)
+  const suppressCelebrationRef = useRef<boolean>(false)
 
   // Settings — persisted to localStorage.
   const allLineKeys = useMemo(() => Object.keys(LINES), [LINES])
@@ -79,6 +107,12 @@ export default function GamePage({
     })
   const { value: showFoundLabels, set: setShowFoundLabels } =
     useLocalStorageValue<boolean>(`${CITY_NAME}-show-found-labels`, {
+      defaultValue: true,
+      initializeWithValue: false,
+    })
+  // Whether the draggable stopwatch shows over the map. On by default.
+  const { value: showTimer, set: setShowTimer } =
+    useLocalStorageValue<boolean>(`${CITY_NAME}-show-timer`, {
       defaultValue: true,
       initializeWithValue: false,
     })
@@ -310,18 +344,9 @@ export default function GamePage({
         // laneOff × the zoom-scaled line width so adjacent ribbons sit one width
         // apart — a CONSTANT screen amount at every zoom (never hide when zoomed
         // out) while geometry stays on the true track. +offset = right of line dir.
-        const lineOffset = [
-          'interpolate', ['linear'], ['zoom'],
-          8.763, ['*', ['coalesce', ['get', 'laneOff'], 0], 2.925],
-          13, ['*', ['coalesce', ['get', 'laneOff'], 0], 5.0625],
-          18, ['*', ['coalesce', ['get', 'laneOff'], 0], 8.4375],
-          22, ['*', ['coalesce', ['get', 'laneOff'], 0], 10.125],
-        ] as unknown as maplibregl.ExpressionSpecification
+        const lineOffset = LINE_OFFSET_EXPR
         // ~50% thicker than the previous pass; white stripes ~1/3 of that.
-        const lineWidth = [
-          'interpolate', ['linear'], ['zoom'],
-          8.763, 2.925, 13, 5.0625, 18, 8.4375, 22, 10.125,
-        ] as unknown as maplibregl.ExpressionSpecification
+        const lineWidth = LINE_WIDTH_EXPR
         const stripeWidth = [
           'interpolate', ['linear'], ['zoom'],
           8.763, 1.0125, 13, 1.6875, 18, 2.8125, 22, 3.375,
@@ -802,6 +827,86 @@ export default function GamePage({
     }
   }, [found, map])
 
+  // Completion celebrations: confetti + on-map flash when a line (or the whole
+  // visible network) hits 100% through genuine in-session play. See lib/completion.
+  useEffect(() => {
+    // Not hydrated from localStorage yet — nothing to compare against.
+    if (localFound == null) return
+
+    const advanceBaseline = () => {
+      prevPerLineRef.current = foundStationsPerLine
+      prevFoundCountRef.current = found.length
+    }
+
+    // First hydrated state (possibly an already-complete game): record a silent
+    // baseline and never celebrate it.
+    if (!baselineReadyRef.current) {
+      advanceBaseline()
+      baselineReadyRef.current = true
+      return
+    }
+    // Reveal-all: skip the mass completion but keep the baseline current.
+    if (suppressCelebrationRef.current) {
+      advanceBaseline()
+      suppressCelebrationRef.current = false
+      return
+    }
+
+    const { newlyCompleteLines, allJustCompleted } = detectCelebrations({
+      prevPerLine: prevPerLineRef.current,
+      perLine: foundStationsPerLine,
+      totals: stationsPerLine,
+      prevFoundCount: prevFoundCountRef.current,
+      foundCount: found.length,
+    })
+
+    // Fire confetti over the top-middle of the MAP element (so it isn't centred
+    // under the desktop sidebar), in window-normalised coords.
+    const region = (() => {
+      const el = typeof document !== 'undefined' ? document.getElementById('map') : null
+      const w = typeof window !== 'undefined' ? window.innerWidth : 1
+      const h = typeof window !== 'undefined' ? window.innerHeight : 1
+      if (!el) return undefined
+      const r = el.getBoundingClientRect()
+      return {
+        centerX: (r.left + r.width / 2) / w,
+        leftX: (r.left + r.width * 0.12) / w,
+        rightX: (r.left + r.width * 0.88) / w,
+        // Mid-map so the burst fills vertical space rather than hugging the top.
+        originY: (r.top + r.height * 0.55) / h,
+      }
+    })()
+
+    if (newlyCompleteLines.length) {
+      celebrateLines(newlyCompleteLines.map((k) => LINES[k]), region)
+      if (map) flashLines(map, newlyCompleteLines, {
+        lineOffset: LINE_OFFSET_EXPR,
+        lineWidth: LINE_WIDTH_EXPR,
+      })
+    }
+    if (allJustCompleted) {
+      const visible = Object.keys(stationsPerLine).filter((k) => stationsPerLine[k] > 0)
+      celebrateFinale(visible.map((k) => LINES[k]), region)
+      if (map) flashLines(map, visible, {
+        lineOffset: LINE_OFFSET_EXPR,
+        lineWidth: LINE_WIDTH_EXPR,
+      }, { finale: true })
+    }
+
+    // Always advance, even when nothing fired (e.g. a line toggled off), so the
+    // next real find diffs against an accurate baseline.
+    advanceBaseline()
+  }, [
+    localFound,
+    foundStationsPerLine,
+    stationsPerLine,
+    found.length,
+    map,
+    LINES,
+    celebrateLines,
+    celebrateFinale,
+  ])
+
   const revealAll = useCallback(() => {
     if (!confirm('Reveal every station on enabled lines? (Use "Start over" to reset.)'))
       return
@@ -809,6 +914,9 @@ export default function GamePage({
     for (const f of enabledFeatures) {
       if (typeof f.id === 'number') ids.push(f.id)
     }
+    // Mass completion — don't celebrate. The detection effect sees this flag,
+    // advances the baseline, and clears it.
+    suppressCelebrationRef.current = true
     setFound(ids)
     setIsNewPlayer(false)
   }, [enabledFeatures, setFound, setIsNewPlayer])
@@ -836,7 +944,7 @@ export default function GamePage({
     <div className="flex h-screen flex-row items-top justify-between">
       <div className="relative flex h-screen grow justify-center">
         <div className="absolute left-0 top-0 h-screen w-full" id="map" />
-        <Timer />
+        <Timer hidden={!(showTimer ?? true)} />
         <div className="absolute top-4 h-12 w-96 max-w-full px-1 lg:top-32">
           <FoundSummary
             className="mb-4 rounded-lg bg-white p-4 shadow-md lg:hidden"
@@ -847,6 +955,8 @@ export default function GamePage({
             minimizable
             enabledLines={enabledLines}
             setEnabledLines={setEnabledLines}
+            showTimer={showTimer ?? true}
+            setShowTimer={setShowTimer}
           />
           <div className="flex gap-2 lg:gap-4">
             <Input
@@ -874,6 +984,8 @@ export default function GamePage({
           defaultMinimized
           enabledLines={enabledLines}
           setEnabledLines={setEnabledLines}
+          showTimer={showTimer ?? true}
+          setShowTimer={setShowTimer}
         />
         <hr className="my-4 w-full border-b border-zinc-100" />
         <FoundList
