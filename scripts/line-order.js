@@ -25,7 +25,4 @@ module.exports = {
   Suffragette: 17,
   Liberty: 18,
   Thameslink: 19,
-  GreatNorthern: 20,
-  Southern: 21,
-  GatwickExpress: 22,
 }

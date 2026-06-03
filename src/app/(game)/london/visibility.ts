@@ -10,13 +10,8 @@ import type { LineString, MultiLineString, Point, Position } from 'geojson'
 import type { Line } from '@/lib/types'
 
 // 1. Whole services hard-hidden from the map, legend, settings, picker and
-//    score. Southern, Great Northern and Gatwick Express are fully disabled
-//    (remove from this set to bring them back).
-export const HIDDEN_LINES = new Set<string>([
-  'Southern',
-  'GreatNorthern',
-  'GatwickExpress',
-])
+//    score. Currently none — add a line key here to hide it from the game.
+export const HIDDEN_LINES = new Set<string>([])
 
 // 2. Thameslink: keep only the core network, trimming each branch at the named
 //    boundary station. "Beyond" = farther from central London, along that

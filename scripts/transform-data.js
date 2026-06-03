@@ -6,8 +6,7 @@
  *      Overground line names (Lioness, Mildmay, Windrush, Weaver, Suffragette,
  *      Liberty).
  *   2. Merges in National Rail TOC stations from stations-extras.json
- *      (produced by fetch-osm-routes.js): Thameslink, Great Northern, Gatwick
- *      Express, Southern.
+ *      (produced by fetch-osm-routes.js): Thameslink.
  *
  * Input:
  *   src/app/(game)/london/data/features.original.json

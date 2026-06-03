@@ -6,9 +6,7 @@
  *
  *   • Underground (11), DLR, Elizabeth line, 2024 Overground (6) — pulled
  *     from `route=subway / light_rail / train` relations matched by tags.
- *   • National Rail TOCs in the Govia Thameslink family: Thameslink, Great
- *     Northern, Gatwick Express, Southern — matched by relation name prefix
- *     and/or operator.
+ *   • National Rail: Thameslink — matched by relation name prefix.
  *
  * Parallel offsets: every OSM way is tracked across the lines that share it.
  * For each (way, line) pair we emit a LineString feature with an `offset`
@@ -54,9 +52,6 @@ const LINE_COLORS = {
   Suffragette: '#5BBD72',
   Liberty: '#7C878E',
   Thameslink: '#DD3399',
-  GreatNorthern: '#0067A5',
-  GatwickExpress: '#E0382F',
-  Southern: '#3FA34D',
 }
 
 // Ascending order roughly groups Underground > Overground/Rail > National Rail
@@ -66,7 +61,6 @@ const LINE_ORDER = {
   Jubilee: 5, Metropolitan: 6, Northern: 7, Piccadilly: 8, Victoria: 9,
   WaterlooAndCity: 10, ElizabethLine: 11, DLR: 12, Lioness: 13, Mildmay: 14,
   Windrush: 15, Weaver: 16, Suffragette: 17, Liberty: 18, Thameslink: 19,
-  GreatNorthern: 20, Southern: 21, GatwickExpress: 22,
 }
 
 // All matchers run against relation tags. The first match wins.
@@ -96,14 +90,6 @@ const RELATION_MATCHERS = [
   { lineKey: 'Liberty', test: (t) => t.ref === 'Liberty' },
   // National Rail TOCs — match by relation name prefix.
   { lineKey: 'Thameslink', test: (t) => /^Thameslink:/.test(t.name || '') },
-  { lineKey: 'GreatNorthern', test: (t) => /^Great Northern:/.test(t.name || '') },
-  { lineKey: 'GatwickExpress', test: (t) => /^Gatwick Express:/.test(t.name || '') },
-  { lineKey: 'Southern',
-    test: (t) =>
-      /^Southern:/.test(t.name || '') ||
-      /^Train Southern/.test(t.name || '') ||
-      /^SN:/.test(t.name || '') ||
-      (t.operator === 'Southern' && t.route === 'train') },
 ]
 
 function tagsToLineKey(tags) {
@@ -113,9 +99,7 @@ function tagsToLineKey(tags) {
 
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter'
 
-// Single query for everything we need. Note operator alternation in regexes
-// avoids accidentally matching Southern Railway (India), Southern California,
-// etc. — UK-only by virtue of operator/ref patterns.
+// Single query for everything we need.
 const OVERPASS_QUERY = `
 [out:json][timeout:240];
 (
@@ -124,11 +108,6 @@ const OVERPASS_QUERY = `
   relation["route"="train"]["ref"~"^Elizabeth"];
   relation["route"="light_rail"]["network"~"Docklands"];
   relation["route"="train"]["name"~"^Thameslink:"];
-  relation["route"="train"]["name"~"^Great Northern:"];
-  relation["route"="train"]["name"~"^Gatwick Express:"];
-  relation["route"="train"]["name"~"^Southern:"];
-  relation["route"="train"]["name"~"^Train Southern"];
-  relation["route"="train"]["operator"="Southern"];
 );
 out geom;
 >;

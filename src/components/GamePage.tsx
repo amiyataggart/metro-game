@@ -233,7 +233,7 @@ export default function GamePage({
   const zBands = useMemo(() => {
     const ug = allLineKeys.filter((k) => (LINES[k].order ?? 99) <= 10)
     return [
-      { id: 'nr', keys: ['Thameslink', 'GreatNorthern', 'Southern', 'GatwickExpress'] },
+      { id: 'nr', keys: ['Thameslink'] },
       { id: 'og', keys: ['Lioness', 'Mildmay', 'Windrush', 'Weaver', 'Suffragette', 'Liberty'] },
       { id: 'dlr', keys: ['DLR'] },
       { id: 'eliz', keys: ['ElizabethLine'] },

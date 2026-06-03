@@ -26,7 +26,7 @@ const COLOR = {
   Northern: '#000000', Piccadilly: '#003688', Victoria: '#0098d4', WaterlooAndCity: '#84CAB3',
   ElizabethLine: '#6950A1', DLR: '#00afad', Lioness: '#FAA61A', Mildmay: '#3DB6E1',
   Windrush: '#DA291C', Weaver: '#823065', Suffragette: '#5BBD72', Liberty: '#7C878E',
-  Thameslink: '#D182A0', GreatNorthern: '#E8A33A', Southern: '#3FA34D', GatwickExpress: '#1C1C1C',
+  Thameslink: '#D182A0',
 }
 
 // [W,S,E,N] probe bboxes

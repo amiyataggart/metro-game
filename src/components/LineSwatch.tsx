@@ -3,10 +3,10 @@ import { Line } from '@/lib/types'
 /**
  * Horizontal bar swatch matching how the line renders on the map:
  *   - Underground tube lines: solid colored bar
- *   - Overground / Elizabeth / DLR / Southern / Great Northern: colored bar
- *     with a thin solid white stripe down the middle
- *   - Thameslink / Gatwick Express: colored bar with a dashed white stripe
- *     down the middle (gaps reveal the line color)
+ *   - Overground / Elizabeth / DLR: colored bar with a thin solid white
+ *     stripe down the middle
+ *   - Thameslink: colored bar with a dashed white stripe down the middle
+ *     (gaps reveal the line color)
  */
 export default function LineSwatch({
   line,

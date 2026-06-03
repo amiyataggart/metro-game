@@ -155,30 +155,6 @@ export const LINES: {
     order: 19,
     stripe: 'dashed',
   },
-  GreatNorthern: {
-    name: 'Great Northern',
-    color: '#E8A33A',
-    backgroundColor: '#7a5419',
-    textColor: '#222',
-    order: 20,
-    stripe: 'solid',
-  },
-  Southern: {
-    name: 'Southern',
-    color: '#3FA34D',
-    backgroundColor: '#1f5226',
-    textColor: '#fff',
-    order: 21,
-    stripe: 'solid',
-  },
-  GatwickExpress: {
-    name: 'Gatwick Express',
-    color: '#1C1C1C',
-    backgroundColor: '#000000',
-    textColor: '#fff',
-    order: 22,
-    stripe: 'dashed',
-  },
 }
 
 export const METADATA: Metadata = {
@@ -205,10 +181,9 @@ export const MAP_CONFIG: Omit<MapOptions, 'container'> = {
   // (The user can still zoom/pan out to the full network within maxBounds.)
   center: [-0.1247, 51.5085],
   zoom: 12.4,
-  // Fit the currently-visible network with a slight margin (Great Northern's
-  // King's Lynn is deprecated). Thameslink sets the N–S extent (Peterborough
-  // ≈ 52.58°N to Brighton ≈ 50.83°N); the Elizabeth line (Reading ≈ -0.97°W)
-  // sets the western edge, so the box is slightly wider west than Thameslink.
+  // Fit the currently-visible network with a slight margin. Thameslink sets the
+  // N–S extent (Peterborough ≈ 52.58°N to Brighton ≈ 50.83°N); the Elizabeth
+  // line (Reading ≈ -0.97°W) sets the western edge.
   maxBounds: [
     [-1.1, 50.75],
     [0.73, 52.66],
