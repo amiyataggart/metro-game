@@ -17,21 +17,20 @@ const GROUPS: { name: string; lines: string[] }[] = [
   },
   {
     name: 'London Overground',
-    lines: ['Lioness', 'Mildmay', 'Windrush', 'Weaver', 'Suffragette', 'Liberty'],
+    lines: ['Liberty', 'Lioness', 'Mildmay', 'Suffragette', 'Weaver', 'Windrush'],
   },
   { name: 'Elizabeth Line (Crossrail)', lines: ['ElizabethLine'] },
   { name: 'Docklands Light Railway (DLR)', lines: ['DLR'] },
+  { name: 'London Trams', lines: ['Tramlink'] },
   { name: 'Thameslink', lines: ['Thameslink'] },
   {
-    name: 'State-owned National Rail',
+    name: 'National Rail',
+    // alphabetical by display name (c2c, Chiltern Railways, East Midlands…)
     lines: [
-      'SouthWesternRailway', 'C2c', 'GreaterAnglia', 'Southeastern',
-      'SoutheasternHighSpeed', 'Southern', 'GreatNorthern', 'GatwickExpress',
+      'C2c', 'Chiltern', 'EastMidlandsRailway', 'GatwickExpress', 'GreatNorthern',
+      'GreatWesternRailway', 'GreaterAnglia', 'HeathrowExpress', 'SouthWesternRailway',
+      'Southeastern', 'SoutheasternHighSpeed', 'Southern',
     ],
-  },
-  {
-    name: 'Privately-owned National Rail',
-    lines: ['Chiltern', 'EastMidlandsRailway', 'GreatWesternRailway', 'HeathrowExpress'],
   },
 ]
 
