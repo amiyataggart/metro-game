@@ -42,6 +42,9 @@ export interface Line {
   // (Overground, Elizabeth, DLR); 'dashed' draws an interrupted white core so
   // the line's own color shows through the gaps (Thameslink).
   stripe?: 'solid' | 'dashed'
+  // Override the stripe colour (defaults to white). Used by Southeastern high
+  // speed, drawn as a blue line with yellow dashes on the rail map.
+  stripeColor?: string
 }
 
 export interface Config {

@@ -77,15 +77,16 @@ export default function GamePage({
   const allLineKeys = useMemo(() => Object.keys(LINES), [LINES])
   const defaultEnabled = useMemo(() => {
     // Everything on by default (Underground, Overground, Elizabeth, DLR)
-    // except Thameslink, which starts off and is toggled on via the picker.
+    // except Thameslink and the National Rail TOCs, which start off and are
+    // toggled on via the picker (config order >= 19 = Thameslink + National Rail).
     const o: Record<string, boolean> = {}
-    for (const k of allLineKeys) o[k] = k !== 'Thameslink'
+    for (const k of allLineKeys) o[k] = (LINES[k]?.order ?? 0) < 19
     return o
-  }, [allLineKeys])
+  }, [allLineKeys, LINES])
 
   const { value: storedEnabled, set: setEnabledLines } = useLocalStorageValue<
     Record<string, boolean>
-  >(`${CITY_NAME}-enabled-lines-v4`, {
+  >(`${CITY_NAME}-enabled-lines-v5`, {
     defaultValue: defaultEnabled,
     initializeWithValue: false,
   })
@@ -233,7 +234,15 @@ export default function GamePage({
   const zBands = useMemo(() => {
     const ug = allLineKeys.filter((k) => (LINES[k].order ?? 99) <= 10)
     return [
-      { id: 'nr', keys: ['Thameslink'] },
+      {
+        id: 'nr',
+        keys: [
+          'Thameslink',
+          'SouthWesternRailway', 'C2c', 'GreaterAnglia', 'Southeastern',
+          'SoutheasternHighSpeed', 'Southern', 'GreatNorthern', 'GatwickExpress',
+          'Chiltern', 'EastMidlandsRailway', 'GreatWesternRailway', 'HeathrowExpress',
+        ],
+      },
       { id: 'og', keys: ['Lioness', 'Mildmay', 'Windrush', 'Weaver', 'Suffragette', 'Liberty'] },
       { id: 'dlr', keys: ['DLR'] },
       { id: 'eliz', keys: ['ElizabethLine'] },
@@ -404,13 +413,20 @@ export default function GamePage({
             })
           }
           if (dashes.length) {
+            // White core by default; lines with a stripeColor (Southeastern
+            // high speed → yellow) override per-feature.
+            const dashColor = [
+              'match', ['get', 'line'],
+              ...dashes.flatMap((k) => [[k], LINES[k].stripeColor ?? '#ffffff']),
+              '#ffffff',
+            ] as unknown as maplibregl.ExpressionSpecification
             m.addLayer({
               id: `lines-${band.id}-stripe-dashed`,
               type: 'line',
               source: 'lines',
               filter: inKeys(dashes),
               paint: {
-                'line-color': '#ffffff',
+                'line-color': dashColor,
                 'line-width': stripeWidth,
                 'line-dasharray': [3, 2.5],
                 'line-offset': lineOffset,

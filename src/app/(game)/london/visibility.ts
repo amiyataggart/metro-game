@@ -8,6 +8,35 @@
  */
 import type { LineString, MultiLineString, Point, Position } from 'geojson'
 import type { Line } from '@/lib/types'
+import { DISPLAY_BOUNDS } from './config'
+
+// 0. Display-bounds clip. Lines + stations are stored in full (National Rail
+//    routes run far past London); only the portion inside DISPLAY_BOUNDS is
+//    shown and playable. Driven entirely by the bounds, so widening the box
+//    later reveals more of the stored network with no re-fetch.
+const [[MIN_LNG, MIN_LAT], [MAX_LNG, MAX_LAT]] = DISPLAY_BOUNDS
+function inDisplayBounds(c: Position): boolean {
+  return c[0] >= MIN_LNG && c[0] <= MAX_LNG && c[1] >= MIN_LAT && c[1] <= MAX_LAT
+}
+// Clip a coordinate sequence to maximal runs that lie inside the box, keeping
+// the first out-of-bounds vertex on each side so the line reaches the edge
+// rather than stopping short of it.
+function clipRunsToBounds(coords: Position[]): Position[][] {
+  const runs: Position[][] = []
+  let run: Position[] = []
+  for (let i = 0; i < coords.length; i++) {
+    if (inDisplayBounds(coords[i])) {
+      if (run.length === 0 && i > 0) run.push(coords[i - 1]) // lead-in vertex
+      run.push(coords[i])
+    } else if (run.length) {
+      run.push(coords[i]) // trailing vertex so the line exits the frame
+      runs.push(run)
+      run = []
+    }
+  }
+  if (run.length) runs.push(run)
+  return runs.filter((r) => r.length >= 2)
+}
 
 // 1. Whole services hard-hidden from the map, legend, settings, picker and
 //    score. Currently none — add a line key here to hide it from the game.
@@ -58,6 +87,7 @@ export function visibleStationFeatures<
   return features.filter((f) => {
     const line = f.properties.line
     if (!line || HIDDEN_LINES.has(line)) return false
+    if (!inDisplayBounds(f.geometry.coordinates)) return false
     if (THAMESLINK_TRIM && line === THAMESLINK) {
       return thameslinkInExtent(f.geometry.coordinates)
     }
@@ -73,23 +103,42 @@ export function visibleRouteFeatures<
   for (const f of features) {
     const line = f.properties.line
     if (line && HIDDEN_LINES.has(line)) continue
-    if (THAMESLINK_TRIM && line === THAMESLINK && f.geometry.type === 'LineString') {
-      // Keep maximal runs of in-extent vertices (clips the long-distance tails).
-      let run: Position[] = []
-      for (const c of f.geometry.coordinates) {
-        if (thameslinkInExtent(c)) {
-          run.push(c)
-        } else if (run.length) {
-          if (run.length >= 2) out.push(makeRun(f, run))
-          run = []
-        }
-      }
-      if (run.length >= 2) out.push(makeRun(f, run))
-      continue
+
+    // Flatten to one or more coordinate sequences (LineString → 1, MLS → N).
+    const seqs: Position[][] =
+      f.geometry.type === 'MultiLineString'
+        ? (f.geometry.coordinates as Position[][])
+        : [f.geometry.coordinates as Position[]]
+
+    // Optional Thameslink bearing/distance trim (off by default): split each
+    // sequence into maximal in-extent runs before the bounds clip.
+    const trimmed: Position[][] =
+      THAMESLINK_TRIM && line === THAMESLINK
+        ? seqs.flatMap((seq) => splitRunsBy(seq, thameslinkInExtent))
+        : seqs
+
+    // Clip every line to the display box. Lines fully inside (all existing
+    // ones) come back as a single unchanged run.
+    for (const seq of trimmed) {
+      for (const run of clipRunsToBounds(seq)) out.push(makeRun(f, run))
     }
-    out.push(f)
   }
   return out
+}
+
+// Split a coordinate sequence into maximal runs where pred holds.
+function splitRunsBy(coords: Position[], pred: (c: Position) => boolean): Position[][] {
+  const runs: Position[][] = []
+  let run: Position[] = []
+  for (const c of coords) {
+    if (pred(c)) run.push(c)
+    else if (run.length) {
+      runs.push(run)
+      run = []
+    }
+  }
+  if (run.length) runs.push(run)
+  return runs
 }
 
 function makeRun<T extends { geometry: LineString | MultiLineString }>(

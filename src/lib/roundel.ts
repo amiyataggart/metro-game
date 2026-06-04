@@ -28,11 +28,12 @@ export function roundelSvg(line: Line, opts?: { pct?: number; px?: number }): st
   const px = opts?.px ?? S
   const dashOffset = circumference * (1 - pct)
 
+  const stripeColor = line.stripeColor ?? '#ffffff'
   const stripe =
     line.stripe === 'solid'
-      ? `<line x1="0" x2="${S}" y1="${cy}" y2="${cy}" stroke="#ffffff" stroke-width="${stripeW}" stroke-linecap="butt" />`
+      ? `<line x1="0" x2="${S}" y1="${cy}" y2="${cy}" stroke="${stripeColor}" stroke-width="${stripeW}" stroke-linecap="butt" />`
       : line.stripe === 'dashed'
-        ? `<line x1="0" x2="${S}" y1="${cy}" y2="${cy}" stroke="#ffffff" stroke-width="${stripeW}" stroke-dasharray="${stripeW * 2.4} ${stripeW * 1.8}" stroke-linecap="butt" />`
+        ? `<line x1="0" x2="${S}" y1="${cy}" y2="${cy}" stroke="${stripeColor}" stroke-width="${stripeW}" stroke-dasharray="${stripeW * 2.4} ${stripeW * 1.8}" stroke-linecap="butt" />`
         : ''
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}" width="${px}" height="${px}">` +
@@ -47,7 +48,7 @@ const imageCache = new Map<string, { src: string; width: number; height: number 
 /** Cached data-URL image descriptor for tsparticles-confetti image particles.
  *  Built once per line key (keyed by colour + stripe so palette changes refresh). */
 export function roundelImage(line: Line): { src: string; width: number; height: number } {
-  const key = `${line.color}|${line.stripe ?? 'none'}`
+  const key = `${line.color}|${line.stripe ?? 'none'}|${line.stripeColor ?? 'white'}`
   const cached = imageCache.get(key)
   if (cached) return cached
   const svg = roundelSvg(line, { pct: 1, px: 128 })

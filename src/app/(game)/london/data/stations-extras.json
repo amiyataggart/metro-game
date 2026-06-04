@@ -6137,5 +6137,6771 @@
       51.582907
     ],
     "line": "Weaver"
+  },
+  {
+    "name": "London Paddington",
+    "coords": [
+      -0.177434,
+      51.5164607
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Reading",
+    "coords": [
+      -0.9742431,
+      51.459165
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Taunton",
+    "coords": [
+      -3.103852,
+      51.0232606
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Tiverton Parkway",
+    "coords": [
+      -3.3597202,
+      50.9170609
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Exeter St Davids",
+    "coords": [
+      -3.5438009,
+      50.729202
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Newton Abbot",
+    "coords": [
+      -3.5990951,
+      50.5301298
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Totnes",
+    "coords": [
+      -3.6887282,
+      50.4358491
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Plymouth",
+    "coords": [
+      -4.1437763,
+      50.3779239
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Liskeard",
+    "coords": [
+      -4.4695429,
+      50.446807
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Bodmin Parkway",
+    "coords": [
+      -4.6627507,
+      50.4459907
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Lostwithiel",
+    "coords": [
+      -4.6660394,
+      50.4071305
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Par",
+    "coords": [
+      -4.7045824,
+      50.3557144
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "St Austell",
+    "coords": [
+      -4.7893305,
+      50.3395824
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Truro",
+    "coords": [
+      -5.0644793,
+      50.2639754
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Redruth",
+    "coords": [
+      -5.2259214,
+      50.2330956
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Camborne",
+    "coords": [
+      -5.2977149,
+      50.2102331
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "St Erth",
+    "coords": [
+      -5.4439084,
+      50.1705581
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Penzance",
+    "coords": [
+      -5.5326995,
+      50.1220762
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Cardiff Central",
+    "coords": [
+      -3.1790274,
+      51.4758729
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Newport",
+    "coords": [
+      -2.9985571,
+      51.590121
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Bristol Parkway",
+    "coords": [
+      -2.5420923,
+      51.5138312
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Swindon",
+    "coords": [
+      -1.7853526,
+      51.5657207
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Gatwick Airport",
+    "coords": [
+      -0.1608034,
+      51.1570616
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Redhill",
+    "coords": [
+      -0.1646395,
+      51.2416907
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Reigate",
+    "coords": [
+      -0.2043056,
+      51.2419535
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Dorking Deepdene",
+    "coords": [
+      -0.3243719,
+      51.2387319
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Guildford",
+    "coords": [
+      -0.5820064,
+      51.2380965
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "North Camp",
+    "coords": [
+      -0.7309951,
+      51.275832
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Blackwater",
+    "coords": [
+      -0.7775459,
+      51.3321271
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Wokingham",
+    "coords": [
+      -0.8433706,
+      51.4125065
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Slough",
+    "coords": [
+      -0.5921859,
+      51.5120118
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Windsor and Eton Central",
+    "coords": [
+      -0.6103467,
+      51.4832256
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Didcot Parkway",
+    "coords": [
+      -1.2426332,
+      51.6110889
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Chippenham",
+    "coords": [
+      -2.1157997,
+      51.4623433
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Bath Spa",
+    "coords": [
+      -2.3565442,
+      51.3776181
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Bristol Temple Meads",
+    "coords": [
+      -2.5795289,
+      51.4490717
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Exeter Central",
+    "coords": [
+      -3.5331267,
+      50.7265347
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Newton St Cyres",
+    "coords": [
+      -3.5892398,
+      50.7787974
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Crediton",
+    "coords": [
+      -3.6475657,
+      50.783325
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Yeoford",
+    "coords": [
+      -3.7272258,
+      50.7769646
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Copplestone",
+    "coords": [
+      -3.7514582,
+      50.8145175
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Morchard Road",
+    "coords": [
+      -3.7763438,
+      50.8318427
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Lapford",
+    "coords": [
+      -3.8112018,
+      50.8572004
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Eggesford",
+    "coords": [
+      -3.875861,
+      50.8879718
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Kings Nympton",
+    "coords": [
+      -3.9055431,
+      50.9366189
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Portsmouth Arms",
+    "coords": [
+      -3.9517817,
+      50.9569273
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Umberleigh",
+    "coords": [
+      -3.9827706,
+      50.9967959
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Chapelton",
+    "coords": [
+      -4.0244414,
+      51.0161613
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Barnstaple",
+    "coords": [
+      -4.0633567,
+      51.0737784
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Twyford",
+    "coords": [
+      -0.8637292,
+      51.4754351
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Wargrave",
+    "coords": [
+      -0.8767326,
+      51.4985454
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Shiplake",
+    "coords": [
+      -0.8823208,
+      51.5111375
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Bridgend",
+    "coords": [
+      -3.5755698,
+      51.5075105
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Port Talbot Parkway",
+    "coords": [
+      -3.7818074,
+      51.5923997
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Neath",
+    "coords": [
+      -3.8073353,
+      51.6622183
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Swansea",
+    "coords": [
+      -3.9406573,
+      51.6255535
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Theale",
+    "coords": [
+      -1.0743463,
+      51.433331
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Thatcham",
+    "coords": [
+      -1.2424568,
+      51.393867
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Newbury",
+    "coords": [
+      -1.3230191,
+      51.3974512
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Kintbury",
+    "coords": [
+      -1.4456774,
+      51.4026006
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Hungerford",
+    "coords": [
+      -1.5114431,
+      51.4146928
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Bedwyn",
+    "coords": [
+      -1.5988913,
+      51.379473
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Pewsey",
+    "coords": [
+      -1.7706653,
+      51.3422307
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Westbury",
+    "coords": [
+      -2.1997293,
+      51.266346
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Frome",
+    "coords": [
+      -2.3099468,
+      51.2274192
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Oxford",
+    "coords": [
+      -1.2702618,
+      51.7534418
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Hereford",
+    "coords": [
+      -2.7085343,
+      52.0616327
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Ledbury",
+    "coords": [
+      -2.4249803,
+      52.0452014
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Colwall",
+    "coords": [
+      -2.35678,
+      52.0798345
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Great Malvern",
+    "coords": [
+      -2.3180889,
+      52.1098754
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Malvern Link",
+    "coords": [
+      -2.3196613,
+      52.1264843
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Worcester Foregate Street",
+    "coords": [
+      -2.221369,
+      52.1951717
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Worcester Shrub Hill",
+    "coords": [
+      -2.2090075,
+      52.1945478
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Pershore",
+    "coords": [
+      -2.072386,
+      52.1307648
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Evesham",
+    "coords": [
+      -1.9465751,
+      52.0983275
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Honeybourne",
+    "coords": [
+      -1.8334747,
+      52.1016141
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Moreton-in-Marsh",
+    "coords": [
+      -1.7002395,
+      51.992191
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Kingham",
+    "coords": [
+      -1.6282325,
+      51.9019583
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Charlbury",
+    "coords": [
+      -1.4894856,
+      51.8721296
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Hanborough",
+    "coords": [
+      -1.3726801,
+      51.8246752
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Reading West",
+    "coords": [
+      -0.9906927,
+      51.4546386
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Mortimer",
+    "coords": [
+      -1.0356117,
+      51.3720549
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Bramley",
+    "coords": [
+      -1.0607735,
+      51.3299918
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Basingstoke",
+    "coords": [
+      -1.086877,
+      51.2688532
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Henley-on-Thames",
+    "coords": [
+      -0.9001336,
+      51.5343231
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Crowthorne",
+    "coords": [
+      -0.8190104,
+      51.366126
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Sandhurst",
+    "coords": [
+      -0.8034443,
+      51.3463627
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Farnborough North",
+    "coords": [
+      -0.7428433,
+      51.3020791
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Ash",
+    "coords": [
+      -0.7122503,
+      51.2494815
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Shalford",
+    "coords": [
+      -0.5658111,
+      51.2144148
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Chilworth",
+    "coords": [
+      -0.5237885,
+      51.2152369
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Gomshall",
+    "coords": [
+      -0.4413326,
+      51.2195352
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Dorking West",
+    "coords": [
+      -0.3384264,
+      51.2364461
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Betchworth",
+    "coords": [
+      -0.2669755,
+      51.248163
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Maidenhead",
+    "coords": [
+      -0.7216136,
+      51.5186573
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "West Ealing",
+    "coords": [
+      -0.3215205,
+      51.5135439
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Drayton Green",
+    "coords": [
+      -0.3302471,
+      51.516613
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Castle Bar Park",
+    "coords": [
+      -0.3316095,
+      51.5230631
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "South Greenford",
+    "coords": [
+      -0.3365632,
+      51.5333968
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Greenford",
+    "coords": [
+      -0.3451429,
+      51.5421961
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Furze Platt",
+    "coords": [
+      -0.7283203,
+      51.5335608
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Cookham",
+    "coords": [
+      -0.7221968,
+      51.5574844
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Bourne End",
+    "coords": [
+      -0.7104005,
+      51.5770679
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Marlow",
+    "coords": [
+      -0.7668556,
+      51.5711327
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Cheltenham Spa",
+    "coords": [
+      -2.100834,
+      51.8963553
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Gloucester",
+    "coords": [
+      -2.2381854,
+      51.8653596
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Stonehouse",
+    "coords": [
+      -2.2791024,
+      51.7457636
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Stroud platform 1",
+    "coords": [
+      -2.2191477,
+      51.744481
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Kemble",
+    "coords": [
+      -2.0230171,
+      51.6767866
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Stroud platform 2",
+    "coords": [
+      -2.2192049,
+      51.7444764
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Yate",
+    "coords": [
+      -2.4325272,
+      51.5407763
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Ashchurch",
+    "coords": [
+      -2.1087547,
+      51.9990252
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Falmouth Docks",
+    "coords": [
+      -5.0555201,
+      50.150906
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Falmouth Town",
+    "coords": [
+      -5.0644897,
+      50.1483708
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Penmere",
+    "coords": [
+      -5.0828598,
+      50.1499899
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Penryn",
+    "coords": [
+      -5.1113114,
+      50.1703256
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Perranwell",
+    "coords": [
+      -5.11256,
+      50.2164008
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Llanelli",
+    "coords": [
+      -4.1610556,
+      51.6737603
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Pembrey and Burry Port",
+    "coords": [
+      -4.2489624,
+      51.6840479
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Carmarthen",
+    "coords": [
+      -4.3057976,
+      51.8533272
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Melksham",
+    "coords": [
+      -2.1445636,
+      51.3803255
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Trowbridge",
+    "coords": [
+      -2.2142736,
+      51.320008
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Weymouth",
+    "coords": [
+      -2.4557777,
+      50.6170512
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Upwey",
+    "coords": [
+      -2.4660892,
+      50.6484157
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Dorchester West",
+    "coords": [
+      -2.4430073,
+      50.7116077
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Maiden Newton",
+    "coords": [
+      -2.5699081,
+      50.7803798
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Chetnole",
+    "coords": [
+      -2.5729252,
+      50.8662431
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Yetminster",
+    "coords": [
+      -2.5737838,
+      50.8956902
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Thornford",
+    "coords": [
+      -2.5791301,
+      50.9106801
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Yeovil Pen Mill",
+    "coords": [
+      -2.6125081,
+      50.9450782
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Castle Cary",
+    "coords": [
+      -2.5227177,
+      51.0996232
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Bruton",
+    "coords": [
+      -2.4468037,
+      51.1118283
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Bradford-on-Avon",
+    "coords": [
+      -2.2525958,
+      51.3447923
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Oldfield Park",
+    "coords": [
+      -2.3801157,
+      51.3791905
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Keynsham",
+    "coords": [
+      -2.4962599,
+      51.418204
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Filton Abbey Wood",
+    "coords": [
+      -2.5639045,
+      51.5032106
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Newbury Racecourse",
+    "coords": [
+      -1.3067359,
+      51.3987891
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Midgham",
+    "coords": [
+      -1.1783719,
+      51.3960936
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Aldermaston",
+    "coords": [
+      -1.1364507,
+      51.40229
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Weston-super-Mare",
+    "coords": [
+      -2.9716663,
+      51.3445549
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Weston Milton",
+    "coords": [
+      -2.9427804,
+      51.3484056
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Worle",
+    "coords": [
+      -2.9091455,
+      51.3579409
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Yatton",
+    "coords": [
+      -2.8279595,
+      51.3908083
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Nailsea and Backwell",
+    "coords": [
+      -2.7498854,
+      51.4196466
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Bridgwater",
+    "coords": [
+      -2.9902859,
+      51.127841
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Highbridge and Burnham",
+    "coords": [
+      -2.972113,
+      51.2178771
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Patchway",
+    "coords": [
+      -2.5623236,
+      51.5257718
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "Severn Tunnel Junction",
+    "coords": [
+      -2.7770881,
+      51.5843266
+    ],
+    "line": "GreatWesternRailway"
+  },
+  {
+    "name": "London Marylebone",
+    "coords": [
+      -0.1627733,
+      51.5232805
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "High Wycombe",
+    "coords": [
+      -0.745562,
+      51.629739
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Bicester North",
+    "coords": [
+      -1.1499566,
+      51.9034655
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Banbury",
+    "coords": [
+      -1.3284489,
+      52.0613252
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Leamington Spa",
+    "coords": [
+      -1.5377695,
+      52.284649
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Warwick",
+    "coords": [
+      -1.5840482,
+      52.2866392
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Warwick Parkway",
+    "coords": [
+      -1.6136598,
+      52.286243
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Dorridge",
+    "coords": [
+      -1.7528182,
+      52.3718665
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Solihull",
+    "coords": [
+      -1.7896718,
+      52.4150218
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Birmingham Moor Street",
+    "coords": [
+      -1.8919731,
+      52.4789265
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Birmingham Snow Hill",
+    "coords": [
+      -1.9004368,
+      52.4843358
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Aylesbury",
+    "coords": [
+      -0.8150778,
+      51.8136146
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Little Kimble",
+    "coords": [
+      -0.8085478,
+      51.7522565
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Monks Risborough",
+    "coords": [
+      -0.8292942,
+      51.7358528
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Princes Risborough",
+    "coords": [
+      -0.8440085,
+      51.7178501
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Gerrards Cross",
+    "coords": [
+      -0.5547415,
+      51.5887348
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Denham",
+    "coords": [
+      -0.4974258,
+      51.57874
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "West Ruislip",
+    "coords": [
+      -0.4360307,
+      51.5693218
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Northolt Park",
+    "coords": [
+      -0.3587979,
+      51.557598
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Wembley Stadium",
+    "coords": [
+      -0.2837834,
+      51.5542732
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Harrow-on-the-Hill",
+    "coords": [
+      -0.3371845,
+      51.5792326
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Rickmansworth",
+    "coords": [
+      -0.4735861,
+      51.6402049
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Chorleywood",
+    "coords": [
+      -0.5183252,
+      51.6541625
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Chalfont & Latimer",
+    "coords": [
+      -0.561223,
+      51.6681
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Amersham",
+    "coords": [
+      -0.6080537,
+      51.6740585
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Great Missenden",
+    "coords": [
+      -0.709528,
+      51.7037706
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Wendover",
+    "coords": [
+      -0.7482342,
+      51.7620637
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Stoke Mandeville",
+    "coords": [
+      -0.7846722,
+      51.788118
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Aylesbury Vale Parkway",
+    "coords": [
+      -0.8599033,
+      51.8311595
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Beaconsfield",
+    "coords": [
+      -0.6433034,
+      51.6114233
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Seer Green and Jordans",
+    "coords": [
+      -0.6073095,
+      51.6096469
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Denham Golf Club",
+    "coords": [
+      -0.5182671,
+      51.5806433
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "South Ruislip",
+    "coords": [
+      -0.3995206,
+      51.55726
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Sudbury Hill Harrow",
+    "coords": [
+      -0.3361733,
+      51.5585626
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Haddenham and Thame Parkway",
+    "coords": [
+      -0.9425829,
+      51.7713763
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Oxford",
+    "coords": [
+      -1.2702377,
+      51.7539662
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Oxford Parkway",
+    "coords": [
+      -1.2747304,
+      51.8042008
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Bicester Village",
+    "coords": [
+      -1.1493494,
+      51.8924663
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Islip",
+    "coords": [
+      -1.2377048,
+      51.8261369
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Stratford-upon-Avon",
+    "coords": [
+      -1.7165785,
+      52.1945032
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Stratford-upon-Avon Parkway",
+    "coords": [
+      -1.7309315,
+      52.2068103
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Wilmcote",
+    "coords": [
+      -1.7558056,
+      52.2225619
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Bearley",
+    "coords": [
+      -1.7497528,
+      52.2449688
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Claverdon",
+    "coords": [
+      -1.6964058,
+      52.2771485
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Hatton",
+    "coords": [
+      -1.6733405,
+      52.2951017
+    ],
+    "line": "Chiltern"
+  },
+  {
+    "name": "Brockenhurst",
+    "coords": [
+      -1.5736288,
+      50.816386
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Lymington Town",
+    "coords": [
+      -1.5370862,
+      50.7610847
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Lymington Pier",
+    "coords": [
+      -1.5293235,
+      50.7576921
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Salisbury",
+    "coords": [
+      -1.8053319,
+      51.070611
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Dean",
+    "coords": [
+      -1.6328605,
+      51.0422946
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Mottisfont & Dunbridge",
+    "coords": [
+      -1.5462937,
+      51.0337379
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Romsey",
+    "coords": [
+      -1.4934122,
+      50.9927855
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Redbridge",
+    "coords": [
+      -1.4695938,
+      50.9195494
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Millbrook",
+    "coords": [
+      -1.4327458,
+      50.9111185
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Southampton Central",
+    "coords": [
+      -1.4141898,
+      50.9075619
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "St Denys",
+    "coords": [
+      -1.3880485,
+      50.9221935
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Swaythling",
+    "coords": [
+      -1.3761476,
+      50.9414731
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Southampton Airport Parkway",
+    "coords": [
+      -1.3629547,
+      50.9507106
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Eastleigh",
+    "coords": [
+      -1.349964,
+      50.9690746
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Chandler's Ford",
+    "coords": [
+      -1.3859792,
+      50.9842576
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "London Waterloo",
+    "coords": [
+      -0.1138342,
+      51.5032496
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Clapham Junction",
+    "coords": [
+      -0.1717302,
+      51.4645885
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Richmond",
+    "coords": [
+      -0.3018689,
+      51.4629594
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Twickenham",
+    "coords": [
+      -0.3297382,
+      51.4501158
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Feltham",
+    "coords": [
+      -0.4104829,
+      51.447781
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Staines",
+    "coords": [
+      -0.5034012,
+      51.4324167
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Egham",
+    "coords": [
+      -0.546762,
+      51.4293232
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Virginia Water",
+    "coords": [
+      -0.5625586,
+      51.4005759
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Longcross",
+    "coords": [
+      -0.5957626,
+      51.3853006
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Sunningdale",
+    "coords": [
+      -0.6344963,
+      51.3926012
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Ascot",
+    "coords": [
+      -0.6774701,
+      51.4063897
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Martins Heron",
+    "coords": [
+      -0.7263165,
+      51.4078389
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Bracknell",
+    "coords": [
+      -0.7530235,
+      51.4130458
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Wokingham",
+    "coords": [
+      -0.8433706,
+      51.4125065
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Winnersh",
+    "coords": [
+      -0.8789096,
+      51.4311777
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Winnersh Triangle",
+    "coords": [
+      -0.8932024,
+      51.4371996
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Earley",
+    "coords": [
+      -0.9175918,
+      51.4409899
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Reading",
+    "coords": [
+      -0.9712241,
+      51.4587808
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Woking",
+    "coords": [
+      -0.557706,
+      51.3182085
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Farnborough (Main)",
+    "coords": [
+      -0.7557353,
+      51.296709
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Basingstoke",
+    "coords": [
+      -1.0898585,
+      51.2682672
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Micheldever",
+    "coords": [
+      -1.2603113,
+      51.1827186
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Winchester",
+    "coords": [
+      -1.3201163,
+      51.0668916
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Hedge End",
+    "coords": [
+      -1.2944821,
+      50.9324097
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Botley",
+    "coords": [
+      -1.2590348,
+      50.916375
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Fareham",
+    "coords": [
+      -1.1924472,
+      50.8535829
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Portchester",
+    "coords": [
+      -1.1250253,
+      50.8488643
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Cosham",
+    "coords": [
+      -1.0661872,
+      50.8417492
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Hilsea",
+    "coords": [
+      -1.0592395,
+      50.8272636
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Fratton",
+    "coords": [
+      -1.0741314,
+      50.796319
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Portsmouth and Southsea",
+    "coords": [
+      -1.0917676,
+      50.7982545
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Portsmouth Harbour",
+    "coords": [
+      -1.1087387,
+      50.7966922
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Vauxhall",
+    "coords": [
+      -0.12266,
+      51.48533
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Earlsfield",
+    "coords": [
+      -0.1876857,
+      51.4422221
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Wimbledon",
+    "coords": [
+      -0.2058685,
+      51.4212621
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Raynes Park",
+    "coords": [
+      -0.2324781,
+      51.4078612
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Motspur Park",
+    "coords": [
+      -0.2397384,
+      51.3944981
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Worcester Park",
+    "coords": [
+      -0.2450141,
+      51.3810672
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Ewell West",
+    "coords": [
+      -0.2577425,
+      51.3490137
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Epsom",
+    "coords": [
+      -0.2701898,
+      51.3341275
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Bookham",
+    "coords": [
+      -0.3838753,
+      51.2888353
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Guildford",
+    "coords": [
+      -0.5805741,
+      51.236548
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "London Road (Guildford)",
+    "coords": [
+      -0.5651524,
+      51.2407567
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Clandon",
+    "coords": [
+      -0.5028641,
+      51.2640542
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Horsley",
+    "coords": [
+      -0.4344682,
+      51.2801909
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Effingham Junction",
+    "coords": [
+      -0.4196569,
+      51.2916347
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Cobham & Stoke D'Abernon",
+    "coords": [
+      -0.3886031,
+      51.3182824
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Oxshott",
+    "coords": [
+      -0.3615189,
+      51.3369227
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Claygate",
+    "coords": [
+      -0.3484349,
+      51.3615778
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Hinchley Wood",
+    "coords": [
+      -0.3405344,
+      51.3755563
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Surbiton",
+    "coords": [
+      -0.3031434,
+      51.3929905
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Berrylands",
+    "coords": [
+      -0.2805779,
+      51.3991148
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "New Malden",
+    "coords": [
+      -0.2539362,
+      51.4044333
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Tolworth",
+    "coords": [
+      -0.2790216,
+      51.377093
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Malden Manor",
+    "coords": [
+      -0.2602286,
+      51.3850133
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Farnham",
+    "coords": [
+      -0.7927826,
+      51.2115896
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Aldershot",
+    "coords": [
+      -0.7588758,
+      51.2466999
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Ash",
+    "coords": [
+      -0.7122503,
+      51.2494815
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Wanborough",
+    "coords": [
+      -0.6669714,
+      51.2446647
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Bagshot",
+    "coords": [
+      -0.6885357,
+      51.3641626
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Camberley",
+    "coords": [
+      -0.7449809,
+      51.3360027
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Ash Vale",
+    "coords": [
+      -0.7217408,
+      51.2722459
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Havant",
+    "coords": [
+      -0.9807286,
+      50.8544322
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Petersfield",
+    "coords": [
+      -0.9416461,
+      51.006597
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Haslemere",
+    "coords": [
+      -0.7194911,
+      51.0887894
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Godalming",
+    "coords": [
+      -0.6183591,
+      51.1874098
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Farncombe",
+    "coords": [
+      -0.6043795,
+      51.1971619
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "West Byfleet",
+    "coords": [
+      -0.5059104,
+      51.3391787
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Brookwood",
+    "coords": [
+      -0.6382183,
+      51.3034
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Bentley",
+    "coords": [
+      -0.8679175,
+      51.1813581
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Alton",
+    "coords": [
+      -0.9674456,
+      51.1515731
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Andover",
+    "coords": [
+      -1.493494,
+      51.2112024
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Tisbury",
+    "coords": [
+      -2.0788869,
+      51.0608709
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Gillingham",
+    "coords": [
+      -2.2726927,
+      51.0338876
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Templecombe",
+    "coords": [
+      -2.4172448,
+      51.0016147
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Sherborne",
+    "coords": [
+      -2.5138482,
+      50.94347
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Yeovil Junction",
+    "coords": [
+      -2.6127626,
+      50.9245214
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Crewkerne",
+    "coords": [
+      -2.7786079,
+      50.873581
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Axminster",
+    "coords": [
+      -3.0053573,
+      50.778482
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Honiton",
+    "coords": [
+      -3.1873762,
+      50.7964632
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Feniton",
+    "coords": [
+      -3.2851915,
+      50.7865681
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Whimple",
+    "coords": [
+      -3.3541459,
+      50.7679467
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Cranbrook",
+    "coords": [
+      -3.4211151,
+      50.7500007
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Pinhoe",
+    "coords": [
+      -3.4706699,
+      50.7377905
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Exeter Central",
+    "coords": [
+      -3.5331267,
+      50.7265347
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Exeter St Davids",
+    "coords": [
+      -3.5435196,
+      50.7296573
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Windsor and Eton Riverside",
+    "coords": [
+      -0.6062953,
+      51.4857461
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Datchet",
+    "coords": [
+      -0.5791439,
+      51.4827768
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Sunnymeads",
+    "coords": [
+      -0.558782,
+      51.469974
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Wraysbury",
+    "coords": [
+      -0.5419744,
+      51.4579348
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Ashford Platform 1",
+    "coords": [
+      -0.4678229,
+      51.4365801
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Whitton",
+    "coords": [
+      -0.3561646,
+      51.4492746
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Putney",
+    "coords": [
+      -0.2141934,
+      51.4607597
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Ashford Platform 2",
+    "coords": [
+      -0.4690055,
+      51.4363761
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Addlestone",
+    "coords": [
+      -0.4859103,
+      51.3738959
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Chertsey",
+    "coords": [
+      -0.5113821,
+      51.3878413
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Hounslow",
+    "coords": [
+      -0.3610529,
+      51.4625187
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Isleworth",
+    "coords": [
+      -0.3365561,
+      51.4750908
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Syon Lane",
+    "coords": [
+      -0.3247107,
+      51.481878
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Brentford",
+    "coords": [
+      -0.3093832,
+      51.4877742
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Kew Bridge",
+    "coords": [
+      -0.287282,
+      51.4895779
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Chiswick",
+    "coords": [
+      -0.266882,
+      51.480422
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Barnes Bridge",
+    "coords": [
+      -0.2507228,
+      51.4708219
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Barnes",
+    "coords": [
+      -0.2398752,
+      51.4665763
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Wandsworth Town",
+    "coords": [
+      -0.1870499,
+      51.4612276
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Queenstown Road",
+    "coords": [
+      -0.1454837,
+      51.4755279
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Norbiton",
+    "coords": [
+      -0.2845687,
+      51.4124524
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Kingston",
+    "coords": [
+      -0.3031762,
+      51.4130413
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Hampton Wick",
+    "coords": [
+      -0.3126517,
+      51.4147248
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Teddington",
+    "coords": [
+      -0.3334549,
+      51.4253119
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Strawberry Hill",
+    "coords": [
+      -0.3392587,
+      51.4402413
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "St Margarets",
+    "coords": [
+      -0.3203171,
+      51.4552807
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "North Sheen",
+    "coords": [
+      -0.2843457,
+      51.465725
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Mortlake",
+    "coords": [
+      -0.2668361,
+      51.4680861
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Shepperton",
+    "coords": [
+      -0.447701,
+      51.3964542
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Upper Halliford",
+    "coords": [
+      -0.4292601,
+      51.4140569
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Sunbury",
+    "coords": [
+      -0.4163635,
+      51.4186796
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Kempton Park",
+    "coords": [
+      -0.4080964,
+      51.4214963
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Hampton",
+    "coords": [
+      -0.370415,
+      51.4162036
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Fulwell",
+    "coords": [
+      -0.3482054,
+      51.4341357
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Hazrat Nizamuddin Junction",
+    "coords": [
+      77.2543093,
+      28.5890207
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Agra Cantonment Junction",
+    "coords": [
+      77.9903044,
+      27.1589365
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Gwalior Junction",
+    "coords": [
+      78.1818251,
+      26.21551
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Virangana Lakshmibai Jhansi Junction",
+    "coords": [
+      78.5530025,
+      25.4451444
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Bhopal Junction",
+    "coords": [
+      77.4138682,
+      23.2682334
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Itarsi Junction",
+    "coords": [
+      77.7666042,
+      22.6078713
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Nagpur Junction",
+    "coords": [
+      79.0885096,
+      21.1522935
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Balharshah",
+    "coords": [
+      79.347926,
+      19.8494606
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Kazipet Junction",
+    "coords": [
+      79.5114606,
+      17.9744052
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Secunderabad Junction",
+    "coords": [
+      78.5029553,
+      17.4329748
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Sedam",
+    "coords": [
+      77.2849667,
+      17.1810545
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Raichur",
+    "coords": [
+      77.3394627,
+      16.1932834
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Guntakal Junction",
+    "coords": [
+      77.367221,
+      15.1747593
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Dharmavaram Junction",
+    "coords": [
+      77.7156561,
+      14.4261788
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Sri Satya Sai Prashanthi Nilayam",
+    "coords": [
+      77.7589875,
+      14.1616257
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Bangalore City Junction",
+    "coords": [
+      77.568046,
+      12.9783992
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Bedhampton",
+    "coords": [
+      -0.996281,
+      50.8539991
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Rowlands Castle",
+    "coords": [
+      -0.9573238,
+      50.8924421
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Liss",
+    "coords": [
+      -0.8927677,
+      51.0438355
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Liphook",
+    "coords": [
+      -0.8001334,
+      51.0712391
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Witley",
+    "coords": [
+      -0.6460162,
+      51.1330968
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Milford",
+    "coords": [
+      -0.6369188,
+      51.1631833
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Worplesdon",
+    "coords": [
+      -0.5824454,
+      51.2878846
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "New Milton",
+    "coords": [
+      -1.6576602,
+      50.7557411
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Christchurch",
+    "coords": [
+      -1.7847423,
+      50.7383187
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Pokesdown",
+    "coords": [
+      -1.8276089,
+      50.7311425
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Bournemouth",
+    "coords": [
+      -1.8641366,
+      50.7271194
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Poole",
+    "coords": [
+      -1.9834362,
+      50.7202938
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Hamworthy",
+    "coords": [
+      -2.0195806,
+      50.7249176
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Holton Heath",
+    "coords": [
+      -2.0783515,
+      50.7111778
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Wareham",
+    "coords": [
+      -2.1166625,
+      50.6922542
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Wool",
+    "coords": [
+      -2.2222159,
+      50.6815549
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Moreton",
+    "coords": [
+      -2.3150774,
+      50.7013376
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Dorchester South",
+    "coords": [
+      -2.4377384,
+      50.7089861
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Upwey",
+    "coords": [
+      -2.4660445,
+      50.6484191
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Weymouth",
+    "coords": [
+      -2.4557777,
+      50.6170512
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Shawford",
+    "coords": [
+      -1.3276968,
+      51.0221662
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Totton",
+    "coords": [
+      -1.483158,
+      50.917632
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Ashurst New Forest",
+    "coords": [
+      -1.5265833,
+      50.8895507
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Beaulieu Road",
+    "coords": [
+      -1.5049411,
+      50.8549449
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Sway",
+    "coords": [
+      -1.6100513,
+      50.7846437
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Hinton Admiral",
+    "coords": [
+      -1.7137206,
+      50.7525595
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Branksome",
+    "coords": [
+      -1.9199002,
+      50.7269133
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Parkstone",
+    "coords": [
+      -1.9485349,
+      50.7227585
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Kannur",
+    "coords": [
+      75.367309,
+      11.8722504
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Payyanur",
+    "coords": [
+      75.1954123,
+      12.0913379
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Nileshwar",
+    "coords": [
+      75.1357956,
+      12.2558766
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Kanhangad",
+    "coords": [
+      75.0847435,
+      12.3200992
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Kasaragod",
+    "coords": [
+      74.9874045,
+      12.4917873
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Mangaluru Central",
+    "coords": [
+      74.8434661,
+      12.8625016
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Mangalore Junction",
+    "coords": [
+      74.8795068,
+      12.8664586
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Bantawal",
+    "coords": [
+      75.0339436,
+      12.8780603
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Kabaka Puttur",
+    "coords": [
+      75.2049522,
+      12.7687544
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Subrahmanya Road",
+    "coords": [
+      75.5578907,
+      12.7317335
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Sakleshpur",
+    "coords": [
+      75.7789159,
+      12.9455299
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Hassan Junction",
+    "coords": [
+      76.1173845,
+      13.0032309
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Channarayapatna",
+    "coords": [
+      76.3938858,
+      12.8924577
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Shravanabelagola",
+    "coords": [
+      76.4657827,
+      12.8715899
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "B.G Nagar",
+    "coords": [
+      76.7330834,
+      12.968599
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Kunigal",
+    "coords": [
+      77.0111645,
+      13.0164154
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Yesvantpur Junction",
+    "coords": [
+      77.5513762,
+      13.0239297
+    ],
+    "line": "SouthWesternRailway"
+  },
+  {
+    "name": "Seaford",
+    "coords": [
+      0.0999594,
+      50.7728156
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Bishopstone",
+    "coords": [
+      0.0826064,
+      50.779975
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Newhaven Harbour",
+    "coords": [
+      0.0548584,
+      50.7908765
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Newhaven Town",
+    "coords": [
+      0.0550834,
+      50.7951266
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Southease",
+    "coords": [
+      0.0306764,
+      50.8313582
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Lewes",
+    "coords": [
+      0.0111116,
+      50.8699608
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Falmer",
+    "coords": [
+      -0.0883826,
+      50.8616197
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Moulsecoomb",
+    "coords": [
+      -0.1195388,
+      50.8460853
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "London Road (Brighton)",
+    "coords": [
+      -0.1369624,
+      50.8366968
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Brighton",
+    "coords": [
+      -0.1404664,
+      50.8291671
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "London Victoria",
+    "coords": [
+      -0.1451776,
+      51.4945092
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Clapham Junction",
+    "coords": [
+      -0.170851,
+      51.4634678
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "East Croydon",
+    "coords": [
+      -0.0928258,
+      51.375903
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Gatwick Airport",
+    "coords": [
+      -0.1605661,
+      51.1554851
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Haywards Heath",
+    "coords": [
+      -0.1054722,
+      51.0042806
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Wivelsfield",
+    "coords": [
+      -0.1213668,
+      50.9632069
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Cooksbridge",
+    "coords": [
+      -0.0092827,
+      50.9037263
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Polegate",
+    "coords": [
+      0.2477618,
+      50.82112
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Hampden Park",
+    "coords": [
+      0.2799357,
+      50.7953463
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Eastbourne",
+    "coords": [
+      0.2817675,
+      50.7696048
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Redhill",
+    "coords": [
+      -0.1656579,
+      51.2396328
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Reigate",
+    "coords": [
+      -0.2043056,
+      51.2419535
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Nutfield",
+    "coords": [
+      -0.1322775,
+      51.2267624
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Godstone",
+    "coords": [
+      -0.0507282,
+      51.2181308
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Edenbridge",
+    "coords": [
+      0.061083,
+      51.2082591
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Penshurst",
+    "coords": [
+      0.1736634,
+      51.1972375
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Leigh",
+    "coords": [
+      0.2120917,
+      51.1939391
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Tonbridge",
+    "coords": [
+      0.2699207,
+      51.1913366
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Horsham",
+    "coords": [
+      -0.3187278,
+      51.0659097
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Littlehaven",
+    "coords": [
+      -0.3083133,
+      51.079499
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Faygate",
+    "coords": [
+      -0.2626655,
+      51.0961004
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Ifield",
+    "coords": [
+      -0.2136259,
+      51.1156331
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Three Bridges",
+    "coords": [
+      -0.1610436,
+      51.118225
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Horley",
+    "coords": [
+      -0.161073,
+      51.1694617
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Salfords",
+    "coords": [
+      -0.1623219,
+      51.2019993
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Earlswood",
+    "coords": [
+      -0.1708605,
+      51.2277659
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Merstham",
+    "coords": [
+      -0.1499671,
+      51.2648196
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Coulsdon South",
+    "coords": [
+      -0.1374819,
+      51.3162519
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Purley",
+    "coords": [
+      -0.1131862,
+      51.3379613
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "London Bridge",
+    "coords": [
+      -0.0853123,
+      51.5049483
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Crawley",
+    "coords": [
+      -0.1879317,
+      51.1121837
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Pevensey and Westham",
+    "coords": [
+      0.3262062,
+      50.8158719
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Normans Bay",
+    "coords": [
+      0.3897456,
+      50.826101
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Cooden Beach",
+    "coords": [
+      0.426896,
+      50.8334242
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Collington",
+    "coords": [
+      0.4574642,
+      50.839341
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Bexhill",
+    "coords": [
+      0.4765874,
+      50.841021
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "St Leonards Warrior Square",
+    "coords": [
+      0.5612582,
+      50.8558684
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Hastings",
+    "coords": [
+      0.5769079,
+      50.8583416
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Ore",
+    "coords": [
+      0.592506,
+      50.86713
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Three Oaks",
+    "coords": [
+      0.613136,
+      50.9010417
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Winchelsea",
+    "coords": [
+      0.702367,
+      50.9337909
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Rye",
+    "coords": [
+      0.7321101,
+      50.9531915
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Appledore",
+    "coords": [
+      0.8166868,
+      51.0334462
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Ham Street",
+    "coords": [
+      0.8552405,
+      51.0688666
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Ashford International",
+    "coords": [
+      0.8749333,
+      51.1431468
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Plumpton",
+    "coords": [
+      -0.0612948,
+      50.9288632
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Berwick",
+    "coords": [
+      0.1643771,
+      50.8412359
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Glynde",
+    "coords": [
+      0.0694395,
+      50.8589706
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Epsom",
+    "coords": [
+      -0.2700773,
+      51.3340266
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Ewell East",
+    "coords": [
+      -0.2413,
+      51.3453061
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Cheam",
+    "coords": [
+      -0.2124913,
+      51.3560827
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Carshalton Beeches",
+    "coords": [
+      -0.1682469,
+      51.3571688
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Wallington",
+    "coords": [
+      -0.1488488,
+      51.3605908
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Waddon",
+    "coords": [
+      -0.1163447,
+      51.3679315
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "West Croydon",
+    "coords": [
+      -0.1015732,
+      51.379661
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Norwood Junction",
+    "coords": [
+      -0.0742426,
+      51.3982922
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Epsom Downs",
+    "coords": [
+      -0.2388561,
+      51.3238529
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Banstead",
+    "coords": [
+      -0.2152943,
+      51.329637
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Sutton",
+    "coords": [
+      -0.1903314,
+      51.3597453
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Selhurst",
+    "coords": [
+      -0.0891486,
+      51.3927274
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Thornton Heath",
+    "coords": [
+      -0.1016067,
+      51.3996891
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Norbury",
+    "coords": [
+      -0.1220512,
+      51.4114943
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Streatham Common",
+    "coords": [
+      -0.1366167,
+      51.4194842
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Balham",
+    "coords": [
+      -0.1517368,
+      51.4428954
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Wandsworth Common",
+    "coords": [
+      -0.1638706,
+      51.446442
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Battersea Park",
+    "coords": [
+      -0.1475886,
+      51.4784204
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Belmont",
+    "coords": [
+      -0.1987678,
+      51.3441728
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Hove",
+    "coords": [
+      -0.1704351,
+      50.835141
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Aldrington",
+    "coords": [
+      -0.1820972,
+      50.8363584
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Portslade",
+    "coords": [
+      -0.2053112,
+      50.8357235
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Fishersgate",
+    "coords": [
+      -0.2200426,
+      50.8342146
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Southwick",
+    "coords": [
+      -0.2373401,
+      50.8324318
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Shoreham-by-Sea",
+    "coords": [
+      -0.2717732,
+      50.8343913
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Lancing",
+    "coords": [
+      -0.3235905,
+      50.8269195
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "East Worthing",
+    "coords": [
+      -0.3553678,
+      50.8215143
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Worthing",
+    "coords": [
+      -0.37539,
+      50.8186165
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "West Worthing",
+    "coords": [
+      -0.3931814,
+      50.8183698
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Durrington-on-Sea",
+    "coords": [
+      -0.4114788,
+      50.8174102
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Goring-by-Sea",
+    "coords": [
+      -0.4320094,
+      50.8176485
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Angmering",
+    "coords": [
+      -0.4893238,
+      50.8165113
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Ford",
+    "coords": [
+      -0.5799326,
+      50.829756
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Barnham",
+    "coords": [
+      -0.6394397,
+      50.8307996
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Chichester",
+    "coords": [
+      -0.7833727,
+      50.8318786
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Southbourne",
+    "coords": [
+      -0.9070881,
+      50.8481737
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Emsworth",
+    "coords": [
+      -0.9387188,
+      50.8515993
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Havant",
+    "coords": [
+      -0.9815462,
+      50.8543984
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Cosham",
+    "coords": [
+      -1.0661973,
+      50.8417195
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Portchester",
+    "coords": [
+      -1.1250299,
+      50.8488335
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Fareham",
+    "coords": [
+      -1.1926367,
+      50.8535419
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Swanwick",
+    "coords": [
+      -1.2659094,
+      50.8757445
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Southampton Central",
+    "coords": [
+      -1.4141898,
+      50.9075619
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Bosham",
+    "coords": [
+      -0.8465063,
+      50.8427952
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "London St Pancras",
+    "coords": [
+      -0.1264972,
+      51.5328319
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Stratford International",
+    "coords": [
+      -0.0080531,
+      51.5448835
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Ebbsfleet International",
+    "coords": [
+      0.3237907,
+      51.4429313
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Gravesend",
+    "coords": [
+      0.3680292,
+      51.4413161
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Strood",
+    "coords": [
+      0.4999724,
+      51.3963101
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Rochester",
+    "coords": [
+      0.5077754,
+      51.3883084
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Chatham",
+    "coords": [
+      0.5218145,
+      51.3800648
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Gillingham",
+    "coords": [
+      0.5532072,
+      51.3871408
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Rainham",
+    "coords": [
+      0.6115053,
+      51.366437
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Sittingbourne",
+    "coords": [
+      0.7364021,
+      51.3418178
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Faversham",
+    "coords": [
+      0.8896361,
+      51.311759
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Ashford International",
+    "coords": [
+      0.8756622,
+      51.1433164
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Canterbury West",
+    "coords": [
+      1.0752498,
+      51.2842782
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Ramsgate",
+    "coords": [
+      1.405619,
+      51.3410404
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Ebbsfleet International (domestic)",
+    "coords": [
+      0.3209059,
+      51.444087
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Folkestone West",
+    "coords": [
+      1.1548317,
+      51.0846253
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Folkestone Central",
+    "coords": [
+      1.1693043,
+      51.0828035
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Dover Priory",
+    "coords": [
+      1.3049222,
+      51.1260972
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Martin Mill",
+    "coords": [
+      1.3479677,
+      51.1706483
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Walmer",
+    "coords": [
+      1.3825186,
+      51.2032375
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Deal",
+    "coords": [
+      1.3986147,
+      51.2231021
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "Sandwich",
+    "coords": [
+      1.3422492,
+      51.2699462
+    ],
+    "line": "SoutheasternHighSpeed"
+  },
+  {
+    "name": "London Charing Cross",
+    "coords": [
+      -0.1246431,
+      51.5077211
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Waterloo East",
+    "coords": [
+      -0.1066539,
+      51.5042854
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "London Bridge",
+    "coords": [
+      -0.0833801,
+      51.5034926
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "New Eltham",
+    "coords": [
+      0.0715335,
+      51.4379674
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Sidcup",
+    "coords": [
+      0.1064314,
+      51.433936
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Bexley",
+    "coords": [
+      0.1483462,
+      51.4403547
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Crayford",
+    "coords": [
+      0.1790114,
+      51.4483376
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Dartford",
+    "coords": [
+      0.2209436,
+      51.4472844
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Stone Crossing",
+    "coords": [
+      0.2641023,
+      51.4514252
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Greenhithe",
+    "coords": [
+      0.2814098,
+      51.450235
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Swanscombe",
+    "coords": [
+      0.3130175,
+      51.4488798
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Northfleet",
+    "coords": [
+      0.3254214,
+      51.4452224
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Gravesend",
+    "coords": [
+      0.36806,
+      51.441225
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Orpington",
+    "coords": [
+      0.088817,
+      51.3733799
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Sevenoaks",
+    "coords": [
+      0.1822155,
+      51.2759161
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Hildenborough",
+    "coords": [
+      0.2283452,
+      51.214463
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Tonbridge",
+    "coords": [
+      0.2700399,
+      51.1915633
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "High Brooms",
+    "coords": [
+      0.2774916,
+      51.1492509
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Tunbridge Wells",
+    "coords": [
+      0.2630916,
+      51.1297641
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Frant",
+    "coords": [
+      0.2948892,
+      51.103502
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Wadhurst",
+    "coords": [
+      0.3133762,
+      51.0731475
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Stonegate",
+    "coords": [
+      0.363962,
+      51.0197765
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Etchingham",
+    "coords": [
+      0.4431093,
+      51.010395
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Robertsbridge",
+    "coords": [
+      0.4687036,
+      50.984735
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Battle",
+    "coords": [
+      0.4949861,
+      50.9129312
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Crowhurst",
+    "coords": [
+      0.5021141,
+      50.8885503
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "West St Leonards",
+    "coords": [
+      0.5406988,
+      50.8531068
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "St Leonards Warrior Square",
+    "coords": [
+      0.5612582,
+      50.8558684
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Hastings",
+    "coords": [
+      0.5769079,
+      50.8583416
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Ladywell",
+    "coords": [
+      -0.0201082,
+      51.4546696
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Catford Bridge",
+    "coords": [
+      -0.0248829,
+      51.4446596
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Lower Sydenham",
+    "coords": [
+      -0.0333131,
+      51.4245767
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "New Beckenham",
+    "coords": [
+      -0.0352337,
+      51.4165249
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Clock House",
+    "coords": [
+      -0.0409328,
+      51.4082262
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Elmers End",
+    "coords": [
+      -0.0501236,
+      51.3976243
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Eden Park",
+    "coords": [
+      -0.0261278,
+      51.3900463
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "West Wickham",
+    "coords": [
+      -0.0144917,
+      51.3814027
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Hayes",
+    "coords": [
+      0.0084681,
+      51.3768303
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Lewisham",
+    "coords": [
+      -0.014466,
+      51.4656773
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "St Johns",
+    "coords": [
+      -0.0235044,
+      51.4696442
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "New Cross",
+    "coords": [
+      -0.0325103,
+      51.4763546
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Cannon Street",
+    "coords": [
+      -0.0902919,
+      51.5109585
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Petts Wood",
+    "coords": [
+      0.0746271,
+      51.3884473
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Chislehurst",
+    "coords": [
+      0.0564989,
+      51.4062148
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Elmstead Woods",
+    "coords": [
+      0.0444247,
+      51.4169547
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Grove Park",
+    "coords": [
+      0.0219125,
+      51.4308549
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Hither Green",
+    "coords": [
+      -0.0010344,
+      51.4519412
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Dover Priory",
+    "coords": [
+      1.3049222,
+      51.1260972
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Folkestone Central",
+    "coords": [
+      1.1666051,
+      51.0828728
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Folkestone West",
+    "coords": [
+      1.1519971,
+      51.0849292
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Sandling",
+    "coords": [
+      1.0659992,
+      51.0904859
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Westenhanger",
+    "coords": [
+      1.0369846,
+      51.0951018
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Ashford International",
+    "coords": [
+      0.8749142,
+      51.1433438
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Pluckley",
+    "coords": [
+      0.7448325,
+      51.1566029
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Headcorn",
+    "coords": [
+      0.6257856,
+      51.1656962
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Staplehurst",
+    "coords": [
+      0.5487891,
+      51.1716423
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Marden",
+    "coords": [
+      0.4911846,
+      51.1755423
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Paddock Wood",
+    "coords": [
+      0.3886359,
+      51.1823619
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Ramsgate",
+    "coords": [
+      1.405619,
+      51.3410404
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Minster",
+    "coords": [
+      1.3171672,
+      51.3291502
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Sturry",
+    "coords": [
+      1.1202935,
+      51.3006339
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Canterbury West",
+    "coords": [
+      1.0753812,
+      51.2841886
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Chartham",
+    "coords": [
+      1.0182119,
+      51.2572104
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Chilham",
+    "coords": [
+      0.9760819,
+      51.244413
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Wye",
+    "coords": [
+      0.929315,
+      51.185137
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Beltring",
+    "coords": [
+      0.4033426,
+      51.2045543
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Yalding",
+    "coords": [
+      0.4126203,
+      51.2275068
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Wateringbury",
+    "coords": [
+      0.4231352,
+      51.2497682
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "East Farleigh",
+    "coords": [
+      0.484222,
+      51.2552224
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Maidstone West",
+    "coords": [
+      0.5156336,
+      51.2707827
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Maidstone Barracks",
+    "coords": [
+      0.5141381,
+      51.2770411
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Aylesford",
+    "coords": [
+      0.4656379,
+      51.3015492
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "New Hythe",
+    "coords": [
+      0.4551012,
+      51.3128294
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Snodland",
+    "coords": [
+      0.448418,
+      51.3302241
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Halling",
+    "coords": [
+      0.4450969,
+      51.3523751
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Cuxton",
+    "coords": [
+      0.4619639,
+      51.373928
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Strood",
+    "coords": [
+      0.5002751,
+      51.3966534
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Kearsney",
+    "coords": [
+      1.2711921,
+      51.1496923
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Shepherdswell",
+    "coords": [
+      1.2295782,
+      51.1883532
+    ],
+    "line": "Southeastern",
+    "alternate_names": [
+      "Shepherds Well"
+    ]
+  },
+  {
+    "name": "Snowdown",
+    "coords": [
+      1.2137155,
+      51.2151421
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Aylesham",
+    "coords": [
+      1.2093232,
+      51.2281673
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Adisham",
+    "coords": [
+      1.1977403,
+      51.2421012
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Bekesbourne",
+    "coords": [
+      1.1366569,
+      51.2615415
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Canterbury East",
+    "coords": [
+      1.0748337,
+      51.2743889
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Selling",
+    "coords": [
+      0.9398825,
+      51.2781564
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Faversham",
+    "coords": [
+      0.8898154,
+      51.3118021
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Teynham",
+    "coords": [
+      0.8050308,
+      51.3341033
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Sittingbourne",
+    "coords": [
+      0.7340798,
+      51.3422331
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Newington",
+    "coords": [
+      0.6643815,
+      51.3537322
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Rainham",
+    "coords": [
+      0.6089059,
+      51.3677922
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Gillingham",
+    "coords": [
+      0.5505834,
+      51.3867308
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Chatham",
+    "coords": [
+      0.5197961,
+      51.3807863
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Rochester",
+    "coords": [
+      0.5063593,
+      51.3899852
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Meopham",
+    "coords": [
+      0.3560552,
+      51.3864401
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Longfield",
+    "coords": [
+      0.2984549,
+      51.3966406
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Bromley South",
+    "coords": [
+      0.0176544,
+      51.4000796
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "London Victoria",
+    "coords": [
+      -0.1433106,
+      51.4949888
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "St Mary Cray",
+    "coords": [
+      0.1072559,
+      51.3949056
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Swanley",
+    "coords": [
+      0.1685035,
+      51.393371
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Otford",
+    "coords": [
+      0.1974687,
+      51.3125158
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Kemsing",
+    "coords": [
+      0.2474246,
+      51.2972738
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Borough Green & Wrotham",
+    "coords": [
+      0.306193,
+      51.2931562
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "West Malling",
+    "coords": [
+      0.4192296,
+      51.2918725
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "East Malling",
+    "coords": [
+      0.441186,
+      51.2855733
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Barming",
+    "coords": [
+      0.4800081,
+      51.2852847
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Bickley",
+    "coords": [
+      0.04295,
+      51.3998942
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Shortlands",
+    "coords": [
+      0.0020218,
+      51.405841
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Beckenham Junction",
+    "coords": [
+      -0.0276609,
+      51.411208
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Kent House",
+    "coords": [
+      -0.0462324,
+      51.412731
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Penge East",
+    "coords": [
+      -0.0550655,
+      51.4198938
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Sydenham Hill",
+    "coords": [
+      -0.0813955,
+      51.4332182
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Herne Hill",
+    "coords": [
+      -0.1029911,
+      51.4544433
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Whitstable",
+    "coords": [
+      1.0359532,
+      51.3578385
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Chestfield & Swalecliffe",
+    "coords": [
+      1.0702389,
+      51.360544
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Herne Bay",
+    "coords": [
+      1.1200891,
+      51.3644827
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Birchington-on-Sea",
+    "coords": [
+      1.3014922,
+      51.3775466
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Westgate-on-Sea",
+    "coords": [
+      1.3382994,
+      51.381315
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Margate",
+    "coords": [
+      1.3735264,
+      51.3851516
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Broadstairs",
+    "coords": [
+      1.4335149,
+      51.3605155
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Dumpton Park",
+    "coords": [
+      1.4238303,
+      51.3459043
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Barnehurst",
+    "coords": [
+      0.1603666,
+      51.4649759
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Bexleyheath",
+    "coords": [
+      0.1315606,
+      51.4636295
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Welling",
+    "coords": [
+      0.1004386,
+      51.4645982
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Eltham",
+    "coords": [
+      0.0515502,
+      51.4555037
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Kidbrooke",
+    "coords": [
+      0.0268786,
+      51.4623885
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Blackheath",
+    "coords": [
+      0.005568,
+      51.4655358
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Bromley North",
+    "coords": [
+      0.0177458,
+      51.4090465
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "Sundridge Park",
+    "coords": [
+      0.0214557,
+      51.4139714
+    ],
+    "line": "Southeastern"
+  },
+  {
+    "name": "London Paddington",
+    "coords": [
+      -0.1770992,
+      51.5166635
+    ],
+    "line": "HeathrowExpress"
+  },
+  {
+    "name": "Heathrow Terminals 2 & 3",
+    "coords": [
+      -0.4554943,
+      51.4711188
+    ],
+    "line": "HeathrowExpress",
+    "alternate_names": [
+      "Heathrow Central"
+    ]
+  },
+  {
+    "name": "Heathrow Terminal 5",
+    "coords": [
+      -0.4877252,
+      51.4721177
+    ],
+    "line": "HeathrowExpress"
+  },
+  {
+    "name": "Crewe",
+    "coords": [
+      -2.4327202,
+      53.0889488
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Alsager",
+    "coords": [
+      -2.2988432,
+      53.0930252
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Longport",
+    "coords": [
+      -2.2167116,
+      53.0420907
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Stoke-on-Trent",
+    "coords": [
+      -2.1809966,
+      53.0079882
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Grimsby Town",
+    "coords": [
+      -0.0866928,
+      53.5633219
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Habrough",
+    "coords": [
+      -0.2707202,
+      53.6063524
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Barnetby",
+    "coords": [
+      -0.4100064,
+      53.5748771
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Market Rasen",
+    "coords": [
+      -0.3368376,
+      53.3839744
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Lincoln",
+    "coords": [
+      -0.5397776,
+      53.226021
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Hykeham",
+    "coords": [
+      -0.6017068,
+      53.1946155
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Swinderby",
+    "coords": [
+      -0.7031474,
+      53.1690696
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Collingham",
+    "coords": [
+      -0.7501516,
+      53.1440243
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Newark Northgate",
+    "coords": [
+      -0.7994563,
+      53.0816661
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Doncaster",
+    "coords": [
+      -1.1401583,
+      53.5212302
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Gainsborough Lea Road",
+    "coords": [
+      -0.7686514,
+      53.3856497
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Saxilby",
+    "coords": [
+      -0.664235,
+      53.2671909
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "London St Pancras",
+    "coords": [
+      -0.1273579,
+      51.5322607
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Leicester",
+    "coords": [
+      -1.1232676,
+      52.6324721
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Loughborough",
+    "coords": [
+      -1.1964286,
+      52.7794254
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "East Midlands Parkway",
+    "coords": [
+      -1.2630096,
+      52.8621027
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Long Eaton",
+    "coords": [
+      -1.2880646,
+      52.8849882
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Derby",
+    "coords": [
+      -1.4625965,
+      52.9170942
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Chesterfield",
+    "coords": [
+      -1.4194602,
+      53.2393974
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Sheffield",
+    "coords": [
+      -1.4623446,
+      53.3782842
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Luton Airport Parkway",
+    "coords": [
+      -0.3974846,
+      51.8737073
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Bedford",
+    "coords": [
+      -0.4800369,
+      52.1362764
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Wellingborough",
+    "coords": [
+      -0.67647,
+      52.3038731
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Kettering",
+    "coords": [
+      -0.7325627,
+      52.3942366
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Market Harborough",
+    "coords": [
+      -0.9089338,
+      52.4810411
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Beeston",
+    "coords": [
+      -1.2074581,
+      52.9208469
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Nottingham",
+    "coords": [
+      -1.1447676,
+      52.9472677
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Newark Castle",
+    "coords": [
+      -0.8135779,
+      53.0799231
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Barrow-upon-Soar",
+    "coords": [
+      -1.14525,
+      52.7493822
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Sileby",
+    "coords": [
+      -1.1093877,
+      52.7311255
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Syston",
+    "coords": [
+      -1.0824785,
+      52.6940952
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Rolleston",
+    "coords": [
+      -0.9004933,
+      53.0649852
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Fiskerton",
+    "coords": [
+      -0.912263,
+      53.0604253
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Bleasby",
+    "coords": [
+      -0.9447812,
+      53.0406404
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Thurgarton",
+    "coords": [
+      -0.9631173,
+      53.0283878
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Lowdham",
+    "coords": [
+      -0.9984676,
+      53.0062574
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Burton Joyce",
+    "coords": [
+      -1.0420048,
+      52.982899
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Carlton",
+    "coords": [
+      -1.0799834,
+      52.9643808
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Attenborough",
+    "coords": [
+      -1.2312325,
+      52.9063363
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Duffield",
+    "coords": [
+      -1.4861068,
+      52.9884827
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Belper",
+    "coords": [
+      -1.4826538,
+      53.0246533
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Ambergate",
+    "coords": [
+      -1.4808642,
+      53.060482
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Whatshandwell",
+    "coords": [
+      -1.504293,
+      53.0834775
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Cromford",
+    "coords": [
+      -1.5490803,
+      53.1129042
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Matlock Bath",
+    "coords": [
+      -1.5568557,
+      53.122553
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Matlock",
+    "coords": [
+      -1.55853,
+      53.1381195
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Skegness",
+    "coords": [
+      0.3341742,
+      53.1431028
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Boston",
+    "coords": [
+      -0.0311587,
+      52.9782405
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Heckington",
+    "coords": [
+      -0.2945307,
+      52.9773148
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Sleaford",
+    "coords": [
+      -0.4108849,
+      52.9954895
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Grantham",
+    "coords": [
+      -0.6431981,
+      52.9063879
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Bottesford",
+    "coords": [
+      -0.7954873,
+      52.9448669
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Bingham",
+    "coords": [
+      -0.9514472,
+      52.9542098
+    ],
+    "line": "EastMidlandsRailway"
+  },
+  {
+    "name": "Welwyn Garden City",
+    "coords": [
+      -0.2035918,
+      51.8014795
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Hatfield",
+    "coords": [
+      -0.2159609,
+      51.7629534
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Welham Green",
+    "coords": [
+      -0.2096655,
+      51.7356626
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Brookmans Park",
+    "coords": [
+      -0.2045708,
+      51.720452
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Potters Bar",
+    "coords": [
+      -0.1925677,
+      51.6972511
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Hadley Wood",
+    "coords": [
+      -0.1759757,
+      51.6682388
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "New Barnet",
+    "coords": [
+      -0.1721483,
+      51.6477308
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Oakleigh Park",
+    "coords": [
+      -0.1657192,
+      51.6373476
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "New Southgate",
+    "coords": [
+      -0.1421937,
+      51.6134135
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Alexandra Palace",
+    "coords": [
+      -0.1198717,
+      51.5976567
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Hornsey",
+    "coords": [
+      -0.1110991,
+      51.5856442
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Harringay",
+    "coords": [
+      -0.1050615,
+      51.5769096
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Finsbury Park",
+    "coords": [
+      -0.1059917,
+      51.5641798
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Drayton Park",
+    "coords": [
+      -0.1055395,
+      51.5527536
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Highbury & Islington",
+    "coords": [
+      -0.1031338,
+      51.5468361
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Essex Road",
+    "coords": [
+      -0.0960999,
+      51.5406938
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Old Street",
+    "coords": [
+      -0.0875436,
+      51.5254225
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Moorgate",
+    "coords": [
+      -0.0878551,
+      51.5185254
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Peterborough",
+    "coords": [
+      -0.2503845,
+      52.5749666
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Huntingdon",
+    "coords": [
+      -0.1929948,
+      52.3273101
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "St Neots",
+    "coords": [
+      -0.247278,
+      52.2310012
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Biggleswade",
+    "coords": [
+      -0.260495,
+      52.0839339
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Stevenage",
+    "coords": [
+      -0.2063835,
+      51.900717
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "London King's Cross",
+    "coords": [
+      -0.1235571,
+      51.5311615
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Cambridge",
+    "coords": [
+      0.1369709,
+      52.1934625
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Foxton",
+    "coords": [
+      0.0563709,
+      52.1192256
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Shepreth",
+    "coords": [
+      0.0313526,
+      52.114323
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Meldreth",
+    "coords": [
+      0.0090475,
+      52.0906688
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Royston",
+    "coords": [
+      -0.028532,
+      52.0528725
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Baldock",
+    "coords": [
+      -0.1878683,
+      51.9929166
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Letchworth Garden City",
+    "coords": [
+      -0.2302791,
+      51.9799671
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Hitchin",
+    "coords": [
+      -0.26125,
+      51.9517161
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Knebworth",
+    "coords": [
+      -0.1866935,
+      51.866601
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Welwyn North",
+    "coords": [
+      -0.1922074,
+      51.8235574
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Cambridge North",
+    "coords": [
+      0.1593093,
+      52.2252575
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Waterbeach",
+    "coords": [
+      0.1970417,
+      52.262556
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Ely",
+    "coords": [
+      0.2669775,
+      52.391142
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Littleport",
+    "coords": [
+      0.3163689,
+      52.462607
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Downham Market",
+    "coords": [
+      0.36599,
+      52.6053457
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Watlington",
+    "coords": [
+      0.3832316,
+      52.6732599
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "King's Lynn",
+    "coords": [
+      0.4034236,
+      52.753865
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Hertford North",
+    "coords": [
+      -0.0924334,
+      51.7993189
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Bayford",
+    "coords": [
+      -0.0957068,
+      51.7578966
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Cuffley",
+    "coords": [
+      -0.1097684,
+      51.7091448
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Crews Hill",
+    "coords": [
+      -0.1072293,
+      51.6847515
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Gordon Hill",
+    "coords": [
+      -0.0936352,
+      51.6623614
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Enfield Chase",
+    "coords": [
+      -0.0907875,
+      51.6527749
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Grange Park",
+    "coords": [
+      -0.0969173,
+      51.6433237
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Winchmore Hill",
+    "coords": [
+      -0.101003,
+      51.6339405
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Palmers Green",
+    "coords": [
+      -0.1104246,
+      51.6183327
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Bowes Park",
+    "coords": [
+      -0.1204347,
+      51.6071151
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Watton-at-Stone",
+    "coords": [
+      -0.1192983,
+      51.8564035
+    ],
+    "line": "GreatNorthern"
+  },
+  {
+    "name": "Brighton",
+    "coords": [
+      -0.1410584,
+      50.8292053
+    ],
+    "line": "GatwickExpress"
+  },
+  {
+    "name": "Haywards Heath",
+    "coords": [
+      -0.1051453,
+      51.0056514
+    ],
+    "line": "GatwickExpress"
+  },
+  {
+    "name": "Gatwick Airport",
+    "coords": [
+      -0.1608034,
+      51.1570616
+    ],
+    "line": "GatwickExpress"
+  },
+  {
+    "name": "London Victoria",
+    "coords": [
+      -0.1445526,
+      51.4949396
+    ],
+    "line": "GatwickExpress"
+  },
+  {
+    "name": "Burgess Hill",
+    "coords": [
+      -0.1286441,
+      50.9516524
+    ],
+    "line": "GatwickExpress"
+  },
+  {
+    "name": "Hassocks",
+    "coords": [
+      -0.1459636,
+      50.924282
+    ],
+    "line": "GatwickExpress"
+  },
+  {
+    "name": "Preston Park",
+    "coords": [
+      -0.155013,
+      50.8454061
+    ],
+    "line": "GatwickExpress"
+  },
+  {
+    "name": "Stansted Airport",
+    "coords": [
+      0.2620681,
+      51.8893715
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Harlow Town",
+    "coords": [
+      0.0937048,
+      51.7810136
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Tottenham Hale",
+    "coords": [
+      -0.0599014,
+      51.5882172
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "London Liverpool Street",
+    "coords": [
+      -0.0812142,
+      51.5179021
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Hertford East",
+    "coords": [
+      -0.0726183,
+      51.7991773
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "St Margarets",
+    "coords": [
+      0.0011905,
+      51.7878314
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Rye House",
+    "coords": [
+      0.005876,
+      51.7679141
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Broxbourne",
+    "coords": [
+      -0.0108634,
+      51.7464772
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Cheshunt",
+    "coords": [
+      -0.024039,
+      51.7009861
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Waltham Cross",
+    "coords": [
+      -0.0265706,
+      51.6839526
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Enfield Lock",
+    "coords": [
+      -0.0286827,
+      51.6696794
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Brimsdown",
+    "coords": [
+      -0.0309322,
+      51.6544602
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Ponders End",
+    "coords": [
+      -0.0350473,
+      51.6422357
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Hackney Downs",
+    "coords": [
+      -0.0600994,
+      51.5479037
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Ware",
+    "coords": [
+      -0.0274793,
+      51.807723
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Ely",
+    "coords": [
+      0.2658698,
+      52.3898501
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Waterbeach",
+    "coords": [
+      0.1965862,
+      52.262061
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Cambridge",
+    "coords": [
+      0.1374844,
+      52.1934388
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Shelford",
+    "coords": [
+      0.140033,
+      52.1488936
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Whittlesford Parkway",
+    "coords": [
+      0.165654,
+      52.1030575
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Great Chesterford",
+    "coords": [
+      0.1941946,
+      52.0593545
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Audley End",
+    "coords": [
+      0.2074612,
+      52.0036013
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Newport",
+    "coords": [
+      0.2155021,
+      51.978984
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Elsenham",
+    "coords": [
+      0.2293889,
+      51.9194703
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Stansted Mountfitchet",
+    "coords": [
+      0.1970646,
+      51.9005005
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Bishop's Stortford",
+    "coords": [
+      0.1664634,
+      51.8653519
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Sawbridgeworth",
+    "coords": [
+      0.1605594,
+      51.8145896
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Harlow Mill",
+    "coords": [
+      0.1315713,
+      51.7902785
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Roydon",
+    "coords": [
+      0.0369024,
+      51.7754134
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Cambridge North",
+    "coords": [
+      0.1593093,
+      52.2252575
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Stratford",
+    "coords": [
+      -0.0034293,
+      51.5425203
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Lea Bridge",
+    "coords": [
+      -0.0378773,
+      51.5670846
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Northumberland Park",
+    "coords": [
+      -0.0545344,
+      51.6006194
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Brandon",
+    "coords": [
+      0.6255933,
+      52.4539522
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Thetford",
+    "coords": [
+      0.7452871,
+      52.4191733
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Eccles Road",
+    "coords": [
+      0.9700885,
+      52.4714082
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Attleborough",
+    "coords": [
+      1.0221941,
+      52.5144457
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Wymondham",
+    "coords": [
+      1.118271,
+      52.565435
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Norwich",
+    "coords": [
+      1.3074564,
+      52.6262953
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Meridian Water",
+    "coords": [
+      -0.0498737,
+      51.6103243
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Diss",
+    "coords": [
+      1.1235715,
+      52.3736084
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Stowmarket",
+    "coords": [
+      1.0002629,
+      52.1898272
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Ipswich",
+    "coords": [
+      1.1457547,
+      52.050126
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Manningtree",
+    "coords": [
+      1.0448382,
+      51.9491269
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Colchester",
+    "coords": [
+      0.8884382,
+      51.9011333
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Woodbridge",
+    "coords": [
+      1.3180768,
+      52.09039
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Melton",
+    "coords": [
+      1.3382063,
+      52.1043356
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Wickham Market",
+    "coords": [
+      1.3988939,
+      52.1511806
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Saxmundham",
+    "coords": [
+      1.4903503,
+      52.2153362
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Darsham",
+    "coords": [
+      1.5235995,
+      52.2734886
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Halesworth",
+    "coords": [
+      1.5057234,
+      52.3470771
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Brampton",
+    "coords": [
+      1.5437729,
+      52.3954152
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Beccles",
+    "coords": [
+      1.569643,
+      52.4587292
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Oulton Broad South",
+    "coords": [
+      1.7075324,
+      52.4695941
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Lowestoft",
+    "coords": [
+      1.7496694,
+      52.4743148
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Sudbury",
+    "coords": [
+      0.7352466,
+      52.0362547
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Bures",
+    "coords": [
+      0.7691114,
+      51.9712206
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Chappel & Wakes Colne",
+    "coords": [
+      0.7583195,
+      51.9253809
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Marks Tey",
+    "coords": [
+      0.7826492,
+      51.8810595
+    ],
+    "line": "GreaterAnglia"
+  },
+  {
+    "name": "Shoeburyness",
+    "coords": [
+      0.7946051,
+      51.531451
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Thorpe Bay",
+    "coords": [
+      0.7596846,
+      51.5379271
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Southend East",
+    "coords": [
+      0.7297914,
+      51.5388568
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Southend Central",
+    "coords": [
+      0.7083787,
+      51.5369155
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Westcliff",
+    "coords": [
+      0.691469,
+      51.5374341
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Chalkwell",
+    "coords": [
+      0.6670781,
+      51.5388146
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Leigh-on-Sea",
+    "coords": [
+      0.6368258,
+      51.5411666
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Benfleet",
+    "coords": [
+      0.5596919,
+      51.5449867
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Pitsea",
+    "coords": [
+      0.5073204,
+      51.5603938
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Basildon",
+    "coords": [
+      0.4560144,
+      51.5680863
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Laindon",
+    "coords": [
+      0.4233665,
+      51.5675878
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "West Horndon",
+    "coords": [
+      0.3402652,
+      51.5678144
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Upminster",
+    "coords": [
+      0.2509483,
+      51.5588921
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Barking",
+    "coords": [
+      0.0795547,
+      51.5401983
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "West Ham",
+    "coords": [
+      0.0056173,
+      51.5284044
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Limehouse",
+    "coords": [
+      -0.0397961,
+      51.5125482
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "London Fenchurch Street",
+    "coords": [
+      -0.0778815,
+      51.5113133
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Stanford-le-Hope",
+    "coords": [
+      0.4232468,
+      51.5129921
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "East Tilbury",
+    "coords": [
+      0.4123275,
+      51.4835139
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Tilbury Town",
+    "coords": [
+      0.3540122,
+      51.46234
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Grays",
+    "coords": [
+      0.3204333,
+      51.4764292
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Chafford Hundred",
+    "coords": [
+      0.2874586,
+      51.4855602
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Ockendon",
+    "coords": [
+      0.2900958,
+      51.5221419
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Purfleet",
+    "coords": [
+      0.2368947,
+      51.4823503
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Rainham",
+    "coords": [
+      0.1892092,
+      51.517533
+    ],
+    "line": "C2c"
+  },
+  {
+    "name": "Dagenham Dock",
+    "coords": [
+      0.1440088,
+      51.5263363
+    ],
+    "line": "C2c"
   }
 ]

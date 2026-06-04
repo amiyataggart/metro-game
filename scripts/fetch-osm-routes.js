@@ -52,6 +52,19 @@ const LINE_COLORS = {
   Suffragette: '#5BBD72',
   Liberty: '#7C878E',
   Thameslink: '#DD3399',
+  // National Rail TOCs (colours as on TfL's "London's rail & tube services" map).
+  SouthWesternRailway: '#C63834',
+  C2c: '#C62F7C',
+  GreaterAnglia: '#828795',
+  Southeastern: '#2B65A0',
+  SoutheasternHighSpeed: '#2B65A0',
+  Southern: '#439752',
+  GreatNorthern: '#BB9767',
+  GatwickExpress: '#1A1919',
+  Chiltern: '#A382AA',
+  EastMidlandsRailway: '#4F9AB3',
+  GreatWesternRailway: '#2A2D74',
+  HeathrowExpress: '#75BAB1',
 }
 
 // Ascending order roughly groups Underground > Overground/Rail > National Rail
@@ -61,6 +74,9 @@ const LINE_ORDER = {
   Jubilee: 5, Metropolitan: 6, Northern: 7, Piccadilly: 8, Victoria: 9,
   WaterlooAndCity: 10, ElizabethLine: 11, DLR: 12, Lioness: 13, Mildmay: 14,
   Windrush: 15, Weaver: 16, Suffragette: 17, Liberty: 18, Thameslink: 19,
+  SouthWesternRailway: 20, C2c: 21, GreaterAnglia: 22, Southeastern: 23,
+  SoutheasternHighSpeed: 24, Southern: 25, GreatNorthern: 26, GatwickExpress: 27,
+  Chiltern: 28, EastMidlandsRailway: 29, GreatWesternRailway: 30, HeathrowExpress: 31,
 }
 
 // All matchers run against relation tags. The first match wins.
@@ -90,6 +106,25 @@ const RELATION_MATCHERS = [
   { lineKey: 'Liberty', test: (t) => t.ref === 'Liberty' },
   // National Rail TOCs — match by relation name prefix.
   { lineKey: 'Thameslink', test: (t) => /^Thameslink:/.test(t.name || '') },
+  // More National Rail TOCs. Name-prefix matchers first (some share an
+  // operator tag with other TOCs — e.g. Great Northern / Gatwick Express both
+  // carry operator="Govia Thameslink Railway", so they MUST be split by name,
+  // never by operator). Heathrow Express has an EMPTY operator tag in OSM, so
+  // it too is name-only.
+  { lineKey: 'Southern', test: (t) => t.route === 'train' && /^Southern:/.test(t.name || '') },
+  { lineKey: 'GreatNorthern', test: (t) => t.route === 'train' && /^Great Northern:/.test(t.name || '') },
+  { lineKey: 'GatwickExpress', test: (t) => t.route === 'train' && /^Gatwick Express:/.test(t.name || '') },
+  { lineKey: 'GreatWesternRailway', test: (t) => t.route === 'train' && /^GWR:/.test(t.name || '') },
+  { lineKey: 'Chiltern', test: (t) => t.route === 'train' && /^CH:/.test(t.name || '') },
+  { lineKey: 'C2c', test: (t) => t.route === 'train' && /^c2c:/.test(t.name || '') },
+  { lineKey: 'HeathrowExpress', test: (t) => t.route === 'train' && /^Heathrow Express:/.test(t.name || '') },
+  // Southeastern: split the High Speed (HS1) services into their own line.
+  { lineKey: 'SoutheasternHighSpeed', test: (t) => t.route === 'train' && t.operator === 'Southeastern' && (/High Speed/i.test(t.name || '') || t.ref === 'HS1') },
+  { lineKey: 'Southeastern', test: (t) => t.route === 'train' && t.operator === 'Southeastern' },
+  // Operator-tag matchers for the remaining TOCs.
+  { lineKey: 'GreaterAnglia', test: (t) => t.route === 'train' && t.operator === 'Greater Anglia' },
+  { lineKey: 'SouthWesternRailway', test: (t) => t.route === 'train' && t.operator === 'South Western Railway' },
+  { lineKey: 'EastMidlandsRailway', test: (t) => t.route === 'train' && t.operator === 'East Midlands Railway' },
 ]
 
 function tagsToLineKey(tags) {
@@ -98,6 +133,12 @@ function tagsToLineKey(tags) {
 }
 
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter'
+// Mirror fallbacks — the public endpoint frequently returns 504 under load.
+const OVERPASS_MIRRORS = [
+  OVERPASS_URL,
+  'https://overpass.private.coffee/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+]
 
 // Single query for everything we need.
 const OVERPASS_QUERY = `
@@ -108,6 +149,17 @@ const OVERPASS_QUERY = `
   relation["route"="train"]["ref"~"^Elizabeth"];
   relation["route"="light_rail"]["network"~"Docklands"];
   relation["route"="train"]["name"~"^Thameslink:"];
+  relation["route"="train"]["name"~"^Southern:"];
+  relation["route"="train"]["name"~"^Great Northern:"];
+  relation["route"="train"]["name"~"^Gatwick Express:"];
+  relation["route"="train"]["name"~"^GWR:"];
+  relation["route"="train"]["name"~"^CH:"];
+  relation["route"="train"]["name"~"^c2c:"];
+  relation["route"="train"]["name"~"^Heathrow Express:"];
+  relation["route"="train"]["operator"="Southeastern"];
+  relation["route"="train"]["operator"="Greater Anglia"];
+  relation["route"="train"]["operator"="South Western Railway"];
+  relation["route"="train"]["operator"="East Midlands Railway"];
 );
 out geom;
 >;
@@ -116,18 +168,30 @@ out;
 
 async function fetchOverpass() {
   console.log('Fetching from Overpass API (this may take 60-120s)...')
-  const res = await fetch(OVERPASS_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': 'tube-memory-dev/0.1 (offline build)',
-    },
-    body: 'data=' + encodeURIComponent(OVERPASS_QUERY),
-  })
-  if (!res.ok) {
-    throw new Error(`Overpass returned ${res.status}: ${await res.text()}`)
+  let lastErr
+  for (const url of OVERPASS_MIRRORS) {
+    try {
+      console.log(`  → ${url}`)
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'tube-memory-dev/0.1 (offline build)',
+        },
+        body: 'data=' + encodeURIComponent(OVERPASS_QUERY),
+      })
+      if (!res.ok) {
+        lastErr = new Error(`Overpass returned ${res.status}`)
+        console.warn(`    ${res.status} — trying next mirror`)
+        continue
+      }
+      return await res.json()
+    } catch (e) {
+      lastErr = e
+      console.warn(`    ${e.message} — trying next mirror`)
+    }
   }
-  return res.json()
+  throw lastErr || new Error('All Overpass mirrors failed')
 }
 
 function main() {

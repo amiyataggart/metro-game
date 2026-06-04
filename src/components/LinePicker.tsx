@@ -22,6 +22,17 @@ const GROUPS: { name: string; lines: string[] }[] = [
   { name: 'Elizabeth Line (Crossrail)', lines: ['ElizabethLine'] },
   { name: 'Docklands Light Railway (DLR)', lines: ['DLR'] },
   { name: 'Thameslink', lines: ['Thameslink'] },
+  {
+    name: 'State-owned National Rail',
+    lines: [
+      'SouthWesternRailway', 'C2c', 'GreaterAnglia', 'Southeastern',
+      'SoutheasternHighSpeed', 'Southern', 'GreatNorthern', 'GatwickExpress',
+    ],
+  },
+  {
+    name: 'Privately-owned National Rail',
+    lines: ['Chiltern', 'EastMidlandsRailway', 'GreatWesternRailway', 'HeathrowExpress'],
+  },
 ]
 
 export default function LinePicker({

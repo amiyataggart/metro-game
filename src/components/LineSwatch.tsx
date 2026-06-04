@@ -60,7 +60,7 @@ export default function LineSwatch({
           y1={cy}
           x2={w}
           y2={cy}
-          stroke="#ffffff"
+          stroke={line.stripeColor ?? '#ffffff'}
           strokeWidth={stripeW}
           strokeDasharray={`${stripeW * 2.4} ${stripeW * 1.8}`}
           strokeLinecap="butt"

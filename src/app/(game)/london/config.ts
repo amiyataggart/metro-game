@@ -155,6 +155,108 @@ export const LINES: {
     order: 19,
     stripe: 'dashed',
   },
+  // ---- National Rail TOCs ----
+  // Colours match TfL's "London's rail & tube services" map. All are dashed
+  // (white core) like Thameslink; Southeastern high speed uses yellow dashes.
+  // State-owned National Rail
+  SouthWesternRailway: {
+    name: 'South Western Railway',
+    color: '#C63834',
+    backgroundColor: '#6e1d1b',
+    textColor: '#fff',
+    order: 20,
+    stripe: 'dashed',
+  },
+  C2c: {
+    name: 'c2c',
+    color: '#C62F7C',
+    backgroundColor: '#6e1944',
+    textColor: '#fff',
+    order: 21,
+    stripe: 'dashed',
+  },
+  GreaterAnglia: {
+    name: 'Greater Anglia',
+    color: '#828795',
+    backgroundColor: '#44474e',
+    textColor: '#fff',
+    order: 22,
+    stripe: 'dashed',
+  },
+  Southeastern: {
+    name: 'Southeastern',
+    color: '#2B65A0',
+    backgroundColor: '#173456',
+    textColor: '#fff',
+    order: 23,
+    stripe: 'dashed',
+  },
+  SoutheasternHighSpeed: {
+    name: 'Southeastern high speed',
+    color: '#2B65A0',
+    backgroundColor: '#173456',
+    textColor: '#fff',
+    order: 24,
+    stripe: 'dashed',
+    stripeColor: '#F4D04D',
+  },
+  Southern: {
+    name: 'Southern',
+    color: '#439752',
+    backgroundColor: '#245029',
+    textColor: '#fff',
+    order: 25,
+    stripe: 'dashed',
+  },
+  GreatNorthern: {
+    name: 'Great Northern',
+    color: '#BB9767',
+    backgroundColor: '#5e4a30',
+    textColor: '#222',
+    order: 26,
+    stripe: 'dashed',
+  },
+  GatwickExpress: {
+    name: 'Gatwick Express',
+    color: '#1A1919',
+    backgroundColor: '#000000',
+    textColor: '#fff',
+    order: 27,
+    stripe: 'dashed',
+  },
+  // Privately-owned National Rail
+  Chiltern: {
+    name: 'Chiltern Railways',
+    color: '#A382AA',
+    backgroundColor: '#4d3a52',
+    textColor: '#fff',
+    order: 28,
+    stripe: 'dashed',
+  },
+  EastMidlandsRailway: {
+    name: 'East Midlands Railway',
+    color: '#4F9AB3',
+    backgroundColor: '#285060',
+    textColor: '#fff',
+    order: 29,
+    stripe: 'dashed',
+  },
+  GreatWesternRailway: {
+    name: 'Great Western Railway',
+    color: '#2A2D74',
+    backgroundColor: '#15163a',
+    textColor: '#fff',
+    order: 30,
+    stripe: 'dashed',
+  },
+  HeathrowExpress: {
+    name: 'Heathrow Express',
+    color: '#75BAB1',
+    backgroundColor: '#3a5d5a',
+    textColor: '#222',
+    order: 31,
+    stripe: 'dashed',
+  },
 }
 
 export const METADATA: Metadata = {
@@ -191,6 +293,13 @@ export const MAP_CONFIG: Omit<MapOptions, 'container'> = {
   minZoom: 6,
   fadeDuration: 50,
 }
+
+// Lines + stations are fetched and stored in full (e.g. National Rail routes
+// run far past London), but only the portion inside this box is displayed and
+// playable — see visibility.ts. Defaults to the camera maxBounds; widen this
+// (no re-fetch needed) to reveal more of the stored network later.
+export const DISPLAY_BOUNDS: [[number, number], [number, number]] =
+  MAP_CONFIG.maxBounds as [[number, number], [number, number]]
 
 export const CITY_NAME = 'london'
 export const LOCALE = 'en'
