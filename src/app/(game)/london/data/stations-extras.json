@@ -12855,5 +12855,86 @@
       51.5263363
     ],
     "line": "C2c"
+  },
+  {
+    "name": "South Bermondsey",
+    "coords": [
+      -0.054456,
+      51.487951
+    ],
+    "line": "Southern",
+    "src": "southern-branch"
+  },
+  {
+    "name": "East Dulwich",
+    "coords": [
+      -0.080798,
+      51.461037
+    ],
+    "line": "Southern",
+    "src": "southern-branch"
+  },
+  {
+    "name": "North Dulwich",
+    "coords": [
+      -0.088329,
+      51.454178
+    ],
+    "line": "Southern",
+    "src": "southern-branch"
+  },
+  {
+    "name": "Tulse Hill",
+    "coords": [
+      -0.104847,
+      51.439927
+    ],
+    "line": "Southern",
+    "src": "southern-branch"
+  },
+  {
+    "name": "Streatham Hill",
+    "coords": [
+      -0.127785,
+      51.438328
+    ],
+    "line": "Southern",
+    "src": "southern-branch"
+  },
+  {
+    "name": "Streatham",
+    "coords": [
+      -0.131313,
+      51.425961
+    ],
+    "line": "Southern",
+    "src": "southern-branch"
+  },
+  {
+    "name": "Mitcham Eastfields",
+    "coords": [
+      -0.154872,
+      51.407395
+    ],
+    "line": "Southern",
+    "src": "southern-branch"
+  },
+  {
+    "name": "West Norwood",
+    "coords": [
+      -0.103491,
+      51.431627
+    ],
+    "line": "Southern",
+    "src": "southern-branch"
+  },
+  {
+    "name": "Gipsy Hill",
+    "coords": [
+      -0.084042,
+      51.424533
+    ],
+    "line": "Southern",
+    "src": "southern-branch"
   }
 ]

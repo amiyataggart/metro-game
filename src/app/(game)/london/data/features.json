@@ -25009,10 +25009,163 @@
         "name": "Dagenham Dock",
         "line": "C2c"
       }
+    },
+    {
+      "type": "Feature",
+      "id": 1974,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.054456,
+          51.487951
+        ]
+      },
+      "properties": {
+        "id": 1974,
+        "name": "South Bermondsey",
+        "line": "Southern",
+        "src": "southern-branch"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1975,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.080798,
+          51.461037
+        ]
+      },
+      "properties": {
+        "id": 1975,
+        "name": "East Dulwich",
+        "line": "Southern",
+        "src": "southern-branch"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1976,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.088329,
+          51.454178
+        ]
+      },
+      "properties": {
+        "id": 1976,
+        "name": "North Dulwich",
+        "line": "Southern",
+        "src": "southern-branch"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1977,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.104847,
+          51.439927
+        ]
+      },
+      "properties": {
+        "id": 1977,
+        "name": "Tulse Hill",
+        "line": "Southern",
+        "src": "southern-branch"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1978,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.127785,
+          51.438328
+        ]
+      },
+      "properties": {
+        "id": 1978,
+        "name": "Streatham Hill",
+        "line": "Southern",
+        "src": "southern-branch"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1979,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.131313,
+          51.425961
+        ]
+      },
+      "properties": {
+        "id": 1979,
+        "name": "Streatham",
+        "line": "Southern",
+        "src": "southern-branch"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1980,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.154872,
+          51.407395
+        ]
+      },
+      "properties": {
+        "id": 1980,
+        "name": "Mitcham Eastfields",
+        "line": "Southern",
+        "src": "southern-branch"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1981,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.103491,
+          51.431627
+        ]
+      },
+      "properties": {
+        "id": 1981,
+        "name": "West Norwood",
+        "line": "Southern",
+        "src": "southern-branch"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1982,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.084042,
+          51.424533
+        ]
+      },
+      "properties": {
+        "id": 1982,
+        "name": "Gipsy Hill",
+        "line": "Southern",
+        "src": "southern-branch"
+      }
     }
   ],
   "properties": {
-    "totalStations": 1558,
+    "totalStations": 1567,
     "stationsPerLine": {
       "Bakerloo": 25,
       "ElizabethLine": 41,
@@ -25037,7 +25190,7 @@
       "GreatWesternRailway": 148,
       "Chiltern": 45,
       "SouthWesternRailway": 163,
-      "Southern": 129,
+      "Southern": 138,
       "SoutheasternHighSpeed": 22,
       "Southeastern": 128,
       "HeathrowExpress": 3,
