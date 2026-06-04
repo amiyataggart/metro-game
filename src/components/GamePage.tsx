@@ -246,6 +246,7 @@ export default function GamePage({
       { id: 'og', keys: ['Lioness', 'Mildmay', 'Windrush', 'Weaver', 'Suffragette', 'Liberty'] },
       { id: 'dlr', keys: ['DLR'] },
       { id: 'eliz', keys: ['ElizabethLine'] },
+      { id: 'tram', keys: ['Tramlink'] },
       { id: 'ug', keys: ug },
     ]
       .map((b) => ({ ...b, keys: b.keys.filter((k) => allLineKeys.includes(k)) }))

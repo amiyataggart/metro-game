@@ -65,6 +65,7 @@ const LINE_COLORS = {
   EastMidlandsRailway: '#4F9AB3',
   GreatWesternRailway: '#2A2D74',
   HeathrowExpress: '#75BAB1',
+  Tramlink: '#80B253',
 }
 
 // Ascending order roughly groups Underground > Overground/Rail > National Rail
@@ -77,6 +78,7 @@ const LINE_ORDER = {
   SouthWesternRailway: 20, C2c: 21, GreaterAnglia: 22, Southeastern: 23,
   SoutheasternHighSpeed: 24, Southern: 25, GreatNorthern: 26, GatwickExpress: 27,
   Chiltern: 28, EastMidlandsRailway: 29, GreatWesternRailway: 30, HeathrowExpress: 31,
+  Tramlink: 32,
 }
 
 // All matchers run against relation tags. The first match wins.
@@ -128,6 +130,8 @@ const RELATION_MATCHERS = [
   { lineKey: 'GreaterAnglia', test: (t) => t.route === 'train' && t.operator === 'Greater Anglia' },
   { lineKey: 'SouthWesternRailway', test: (t) => t.route === 'train' && t.operator === 'South Western Railway' },
   { lineKey: 'EastMidlandsRailway', test: (t) => t.route === 'train' && t.operator === 'East Midlands Railway' },
+  // London Trams (Tramlink) — route=tram, operated by Tram Operations Ltd.
+  { lineKey: 'Tramlink', test: (t) => t.route === 'tram' && /Tram Operations/i.test(t.operator || '') },
 ]
 
 function tagsToLineKey(tags) {
@@ -167,6 +171,7 @@ const OVERPASS_QUERY = `
   relation["route"="train"]["operator"="Greater Anglia"](49.8,-8.7,61.0,2.0);
   relation["route"="train"]["operator"="South Western Railway"](49.8,-8.7,61.0,2.0);
   relation["route"="train"]["operator"="East Midlands Railway"](49.8,-8.7,61.0,2.0);
+  relation["route"="tram"]["operator"~"Tram Operations",i];
 );
 out geom;
 >;

@@ -257,6 +257,16 @@ export const LINES: {
     order: 31,
     stripe: 'dashed',
   },
+  // London Trams (Tramlink) — TfL light rail. Hollow white-centre treatment
+  // like the Overground, in TfL trams green.
+  Tramlink: {
+    name: 'London Trams',
+    color: '#80B253',
+    backgroundColor: '#3a5226',
+    textColor: '#222',
+    order: 32,
+    stripe: 'solid',
+  },
 }
 
 export const METADATA: Metadata = {

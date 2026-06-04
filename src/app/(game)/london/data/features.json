@@ -25162,10 +25162,1081 @@
         "line": "Southern",
         "src": "southern-branch"
       }
+    },
+    {
+      "type": "Feature",
+      "id": 1983,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.040429,
+          51.475298
+        ]
+      },
+      "properties": {
+        "id": 1983,
+        "name": "New Cross Gate",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1984,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.037613,
+          51.464229
+        ]
+      },
+      "properties": {
+        "id": 1984,
+        "name": "Brockley",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1985,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.04502,
+          51.45046
+        ]
+      },
+      "properties": {
+        "id": 1985,
+        "name": "Honor Oak Park",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1986,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.05309,
+          51.439242
+        ]
+      },
+      "properties": {
+        "id": 1986,
+        "name": "Forest Hill",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1987,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.054221,
+          51.427742
+        ]
+      },
+      "properties": {
+        "id": 1987,
+        "name": "Sydenham",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1988,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.060661,
+          51.417503
+        ]
+      },
+      "properties": {
+        "id": 1988,
+        "name": "Penge West",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1989,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.065494,
+          51.412577
+        ]
+      },
+      "properties": {
+        "id": 1989,
+        "name": "Anerley",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1990,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.071267,
+          51.417659
+        ]
+      },
+      "properties": {
+        "id": 1990,
+        "name": "Crystal Palace",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1991,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.056539,
+          51.403456
+        ]
+      },
+      "properties": {
+        "id": 1991,
+        "name": "Birkbeck",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1992,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.025987,
+          51.411062
+        ]
+      },
+      "properties": {
+        "id": 1992,
+        "name": "Beckenham Junction",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1993,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.100844,
+          51.324776
+        ]
+      },
+      "properties": {
+        "id": 1993,
+        "name": "Kenley",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1994,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.081016,
+          51.309921
+        ]
+      },
+      "properties": {
+        "id": 1994,
+        "name": "Whyteleafe",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1995,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.077231,
+          51.303751
+        ]
+      },
+      "properties": {
+        "id": 1995,
+        "name": "Whyteleafe South",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1996,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.123421,
+          51.331129
+        ]
+      },
+      "properties": {
+        "id": 1996,
+        "name": "Reedham",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1997,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.134245,
+          51.322064
+        ]
+      },
+      "properties": {
+        "id": 1997,
+        "name": "Coulsdon Town",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1998,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.153882,
+          51.319051
+        ]
+      },
+      "properties": {
+        "id": 1998,
+        "name": "Woodmansterne",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1999,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.169331,
+          51.309336
+        ]
+      },
+      "properties": {
+        "id": 1999,
+        "name": "Chipstead",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2000,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.211054,
+          51.294731
+        ]
+      },
+      "properties": {
+        "id": 2000,
+        "name": "Kingswood",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2001,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.235863,
+          51.291424
+        ]
+      },
+      "properties": {
+        "id": 2001,
+        "name": "Tadworth",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2002,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.242186,
+          51.308624
+        ]
+      },
+      "properties": {
+        "id": 2002,
+        "name": "Tattenham Corner",
+        "line": "Southern",
+        "src": "southern-extra"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2003,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.065603,
+          51.386932
+        ]
+      },
+      "properties": {
+        "id": 2003,
+        "name": "Woodside",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2004,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.070312,
+          51.384885
+        ]
+      },
+      "properties": {
+        "id": 2004,
+        "name": "Blackhorse Lane",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2005,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.042861,
+          51.354529
+        ]
+      },
+      "properties": {
+        "id": 2005,
+        "name": "Gravel Hill",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2006,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.171053,
+          51.397543
+        ]
+      },
+      "properties": {
+        "id": 2006,
+        "name": "Mitcham",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2007,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.14287,
+          51.389438
+        ]
+      },
+      "properties": {
+        "id": 2007,
+        "name": "Beddington Lane",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2008,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.129271,
+          51.38572
+        ]
+      },
+      "properties": {
+        "id": 2008,
+        "name": "Therapia Lane",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2009,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.123915,
+          51.382466
+        ]
+      },
+      "properties": {
+        "id": 2009,
+        "name": "Ampere Way",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2010,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.117897,
+          51.377004
+        ]
+      },
+      "properties": {
+        "id": 2010,
+        "name": "Waddon Marsh",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2011,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.113415,
+          51.373469
+        ]
+      },
+      "properties": {
+        "id": 2011,
+        "name": "Wandle Park",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2012,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.157614,
+          51.392718
+        ]
+      },
+      "properties": {
+        "id": 2012,
+        "name": "Mitcham Junction",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2013,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.077758,
+          51.374937
+        ]
+      },
+      "properties": {
+        "id": 2013,
+        "name": "Sandilands",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2014,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.032885,
+          51.356224
+        ]
+      },
+      "properties": {
+        "id": 2014,
+        "name": "Addington Village",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2015,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.024215,
+          51.35097
+        ]
+      },
+      "properties": {
+        "id": 2015,
+        "name": "Fieldway",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2016,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.020393,
+          51.345507
+        ]
+      },
+      "properties": {
+        "id": 2016,
+        "name": "King Henry's Drive",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2017,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.017432,
+          51.342668
+        ]
+      },
+      "properties": {
+        "id": 2017,
+        "name": "New Addington",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2018,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.106252,
+          51.374803
+        ]
+      },
+      "properties": {
+        "id": 2018,
+        "name": "Reeves Corner",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2019,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.098912,
+          51.3739
+        ]
+      },
+      "properties": {
+        "id": 2019,
+        "name": "George Street",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2020,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.056135,
+          51.40356
+        ]
+      },
+      "properties": {
+        "id": 2020,
+        "name": "Birkbeck",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2021,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.060426,
+          51.399682
+        ]
+      },
+      "properties": {
+        "id": 2021,
+        "name": "Harrington Road",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2022,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.043157,
+          51.409637
+        ]
+      },
+      "properties": {
+        "id": 2022,
+        "name": "Beckenham Road",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2023,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.097617,
+          51.375624
+        ]
+      },
+      "properties": {
+        "id": 2023,
+        "name": "Wellesley Road",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2024,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.060087,
+          51.359783
+        ]
+      },
+      "properties": {
+        "id": 2024,
+        "name": "Coombe Lane",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2025,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.10418,
+          51.373648
+        ]
+      },
+      "properties": {
+        "id": 2025,
+        "name": "Church Street",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2026,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.049876,
+          51.406581
+        ]
+      },
+      "properties": {
+        "id": 2026,
+        "name": "Avenue Road",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2027,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.058222,
+          51.391583
+        ]
+      },
+      "properties": {
+        "id": 2027,
+        "name": "Arena",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2028,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.073207,
+          51.379821
+        ]
+      },
+      "properties": {
+        "id": 2028,
+        "name": "Addiscombe",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2029,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.205041,
+          51.421556
+        ]
+      },
+      "properties": {
+        "id": 2029,
+        "name": "Wimbledon",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2030,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.049526,
+          51.39835
+        ]
+      },
+      "properties": {
+        "id": 2030,
+        "name": "Elmers End",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2031,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.103784,
+          51.375867
+        ]
+      },
+      "properties": {
+        "id": 2031,
+        "name": "Centrale",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2032,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.026406,
+          51.410775
+        ]
+      },
+      "properties": {
+        "id": 2032,
+        "name": "Beckenham Junction",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2033,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.101625,
+          51.379049
+        ]
+      },
+      "properties": {
+        "id": 2033,
+        "name": "West Croydon",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2034,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.092762,
+          51.374799
+        ]
+      },
+      "properties": {
+        "id": 2034,
+        "name": "East Croydon",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2035,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.085556,
+          51.375205
+        ]
+      },
+      "properties": {
+        "id": 2035,
+        "name": "Lebanon Road",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2036,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.080581,
+          51.364206
+        ]
+      },
+      "properties": {
+        "id": 2036,
+        "name": "Lloyd Park",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2037,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.178654,
+          51.40109
+        ]
+      },
+      "properties": {
+        "id": 2037,
+        "name": "Belgrave Walk",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2038,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.182544,
+          51.403529
+        ]
+      },
+      "properties": {
+        "id": 2038,
+        "name": "Phipps Bridge",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2039,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.207797,
+          51.417729
+        ]
+      },
+      "properties": {
+        "id": 2039,
+        "name": "Dundonald Road",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2040,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.193148,
+          51.40897
+        ]
+      },
+      "properties": {
+        "id": 2040,
+        "name": "Morden Road",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2041,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.201498,
+          51.413867
+        ]
+      },
+      "properties": {
+        "id": 2041,
+        "name": "Merton Park",
+        "line": "Tramlink",
+        "src": "trams"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2042,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.090891,
+          51.440285
+        ]
+      },
+      "properties": {
+        "id": 2042,
+        "name": "West Dulwich",
+        "line": "Southeastern",
+        "src": "extra-branches"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2043,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.089603,
+          51.468043
+        ]
+      },
+      "properties": {
+        "id": 2043,
+        "name": "Denmark Hill",
+        "line": "Southeastern",
+        "src": "extra-branches"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2044,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.069413,
+          51.470006
+        ]
+      },
+      "properties": {
+        "id": 2044,
+        "name": "Peckham Rye",
+        "line": "Southeastern",
+        "src": "extra-branches"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2045,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.052375,
+          51.466835
+        ]
+      },
+      "properties": {
+        "id": 2045,
+        "name": "Nunhead",
+        "line": "Southeastern",
+        "src": "extra-branches"
+      }
     }
   ],
   "properties": {
-    "totalStations": 1567,
+    "totalStations": 1630,
     "stationsPerLine": {
       "Bakerloo": 25,
       "ElizabethLine": 41,
@@ -25190,15 +26261,16 @@
       "GreatWesternRailway": 148,
       "Chiltern": 45,
       "SouthWesternRailway": 163,
-      "Southern": 138,
+      "Southern": 158,
       "SoutheasternHighSpeed": 22,
-      "Southeastern": 128,
+      "Southeastern": 132,
       "HeathrowExpress": 3,
       "EastMidlandsRailway": 57,
       "GreatNorthern": 52,
       "GatwickExpress": 7,
       "GreaterAnglia": 59,
-      "C2c": 26
+      "C2c": 26,
+      "Tramlink": 39
     }
   }
 }

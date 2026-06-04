@@ -37,4 +37,5 @@ module.exports = {
   EastMidlandsRailway: 29,
   GreatWesternRailway: 30,
   HeathrowExpress: 31,
+  Tramlink: 32,
 }

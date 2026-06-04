@@ -12936,5 +12936,572 @@
     ],
     "line": "Southern",
     "src": "southern-branch"
+  },
+  {
+    "name": "New Cross Gate",
+    "coords": [
+      -0.040429,
+      51.475298
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Brockley",
+    "coords": [
+      -0.037613,
+      51.464229
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Honor Oak Park",
+    "coords": [
+      -0.04502,
+      51.45046
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Forest Hill",
+    "coords": [
+      -0.05309,
+      51.439242
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Sydenham",
+    "coords": [
+      -0.054221,
+      51.427742
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Penge West",
+    "coords": [
+      -0.060661,
+      51.417503
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Anerley",
+    "coords": [
+      -0.065494,
+      51.412577
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Crystal Palace",
+    "coords": [
+      -0.071267,
+      51.417659
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Birkbeck",
+    "coords": [
+      -0.056539,
+      51.403456
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Beckenham Junction",
+    "coords": [
+      -0.025987,
+      51.411062
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Kenley",
+    "coords": [
+      -0.100844,
+      51.324776
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Whyteleafe",
+    "coords": [
+      -0.081016,
+      51.309921
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Whyteleafe South",
+    "coords": [
+      -0.077231,
+      51.303751
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Reedham",
+    "coords": [
+      -0.123421,
+      51.331129
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Coulsdon Town",
+    "coords": [
+      -0.134245,
+      51.322064
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Woodmansterne",
+    "coords": [
+      -0.153882,
+      51.319051
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Chipstead",
+    "coords": [
+      -0.169331,
+      51.309336
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Kingswood",
+    "coords": [
+      -0.211054,
+      51.294731
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Tadworth",
+    "coords": [
+      -0.235863,
+      51.291424
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Tattenham Corner",
+    "coords": [
+      -0.242186,
+      51.308624
+    ],
+    "line": "Southern",
+    "src": "southern-extra"
+  },
+  {
+    "name": "Woodside",
+    "coords": [
+      -0.065603,
+      51.386932
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Blackhorse Lane",
+    "coords": [
+      -0.070312,
+      51.384885
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Gravel Hill",
+    "coords": [
+      -0.042861,
+      51.354529
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Mitcham",
+    "coords": [
+      -0.171053,
+      51.397543
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Beddington Lane",
+    "coords": [
+      -0.14287,
+      51.389438
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Therapia Lane",
+    "coords": [
+      -0.129271,
+      51.38572
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Ampere Way",
+    "coords": [
+      -0.123915,
+      51.382466
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Waddon Marsh",
+    "coords": [
+      -0.117897,
+      51.377004
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Wandle Park",
+    "coords": [
+      -0.113415,
+      51.373469
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Mitcham Junction",
+    "coords": [
+      -0.157614,
+      51.392718
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Sandilands",
+    "coords": [
+      -0.077758,
+      51.374937
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Addington Village",
+    "coords": [
+      -0.032885,
+      51.356224
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Fieldway",
+    "coords": [
+      -0.024215,
+      51.35097
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "King Henry's Drive",
+    "coords": [
+      -0.020393,
+      51.345507
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "New Addington",
+    "coords": [
+      -0.017432,
+      51.342668
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Reeves Corner",
+    "coords": [
+      -0.106252,
+      51.374803
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "George Street",
+    "coords": [
+      -0.098912,
+      51.3739
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Birkbeck",
+    "coords": [
+      -0.056135,
+      51.40356
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Harrington Road",
+    "coords": [
+      -0.060426,
+      51.399682
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Beckenham Road",
+    "coords": [
+      -0.043157,
+      51.409637
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Wellesley Road",
+    "coords": [
+      -0.097617,
+      51.375624
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Coombe Lane",
+    "coords": [
+      -0.060087,
+      51.359783
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Church Street",
+    "coords": [
+      -0.10418,
+      51.373648
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Avenue Road",
+    "coords": [
+      -0.049876,
+      51.406581
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Arena",
+    "coords": [
+      -0.058222,
+      51.391583
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Addiscombe",
+    "coords": [
+      -0.073207,
+      51.379821
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Wimbledon",
+    "coords": [
+      -0.205041,
+      51.421556
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Elmers End",
+    "coords": [
+      -0.049526,
+      51.39835
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Centrale",
+    "coords": [
+      -0.103784,
+      51.375867
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Beckenham Junction",
+    "coords": [
+      -0.026406,
+      51.410775
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "West Croydon",
+    "coords": [
+      -0.101625,
+      51.379049
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "East Croydon",
+    "coords": [
+      -0.092762,
+      51.374799
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Lebanon Road",
+    "coords": [
+      -0.085556,
+      51.375205
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Lloyd Park",
+    "coords": [
+      -0.080581,
+      51.364206
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Belgrave Walk",
+    "coords": [
+      -0.178654,
+      51.40109
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Phipps Bridge",
+    "coords": [
+      -0.182544,
+      51.403529
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Dundonald Road",
+    "coords": [
+      -0.207797,
+      51.417729
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Morden Road",
+    "coords": [
+      -0.193148,
+      51.40897
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "Merton Park",
+    "coords": [
+      -0.201498,
+      51.413867
+    ],
+    "line": "Tramlink",
+    "src": "trams"
+  },
+  {
+    "name": "West Dulwich",
+    "coords": [
+      -0.090891,
+      51.440285
+    ],
+    "line": "Southeastern",
+    "src": "extra-branches"
+  },
+  {
+    "name": "Denmark Hill",
+    "coords": [
+      -0.089603,
+      51.468043
+    ],
+    "line": "Southeastern",
+    "src": "extra-branches"
+  },
+  {
+    "name": "Peckham Rye",
+    "coords": [
+      -0.069413,
+      51.470006
+    ],
+    "line": "Southeastern",
+    "src": "extra-branches"
+  },
+  {
+    "name": "Nunhead",
+    "coords": [
+      -0.052375,
+      51.466835
+    ],
+    "line": "Southeastern",
+    "src": "extra-branches"
   }
 ]
