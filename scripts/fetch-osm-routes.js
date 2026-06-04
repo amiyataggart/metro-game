@@ -111,7 +111,10 @@ const RELATION_MATCHERS = [
   // carry operator="Govia Thameslink Railway", so they MUST be split by name,
   // never by operator). Heathrow Express has an EMPTY operator tag in OSM, so
   // it too is name-only.
-  { lineKey: 'Southern', test: (t) => t.route === 'train' && /^Southern:/.test(t.name || '') },
+  // Southern = union of name-prefix (coastal routes) OR operator (inner-suburban
+  // / South London Line routes named without the prefix). Neither alone is
+  // complete. The UK bbox in OVERPASS_QUERY keeps Indian "Southern Railway" out.
+  { lineKey: 'Southern', test: (t) => t.route === 'train' && (/^Southern:/.test(t.name || '') || /^Southern( Railway)?$/.test(t.operator || '')) },
   { lineKey: 'GreatNorthern', test: (t) => t.route === 'train' && /^Great Northern:/.test(t.name || '') },
   { lineKey: 'GatwickExpress', test: (t) => t.route === 'train' && /^Gatwick Express:/.test(t.name || '') },
   { lineKey: 'GreatWesternRailway', test: (t) => t.route === 'train' && /^GWR:/.test(t.name || '') },
@@ -149,17 +152,21 @@ const OVERPASS_QUERY = `
   relation["route"="train"]["ref"~"^Elizabeth"];
   relation["route"="light_rail"]["network"~"Docklands"];
   relation["route"="train"]["name"~"^Thameslink:"];
-  relation["route"="train"]["name"~"^Southern:"];
-  relation["route"="train"]["name"~"^Great Northern:"];
-  relation["route"="train"]["name"~"^Gatwick Express:"];
-  relation["route"="train"]["name"~"^GWR:"];
-  relation["route"="train"]["name"~"^CH:"];
-  relation["route"="train"]["name"~"^c2c:"];
-  relation["route"="train"]["name"~"^Heathrow Express:"];
-  relation["route"="train"]["operator"="Southeastern"];
-  relation["route"="train"]["operator"="Greater Anglia"];
-  relation["route"="train"]["operator"="South Western Railway"];
-  relation["route"="train"]["operator"="East Midlands Railway"];
+  // National Rail TOCs — constrained to a UK bbox (S,W,N,E) so operator-name
+  // collisions with foreign railways (e.g. Indian "South Western Railway" /
+  // "Southern Railway") are excluded.
+  relation["route"="train"]["name"~"^Southern:"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["operator"~"^Southern( Railway)?$"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["name"~"^Great Northern:"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["name"~"^Gatwick Express:"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["name"~"^GWR:"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["name"~"^CH:"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["name"~"^c2c:"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["name"~"^Heathrow Express:"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["operator"="Southeastern"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["operator"="Greater Anglia"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["operator"="South Western Railway"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["operator"="East Midlands Railway"](49.8,-8.7,61.0,2.0);
 );
 out geom;
 >;

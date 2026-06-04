@@ -8763,134 +8763,6 @@
     "line": "SouthWesternRailway"
   },
   {
-    "name": "Hazrat Nizamuddin Junction",
-    "coords": [
-      77.2543093,
-      28.5890207
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Agra Cantonment Junction",
-    "coords": [
-      77.9903044,
-      27.1589365
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Gwalior Junction",
-    "coords": [
-      78.1818251,
-      26.21551
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Virangana Lakshmibai Jhansi Junction",
-    "coords": [
-      78.5530025,
-      25.4451444
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Bhopal Junction",
-    "coords": [
-      77.4138682,
-      23.2682334
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Itarsi Junction",
-    "coords": [
-      77.7666042,
-      22.6078713
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Nagpur Junction",
-    "coords": [
-      79.0885096,
-      21.1522935
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Balharshah",
-    "coords": [
-      79.347926,
-      19.8494606
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Kazipet Junction",
-    "coords": [
-      79.5114606,
-      17.9744052
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Secunderabad Junction",
-    "coords": [
-      78.5029553,
-      17.4329748
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Sedam",
-    "coords": [
-      77.2849667,
-      17.1810545
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Raichur",
-    "coords": [
-      77.3394627,
-      16.1932834
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Guntakal Junction",
-    "coords": [
-      77.367221,
-      15.1747593
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Dharmavaram Junction",
-    "coords": [
-      77.7156561,
-      14.4261788
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Sri Satya Sai Prashanthi Nilayam",
-    "coords": [
-      77.7589875,
-      14.1616257
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Bangalore City Junction",
-    "coords": [
-      77.568046,
-      12.9783992
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
     "name": "Bedhampton",
     "coords": [
       -0.996281,
@@ -9115,142 +8987,6 @@
     "line": "SouthWesternRailway"
   },
   {
-    "name": "Kannur",
-    "coords": [
-      75.367309,
-      11.8722504
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Payyanur",
-    "coords": [
-      75.1954123,
-      12.0913379
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Nileshwar",
-    "coords": [
-      75.1357956,
-      12.2558766
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Kanhangad",
-    "coords": [
-      75.0847435,
-      12.3200992
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Kasaragod",
-    "coords": [
-      74.9874045,
-      12.4917873
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Mangaluru Central",
-    "coords": [
-      74.8434661,
-      12.8625016
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Mangalore Junction",
-    "coords": [
-      74.8795068,
-      12.8664586
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Bantawal",
-    "coords": [
-      75.0339436,
-      12.8780603
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Kabaka Puttur",
-    "coords": [
-      75.2049522,
-      12.7687544
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Subrahmanya Road",
-    "coords": [
-      75.5578907,
-      12.7317335
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Sakleshpur",
-    "coords": [
-      75.7789159,
-      12.9455299
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Hassan Junction",
-    "coords": [
-      76.1173845,
-      13.0032309
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Channarayapatna",
-    "coords": [
-      76.3938858,
-      12.8924577
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Shravanabelagola",
-    "coords": [
-      76.4657827,
-      12.8715899
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "B.G Nagar",
-    "coords": [
-      76.7330834,
-      12.968599
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Kunigal",
-    "coords": [
-      77.0111645,
-      13.0164154
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
-    "name": "Yesvantpur Junction",
-    "coords": [
-      77.5513762,
-      13.0239297
-    ],
-    "line": "SouthWesternRailway"
-  },
-  {
     "name": "Seaford",
     "coords": [
       0.0999594,
@@ -9331,10 +9067,162 @@
     "line": "Southern"
   },
   {
+    "name": "Caterham",
+    "coords": [
+      -0.0782507,
+      51.2822035
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "South Croydon",
+    "coords": [
+      -0.09327,
+      51.3627329
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "East Croydon",
+    "coords": [
+      -0.0927317,
+      51.3758448
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Thornton Heath",
+    "coords": [
+      -0.1002713,
+      51.3988535
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Wandsworth Common",
+    "coords": [
+      -0.1633296,
+      51.4461245
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Battersea Park",
+    "coords": [
+      -0.1476577,
+      51.4768309
+    ],
+    "line": "Southern"
+  },
+  {
     "name": "London Victoria",
     "coords": [
-      -0.1451776,
-      51.4945092
+      -0.1445802,
+      51.4947328
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Aldrington",
+    "coords": [
+      -0.1817423,
+      50.8363558
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Portslade",
+    "coords": [
+      -0.2053193,
+      50.8357573
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Fishersgate",
+    "coords": [
+      -0.2195742,
+      50.8342805
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Southwick",
+    "coords": [
+      -0.2371421,
+      50.8324714
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Shoreham-by-Sea",
+    "coords": [
+      -0.2714448,
+      50.8343756
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Lancing",
+    "coords": [
+      -0.3232037,
+      50.8270176
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "East Worthing",
+    "coords": [
+      -0.3551084,
+      50.821592
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Worthing",
+    "coords": [
+      -0.3761766,
+      50.8186425
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "West Worthing",
+    "coords": [
+      -0.3933519,
+      50.818373
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Ford",
+    "coords": [
+      -0.5779535,
+      50.8292804
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Havant",
+    "coords": [
+      -0.9807286,
+      50.8544322
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Portsmouth and Southsea",
+    "coords": [
+      -1.0906766,
+      50.7982364
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Portsmouth Harbour",
+    "coords": [
+      -1.1087548,
+      50.7967313
     ],
     "line": "Southern"
   },
@@ -9343,14 +9231,6 @@
     "coords": [
       -0.170851,
       51.4634678
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "East Croydon",
-    "coords": [
-      -0.0928258,
-      51.375903
     ],
     "line": "Southern"
   },
@@ -9407,6 +9287,14 @@
     "coords": [
       0.2817675,
       50.7696048
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Queens Road Peckham",
+    "coords": [
+      -0.0572978,
+      51.4736434
     ],
     "line": "Southern"
   },
@@ -9579,6 +9467,214 @@
     "line": "Southern"
   },
   {
+    "name": "Carshalton",
+    "coords": [
+      -0.1668081,
+      51.3684442
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Sutton",
+    "coords": [
+      -0.1909906,
+      51.3597647
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Cheam",
+    "coords": [
+      -0.2144882,
+      51.3555756
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Ewell East",
+    "coords": [
+      -0.2412751,
+      51.3452803
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Epsom",
+    "coords": [
+      -0.2700773,
+      51.3340266
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Ashtead",
+    "coords": [
+      -0.3071489,
+      51.3179839
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Leatherhead",
+    "coords": [
+      -0.3330134,
+      51.2991112
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Box Hill & Westhumble",
+    "coords": [
+      -0.3286533,
+      51.2539962
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Dorking Main",
+    "coords": [
+      -0.3241206,
+      51.2411729
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Holmwood",
+    "coords": [
+      -0.3208618,
+      51.1811206
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Ockley",
+    "coords": [
+      -0.3361416,
+      51.1515715
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Warnham",
+    "coords": [
+      -0.3295905,
+      51.0930438
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Bognor Regis",
+    "coords": [
+      -0.6761738,
+      50.7870168
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Arundel",
+    "coords": [
+      -0.5461477,
+      50.8482003
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Pulborough",
+    "coords": [
+      -0.5153686,
+      50.9585465
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Billingshurst",
+    "coords": [
+      -0.448328,
+      51.0151882
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Oxted",
+    "coords": [
+      -0.0040747,
+      51.2573729
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Hurst Green",
+    "coords": [
+      0.0042467,
+      51.2442915
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Edenbridge Town",
+    "coords": [
+      0.0672303,
+      51.200147
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Hever",
+    "coords": [
+      0.0948252,
+      51.1813941
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Cowden",
+    "coords": [
+      0.1098411,
+      51.1556621
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Ashurst",
+    "coords": [
+      0.1525461,
+      51.1286499
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Eridge",
+    "coords": [
+      0.2000036,
+      51.0896218
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Crowborough",
+    "coords": [
+      0.1880527,
+      51.0462235
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Buxted",
+    "coords": [
+      0.1313543,
+      50.9900567
+    ],
+    "line": "Southern"
+  },
+  {
+    "name": "Uckfield",
+    "coords": [
+      0.0964969,
+      50.9687394
+    ],
+    "line": "Southern"
+  },
+  {
     "name": "Pevensey and Westham",
     "coords": [
       0.3262062,
@@ -9715,30 +9811,6 @@
     "line": "Southern"
   },
   {
-    "name": "Epsom",
-    "coords": [
-      -0.2700773,
-      51.3340266
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "Ewell East",
-    "coords": [
-      -0.2413,
-      51.3453061
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "Cheam",
-    "coords": [
-      -0.2124913,
-      51.3560827
-    ],
-    "line": "Southern"
-  },
-  {
     "name": "Carshalton Beeches",
     "coords": [
       -0.1682469,
@@ -9795,26 +9867,10 @@
     "line": "Southern"
   },
   {
-    "name": "Sutton",
-    "coords": [
-      -0.1903314,
-      51.3597453
-    ],
-    "line": "Southern"
-  },
-  {
     "name": "Selhurst",
     "coords": [
       -0.0891486,
       51.3927274
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "Thornton Heath",
-    "coords": [
-      -0.1016067,
-      51.3996891
     ],
     "line": "Southern"
   },
@@ -9843,22 +9899,6 @@
     "line": "Southern"
   },
   {
-    "name": "Wandsworth Common",
-    "coords": [
-      -0.1638706,
-      51.446442
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "Battersea Park",
-    "coords": [
-      -0.1475886,
-      51.4784204
-    ],
-    "line": "Southern"
-  },
-  {
     "name": "Belmont",
     "coords": [
       -0.1987678,
@@ -9871,78 +9911,6 @@
     "coords": [
       -0.1704351,
       50.835141
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "Aldrington",
-    "coords": [
-      -0.1820972,
-      50.8363584
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "Portslade",
-    "coords": [
-      -0.2053112,
-      50.8357235
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "Fishersgate",
-    "coords": [
-      -0.2200426,
-      50.8342146
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "Southwick",
-    "coords": [
-      -0.2373401,
-      50.8324318
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "Shoreham-by-Sea",
-    "coords": [
-      -0.2717732,
-      50.8343913
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "Lancing",
-    "coords": [
-      -0.3235905,
-      50.8269195
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "East Worthing",
-    "coords": [
-      -0.3553678,
-      50.8215143
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "Worthing",
-    "coords": [
-      -0.37539,
-      50.8186165
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "West Worthing",
-    "coords": [
-      -0.3931814,
-      50.8183698
     ],
     "line": "Southern"
   },
@@ -9967,14 +9935,6 @@
     "coords": [
       -0.4893238,
       50.8165113
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "Ford",
-    "coords": [
-      -0.5799326,
-      50.829756
     ],
     "line": "Southern"
   },
@@ -10007,14 +9967,6 @@
     "coords": [
       -0.9387188,
       50.8515993
-    ],
-    "line": "Southern"
-  },
-  {
-    "name": "Havant",
-    "coords": [
-      -0.9815462,
-      50.8543984
     ],
     "line": "Southern"
   },

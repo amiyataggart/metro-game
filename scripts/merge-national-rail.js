@@ -46,6 +46,17 @@ const osm = read(osmPath)
 const osmNew = read(OSM_IN)
 const stationsNew = read(STATIONS_IN)
 
+// Idempotent: purge any existing National Rail entries first so a corrective
+// re-fetch replaces them cleanly instead of duplicating.
+const purgedFeat = features.features.length
+features.features = features.features.filter((f) => !NEW_LINES.has(f.properties.line))
+extras.length // no-op to keep lint quiet
+const extrasKept = extras.filter((s) => !NEW_LINES.has(s.line))
+extras.length = 0
+extras.push(...extrasKept)
+osm.features = osm.features.filter((f) => !NEW_LINES.has(f.properties.line))
+console.log(`purged ${purgedFeat - features.features.length} existing NR station feature(s)`)
+
 // ---- 1. features.json: merge new-line station Points (transform-data Pass 3) ----
 let nextId = 0
 for (const f of features.features) {
