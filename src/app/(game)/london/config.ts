@@ -2,9 +2,15 @@ import { Metadata } from 'next'
 import type { MapOptions } from 'maplibre-gl'
 import { Config, Line } from '@/lib/types'
 
+// Entry order == legend roundel order (ProgressBars uses Object.keys insertion
+// order); the `order` field == found-list sort order and on-map stacking key.
+// Both are kept in one canonical sequence, matching the line-picker grouping:
+// London Underground, London Overground, Elizabeth line, DLR, Thameslink,
+// London Trams, National Rail — services alphabetical within each group.
 export const LINES: {
   [name: string]: Line
 } = {
+  // ---- London Underground ----
   Bakerloo: {
     name: 'Bakerloo',
     color: '#b36305',
@@ -82,29 +88,21 @@ export const LINES: {
     textColor: '#222',
     order: 10,
   },
-  ElizabethLine: {
-    name: 'Elizabeth line',
-    color: '#6950A1',
-    backgroundColor: '#2b1d4d',
+  // ---- London Overground (2024 line names; white-stripe styling) ----
+  Liberty: {
+    name: 'Liberty',
+    color: '#7C878E',
+    backgroundColor: '#3a4348',
     textColor: '#fff',
     order: 11,
     stripe: 'solid',
   },
-  DLR: {
-    name: 'DLR',
-    color: '#00afad',
-    backgroundColor: '#006d6b',
-    textColor: '#fff',
-    order: 12,
-    stripe: 'solid',
-  },
-  // 2024 Overground line renames — rendered with white-stripe styling
   Lioness: {
     name: 'Lioness',
     color: '#FAA61A',
     backgroundColor: '#9b5a00',
     textColor: '#222',
-    order: 13,
+    order: 12,
     stripe: 'solid',
   },
   Mildmay: {
@@ -112,23 +110,7 @@ export const LINES: {
     color: '#3DB6E1',
     backgroundColor: '#1a4f70',
     textColor: '#222',
-    order: 14,
-    stripe: 'solid',
-  },
-  Windrush: {
-    name: 'Windrush',
-    color: '#DA291C',
-    backgroundColor: '#76140d',
-    textColor: '#fff',
-    order: 15,
-    stripe: 'solid',
-  },
-  Weaver: {
-    name: 'Weaver',
-    color: '#823065',
-    backgroundColor: '#3f1631',
-    textColor: '#fff',
-    order: 16,
+    order: 13,
     stripe: 'solid',
   },
   Suffragette: {
@@ -136,17 +118,43 @@ export const LINES: {
     color: '#5BBD72',
     backgroundColor: '#1f5b30',
     textColor: '#222',
+    order: 14,
+    stripe: 'solid',
+  },
+  Weaver: {
+    name: 'Weaver',
+    color: '#823065',
+    backgroundColor: '#3f1631',
+    textColor: '#fff',
+    order: 15,
+    stripe: 'solid',
+  },
+  Windrush: {
+    name: 'Windrush',
+    color: '#DA291C',
+    backgroundColor: '#76140d',
+    textColor: '#fff',
+    order: 16,
+    stripe: 'solid',
+  },
+  // ---- Elizabeth line, DLR ----
+  ElizabethLine: {
+    name: 'Elizabeth line',
+    color: '#6950A1',
+    backgroundColor: '#2b1d4d',
+    textColor: '#fff',
     order: 17,
     stripe: 'solid',
   },
-  Liberty: {
-    name: 'Liberty',
-    color: '#7C878E',
-    backgroundColor: '#3a4348',
+  DLR: {
+    name: 'DLR',
+    color: '#00afad',
+    backgroundColor: '#006d6b',
     textColor: '#fff',
     order: 18,
     stripe: 'solid',
   },
+  // ---- Thameslink ----
   Thameslink: {
     name: 'Thameslink',
     color: '#D182A0',
@@ -155,18 +163,17 @@ export const LINES: {
     order: 19,
     stripe: 'dashed',
   },
-  // ---- National Rail TOCs ----
-  // Colours match TfL's "London's rail & tube services" map. All are dashed
-  // (white core) like Thameslink; Southeastern high speed uses yellow dashes.
-  // State-owned National Rail
-  SouthWesternRailway: {
-    name: 'South Western Railway',
-    color: '#C63834',
-    backgroundColor: '#6e1d1b',
-    textColor: '#fff',
+  // ---- London Trams (Tramlink) — hollow white-centre, TfL trams green ----
+  Tramlink: {
+    name: 'London Trams',
+    color: '#80B253',
+    backgroundColor: '#3a5226',
+    textColor: '#222',
     order: 20,
-    stripe: 'dashed',
+    stripe: 'solid',
   },
+  // ---- National Rail (alphabetical by name; dashed like Thameslink, white
+  // core except Southeastern high speed which uses yellow dashes) ----
   C2c: {
     name: 'c2c',
     color: '#C62F7C',
@@ -175,12 +182,68 @@ export const LINES: {
     order: 21,
     stripe: 'dashed',
   },
+  Chiltern: {
+    name: 'Chiltern Railways',
+    color: '#A382AA',
+    backgroundColor: '#4d3a52',
+    textColor: '#fff',
+    order: 22,
+    stripe: 'dashed',
+  },
+  EastMidlandsRailway: {
+    name: 'East Midlands Railway',
+    color: '#4F9AB3',
+    backgroundColor: '#285060',
+    textColor: '#fff',
+    order: 23,
+    stripe: 'dashed',
+  },
+  GatwickExpress: {
+    name: 'Gatwick Express',
+    color: '#1A1919',
+    backgroundColor: '#000000',
+    textColor: '#fff',
+    order: 24,
+    stripe: 'dashed',
+  },
+  GreatNorthern: {
+    name: 'Great Northern',
+    color: '#BB9767',
+    backgroundColor: '#5e4a30',
+    textColor: '#222',
+    order: 25,
+    stripe: 'dashed',
+  },
+  GreatWesternRailway: {
+    name: 'Great Western Railway',
+    color: '#2A2D74',
+    backgroundColor: '#15163a',
+    textColor: '#fff',
+    order: 26,
+    stripe: 'dashed',
+  },
   GreaterAnglia: {
     name: 'Greater Anglia',
     color: '#828795',
     backgroundColor: '#44474e',
     textColor: '#fff',
-    order: 22,
+    order: 27,
+    stripe: 'dashed',
+  },
+  HeathrowExpress: {
+    name: 'Heathrow Express',
+    color: '#75BAB1',
+    backgroundColor: '#3a5d5a',
+    textColor: '#222',
+    order: 28,
+    stripe: 'dashed',
+  },
+  SouthWesternRailway: {
+    name: 'South Western Railway',
+    color: '#C63834',
+    backgroundColor: '#6e1d1b',
+    textColor: '#fff',
+    order: 29,
     stripe: 'dashed',
   },
   Southeastern: {
@@ -188,7 +251,7 @@ export const LINES: {
     color: '#2B65A0',
     backgroundColor: '#173456',
     textColor: '#fff',
-    order: 23,
+    order: 30,
     stripe: 'dashed',
   },
   SoutheasternHighSpeed: {
@@ -196,7 +259,7 @@ export const LINES: {
     color: '#2B65A0',
     backgroundColor: '#173456',
     textColor: '#fff',
-    order: 24,
+    order: 31,
     stripe: 'dashed',
     stripeColor: '#F4D04D',
   },
@@ -205,67 +268,8 @@ export const LINES: {
     color: '#439752',
     backgroundColor: '#245029',
     textColor: '#fff',
-    order: 25,
-    stripe: 'dashed',
-  },
-  GreatNorthern: {
-    name: 'Great Northern',
-    color: '#BB9767',
-    backgroundColor: '#5e4a30',
-    textColor: '#222',
-    order: 26,
-    stripe: 'dashed',
-  },
-  GatwickExpress: {
-    name: 'Gatwick Express',
-    color: '#1A1919',
-    backgroundColor: '#000000',
-    textColor: '#fff',
-    order: 27,
-    stripe: 'dashed',
-  },
-  // Privately-owned National Rail
-  Chiltern: {
-    name: 'Chiltern Railways',
-    color: '#A382AA',
-    backgroundColor: '#4d3a52',
-    textColor: '#fff',
-    order: 28,
-    stripe: 'dashed',
-  },
-  EastMidlandsRailway: {
-    name: 'East Midlands Railway',
-    color: '#4F9AB3',
-    backgroundColor: '#285060',
-    textColor: '#fff',
-    order: 29,
-    stripe: 'dashed',
-  },
-  GreatWesternRailway: {
-    name: 'Great Western Railway',
-    color: '#2A2D74',
-    backgroundColor: '#15163a',
-    textColor: '#fff',
-    order: 30,
-    stripe: 'dashed',
-  },
-  HeathrowExpress: {
-    name: 'Heathrow Express',
-    color: '#75BAB1',
-    backgroundColor: '#3a5d5a',
-    textColor: '#222',
-    order: 31,
-    stripe: 'dashed',
-  },
-  // London Trams (Tramlink) — TfL light rail. Hollow white-centre treatment
-  // like the Overground, in TfL trams green.
-  Tramlink: {
-    name: 'London Trams',
-    color: '#80B253',
-    backgroundColor: '#3a5226',
-    textColor: '#222',
     order: 32,
-    stripe: 'solid',
+    stripe: 'dashed',
   },
 }
 

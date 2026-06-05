@@ -21,8 +21,8 @@ const GROUPS: { name: string; lines: string[] }[] = [
   },
   { name: 'Elizabeth Line (Crossrail)', lines: ['ElizabethLine'] },
   { name: 'Docklands Light Railway (DLR)', lines: ['DLR'] },
-  { name: 'London Trams', lines: ['Tramlink'] },
   { name: 'Thameslink', lines: ['Thameslink'] },
+  { name: 'London Trams', lines: ['Tramlink'] },
   {
     name: 'National Rail',
     // alphabetical by display name (c2c, Chiltern Railways, East Midlands…)
