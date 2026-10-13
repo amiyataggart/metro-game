@@ -9,6 +9,7 @@
  *   env SIZE=map | staging   sizing as /lab ?size=map, or as /lab/staging1
  *       (clamped z11.4–12.4 above z11.4, map scale below)
  *   env STATIONS=1   draw station markers + names (for locating artefacts)
+ *   env TRACKS=1     draw the OSM tracks underneath (thin grey; tunnels dashed)
  */
 const fs = require('fs')
 const path = require('path')
@@ -57,6 +58,19 @@ const pathOf = (f) => {
   }).join(' ')
 }
 let svg = ''
+// TRACKS=1: the real OSM tracks underneath (thin; tunnels dashed), to check
+// which track each line follows
+if (process.env.TRACKS) {
+  const zlib = require('zlib')
+  const T = JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(__dirname, 'data', 'tracks.json.gz'))))
+  const N = new Map(T.nodes.map((n) => [n[0], [n[1], n[2]]]))
+  for (const [, type, tunnel, , ns] of T.ways) {
+    const P = ns.map((id) => N.get(id)).filter(Boolean).map(px)
+    if (P.length < 2 || P.every(([x, y]) => x < 0 || y < 0 || x > W || y > H)) continue
+    const col = type === 'subway' ? '#9aa' : type === 'light_rail' ? '#8bb' : '#888'
+    svg += `<polyline points="${P.map((q) => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ')}" fill="none" stroke="${col}" stroke-width="1" ${tunnel ? 'stroke-dasharray="4,3"' : ''} opacity="0.8"/>`
+  }
+}
 for (const f of feats) {
   const d = pathOf(f); if (!d) continue
   const l = f.properties.line
