@@ -270,6 +270,13 @@ export const services: Service[] = [
       'Orpington',
     ],
   },
+  // source: knowledge (user-confirmed via RTT 2026-10-13): peak Welwyn Garden City
+  // services also call at Alexandra Palace, Hornsey and Harringay (not in OSM relations)
+  {
+    line: 'Thameslink',
+    name: 'Welwyn Garden City – London (peak calls)',
+    stops: ['New Southgate', 'Alexandra Palace', 'Hornsey', 'Harringay', 'Finsbury Park'],
+  },
   // source: osm relation 6464332, 6464331
   {
     line: 'Thameslink',
