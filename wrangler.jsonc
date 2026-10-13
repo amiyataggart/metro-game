@@ -14,5 +14,8 @@
   "compatibility_date": "2025-03-25",
   "assets": {
     "directory": "./out"
-  }
+  },
+  // Required by `npx wrangler preview` (the deploy command for non-production
+  // branches such as dev). Empty: assets/compat settings stay at top level.
+  "previews": {}
 }
