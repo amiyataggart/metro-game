@@ -921,7 +921,7 @@ function main() {
       pre = r.items
     }
     const polys = [...(V.d ? bundle2(pre, V.d, noSnap, !!V.sameLine) : pre), ...tubeSet]
-    const cfg = { ...V.ribbon, ...(V.tubeRaw ? { WIDE_LINES: [...TUBE] } : {}), NO_SNAP_DROP, STRATA_TUBE: UNDERGROUND, ORIENT_SPINES: true, EXIT_ORDER: !process.argv.includes("--no-exit"), STRATA: !process.argv.includes('--no-strata') }
+    const cfg = { ...V.ribbon, ...(V.tubeRaw ? { WIDE_LINES: [...TUBE], D_XSTRATA: 15 } : {}), NO_SNAP_DROP, STRATA_TUBE: UNDERGROUND, ORIENT_SPINES: true, EXIT_ORDER: !process.argv.includes("--no-exit"), STRATA: !process.argv.includes('--no-strata') }
     const fcIn = polys.map((p) => ({ ...p, props: { stratum: p.st } }))
     let built = ribbonsWithProps(fcIn, colorOf, orderOf, passthrough, V.id, cfg)
     for (const f of built.features) delete f.properties.stratum
