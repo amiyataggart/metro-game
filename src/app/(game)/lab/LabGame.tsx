@@ -33,6 +33,7 @@ export default function LabGame({
   const [zoom, setZoom] = useState<number | null>(null)
   const [open, setOpen] = useState(true)
   const onMap = (m: maplibregl.Map) => {
+    ;(window as any).__labMap = m // debugging hook for /lab
     setZoom(m.getZoom())
     m.on('zoom', () => setZoom(m.getZoom()))
   }

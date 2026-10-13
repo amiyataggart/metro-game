@@ -151,6 +151,15 @@ const CONFIG = {
   // (spines laid in opposite directions otherwise mirror the lanes -> the
   // pair crosses at the hand-over). Off by default: /london is unchanged.
   ORIENT_GAP: 300, // m: only link spines a line moves between within this gap
+  NO_SNAP_DROP: [], // lab: [{line, radius}] NO_SNAP entries to skip (matched on
+  // line + radius), for rules a lab variant makes redundant.
+  EXIT_ORDER: false, // lab: rank a corridor's lanes by the side each line
+  // leaves/joins it on (left exits take left lanes), so a line peels off the
+  // outside of a stack instead of cutting across its neighbours. Config order
+  // breaks ties; spines under an ORDER_OVERRIDE keep the override ranking.
+  STRATA: false, // lab: features carry a `stratum` property (e.g. 'tunnel' /
+  // 'surface'); a line only snaps onto spines laid in the same stratum, so a
+  // deep tube tunnel never bundles with the viaduct above it.
   EMIT_SPINE: false, // lab: tag each offset-mode feature with its spine id
   // (`spine`, -1 = solo) so lab zoom levels can be aligned corridor by corridor
   OFFSET_SMOOTH_WIN: 24, // offset-mode: window (samples) for smoothing laneOff
@@ -487,7 +496,7 @@ class SpineGrid {
   }
   // nearest spine vertex within D of p that is tangent-parallel to `tan`.
   // If onlySpine >= 0, restrict to that spine.
-  nearest(p, tan, D, angCos, onlySpine = -1) {
+  nearest(p, tan, D, angCos, onlySpine = -1, ok = null) {
     const cx = Math.floor(p[0] / this.cell)
     const cy = Math.floor(p[1] / this.cell)
     let best = null
@@ -498,6 +507,7 @@ class SpineGrid {
         if (!arr) continue
         for (const e of arr) {
           if (onlySpine >= 0 && e.spineId !== onlySpine) continue
+          if (ok && !ok(e)) continue
           const d = Math.hypot(e.x - p[0], e.y - p[1])
           if (d >= bestD) continue
           if (tan) {
@@ -589,6 +599,10 @@ function main() {
     for (const t of disable) tables[t].length = 0
   }
   ORDER_OVERRIDES.forEach((o) => (o.atXY = toXY(o.at)))
+  for (const d of CONFIG.NO_SNAP_DROP) {
+    const k = NO_SNAP.findIndex((o) => o.line === d.line && o.radius === d.radius)
+    if (k >= 0) NO_SNAP.splice(k, 1)
+  }
   NO_SNAP.forEach((o) => (o.atXY = toXY(o.at)))
   FORCE_SNAP.forEach((o) => (o.atXY = toXY(o.at)))
   NUDGE.forEach((o) => (o.atXY = toXY(o.at)))
@@ -719,6 +733,7 @@ function main() {
 
   // ---- spines ----
   const spines = [] // {id, xy, tan, cum, members:Map(line->[[s0,s1]]), sign}
+  let layingStratum = null // CONFIG.STRATA: stratum of the feature laying spines
   const grid = new SpineGrid(CONFIG.D)
 
   function addSpine(xy) {
@@ -728,7 +743,7 @@ function main() {
     const nseq = projectNodes(xy, cum) // ordered nodes along this spine
     const npos = new Map() // node -> index in nseq
     nseq.forEach((e, k) => npos.set(e.node, k))
-    spines.push({ id, xy, tan, cum, members: new Map(), sign: 1, nseq, npos })
+    spines.push({ id, xy, tan, cum, members: new Map(), sign: 1, nseq, npos, stratum: layingStratum })
     for (let i = 0; i < xy.length; i++)
       grid.add(id, i, xy[i][0], xy[i][1], tan[i][0], tan[i][1])
     return id
@@ -807,10 +822,13 @@ function main() {
 
   for (const { f } of procOrder) {
     const n = f.xy.length
+    const fStratum = CONFIG.STRATA ? f.props.stratum ?? null : null
+    const okS = CONFIG.STRATA ? (e) => spines[e.spineId].stratum === fStratum : null
+    layingStratum = fStratum
     // 1) assign each point to nearest existing spine (or -1)
     const assign = new Array(n).fill(-1)
     for (let i = 0; i < n; i++) {
-      const e = grid.nearest(f.xy[i], f.tan[i], CONFIG.D, CONFIG.ANG_COS)
+      const e = grid.nearest(f.xy[i], f.tan[i], CONFIG.D, CONFIG.ANG_COS, -1, okS)
       if (e) assign[i] = e.spineId
     }
     const clean = hysteresis(assign, f.xy)
@@ -820,6 +838,7 @@ function main() {
     // the geometric radius misses. Only fills -1 (solo) vertices, and only
     // where f stays within D2 of the spine (rules out same-name-far-apart).
     for (const X of spines) {
+      if (CONFIG.STRATA && X.stratum !== fStratum) continue
       for (const run of sharedNodeRuns(f.nodes, X)) {
         // Within each shared-station span, fill each solo vertex onto X — but
         // only where f actually stays within the D2 corridor of X (per-vertex,
@@ -993,6 +1012,42 @@ function main() {
     }
   }
 
+  // ---- exit sides (CONFIG.EXIT_ORDER) ----
+  // For every member run of a line on a spine: where is the line ~120 m before
+  // the run starts and after it ends, measured along the spine's LEFT normal?
+  // +1 = fully left, -1 = fully right, 0 = continues straight / unknown.
+  if (CONFIG.EXIT_ORDER) {
+    const K = 12
+    for (const sp of spines) sp.exits = new Map()
+    for (const f of lineFeats) {
+      const n = f.xy.length
+      for (const g of f.segments) {
+        if (g.kind === 'solo') continue
+        const sp = spines[g.spineId]
+        let side = 0
+        for (const [edge, beyond] of [[g.lo, g.lo - K], [g.hi, g.hi + K]]) {
+          if (beyond < 0 || beyond >= n) continue
+          const s0 = projectArc(sp, f.xy[edge])
+          const { pt, normal } = spineAt(sp, s0)
+          const p = f.xy[beyond]
+          const d = (p[0] - pt[0]) * normal[0] + (p[1] - pt[1]) * normal[1]
+          side += Math.max(-1, Math.min(1, d / 40))
+        }
+        const a = projectArc(sp, f.xy[g.lo]), b = projectArc(sp, f.xy[g.hi])
+        if (!sp.exits.has(f.line)) sp.exits.set(f.line, [])
+        sp.exits.get(f.line).push([Math.min(a, b), Math.max(a, b), side])
+      }
+    }
+  }
+  const exitSideAt = (sp, line, s) => {
+    let best = 0, bd = Infinity
+    for (const [a, b, side] of sp.exits.get(line) || []) {
+      const d = s < a ? a - s : s > b ? s - b : 0
+      if (d < bd) { bd = d; best = side }
+    }
+    return best
+  }
+
   // ---- lane packing per spine (per BIN, sorted by order) ----
   for (const sp of spines) {
     const total = sp.cum.at(-1)
@@ -1019,9 +1074,13 @@ function main() {
         const ov = spOv.find((o) => dist(pt, o.atXY) < o.radius)
         if (ov) top = ov.top
       }
+      // EXIT_ORDER: lane index r maps to a LEFT-normal offset of r * sign, so
+      // sorting by exitSide * sign puts left-leaving lines in left lanes.
       const keyOf = top
         ? (l) => { const i = top.indexOf(l); return i >= 0 ? i : top.length + (ORDER[l] ?? 999) }
-        : (l) => ORDER[l] ?? 999
+        : CONFIG.EXIT_ORDER && !spOv.length
+          ? (l) => Math.round(exitSideAt(sp, l, mid) * sp.sign * 4) * 1000 + (ORDER[l] ?? 999)
+          : (l) => ORDER[l] ?? 999
       present.sort((a, c) => keyOf(a) - keyOf(c) || (a < c ? -1 : 1))
       const m = present.length
       sp.mcount[b] = m

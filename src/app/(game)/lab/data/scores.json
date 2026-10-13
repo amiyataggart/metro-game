@@ -106,5 +106,59 @@
       "twists": 733,
       "widthM": 9.5
     }
+  },
+  "graph2": {
+    "11": {
+      "overlapKm": 135.8,
+      "twists": 847,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 89.6,
+      "twists": 664,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 65.7,
+      "twists": 544,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 50.6,
+      "twists": 482,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 38.4,
+      "twists": 430,
+      "widthM": 9.5
+    }
+  },
+  "graph3": {
+    "11": {
+      "overlapKm": 149.1,
+      "twists": 801,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 103.5,
+      "twists": 619,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 70.6,
+      "twists": 585,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 52.6,
+      "twists": 536,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 42.4,
+      "twists": 536,
+      "widthM": 9.5
+    }
   }
 }

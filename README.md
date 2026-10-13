@@ -307,11 +307,15 @@ node scripts/lab/fetch-lab-tracks.js --opl all-rail.opl --osm-base <timestamp>  
 node scripts/lab/build-lab-tracks.js      # route every service over the track graph, bundle at
                                           # 4 radii, build-ribbons per level, align levels, morph
                                           # data, scorecard -> src/app/(game)/lab/data/
+node scripts/lab/build-lab-v2.js         # /lab/graph2 + /lab/graph3 (surface lines routed, tube/DLR
+                                          # raw centrelines, strata, tapers, exit-side lane order);
+                                          # run after build-lab-tracks.js (merges into scores.json)
 node scripts/lab/render.js <variant> <lng,lat> <zoom> [name] [WxH]   # browser-free PNG -> qa/out/lab/
 ```
 
 `build-ribbons.js` gained lab-only options (`--config` JSON; `ORIENT_SPINES`,
-`EMIT_SPINE`), all off by default, so the `/london` build is byte-identical.
+`EMIT_SPINE`, `STRATA`, `EXIT_ORDER`, `NO_SNAP_DROP`), all off by default, so the
+`/london` build is byte-identical.
 
 ## Configuration
 
