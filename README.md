@@ -307,15 +307,22 @@ node scripts/lab/fetch-lab-tracks.js --opl all-rail.opl --osm-base <timestamp>  
 node scripts/lab/build-lab-tracks.js      # route every service over the track graph, bundle at
                                           # 4 radii, build-ribbons per level, align levels, morph
                                           # data, scorecard -> src/app/(game)/lab/data/
-node scripts/lab/build-lab-v2.js         # /lab/graph2 + /lab/graph3 (surface lines routed, tube/DLR
-                                          # raw centrelines, strata, tapers, exit-side lane order);
-                                          # run after build-lab-tracks.js (merges into scores.json)
+node scripts/lab/build-lab-v2.js         # /lab/graph2..graph5 (surface lines routed, tube/DLR raw
+                                          # centrelines, strata, tapers, exit-side + network lane
+                                          # order, graph5 baked for map-scale sizing); run after
+                                          # build-lab-tracks.js (merges into scores.json)
 node scripts/lab/render.js <variant> <lng,lat> <zoom> [name] [WxH]   # browser-free PNG -> qa/out/lab/
 ```
 
 `build-ribbons.js` gained lab-only options (`--config` JSON; `ORIENT_SPINES`,
-`EMIT_SPINE`, `STRATA`, `EXIT_ORDER`, `NO_SNAP_DROP`), all off by default, so the
-`/london` build is byte-identical.
+`EMIT_SPINE`, `STRATA`, `EXIT_ORDER`, `GLOBAL_ORDER`, `NO_SNAP_DROP`), all off by
+default, so the `/london` build is byte-identical.
+
+Every lab page has a **Sizing** switch (`?size=`): `current`; `clamp` (today's
+zoom curve for line widths, lane gaps, stripes and station circles, clamped
+between its z11.4 and z12.4 values); `map` (sizes pinned to the map scale as at
+z12.4, doubling per zoom level). Station label text is never resized. `/lab/graph5`
+is built for, and always uses, `map`.
 
 ## Configuration
 

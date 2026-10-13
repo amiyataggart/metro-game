@@ -10,7 +10,7 @@
 const fs = require('fs')
 const path = require('path')
 const sharp = require('sharp')
-const { widthPx, mpp, offsetPx } = require('./score.js')
+const { widthPx, mpp, offsetPx, MAP_W } = require('./score.js')
 const ROOT = path.join(__dirname, '..', '..')
 const LAB = path.join(ROOT, 'src', 'app', '(game)', 'lab', 'data')
 const [variant, center, zs, name, size] = process.argv.slice(2)
@@ -25,6 +25,8 @@ else if (variant === 'levels') fc = load(path.join(LAB, `routes.${meta.levels.fi
 else if (variant === 'morph') { fc = load(path.join(LAB, 'routes.morph.json')); mode = meta.morph }
 else if (variant.endsWith('.json')) fc = load(variant)
 else fc = load(path.join(LAB, `routes.${variant}.json`))
+// map-scale sizing (as /lab ?size=map): graph5 always, others with SIZE=map
+if (variant === 'graph5' || process.env.SIZE === 'map') mode = 'map'
 const LINES = require('../line-order.js')
 const cfgSrc = fs.readFileSync(path.join(ROOT, 'src', 'app', '(game)', 'london', 'config.ts'), 'utf8')
 const colour = {}, stripe = {}
@@ -37,7 +39,7 @@ const MG = 69300, ML = 111320
 const [clng, clat] = center.split(',').map(Number)
 const m = mpp(z)
 const px = (c) => [W / 2 + ((c[0] - clng) * MG) / m, H / 2 - ((c[1] - clat) * ML) / m]
-const w = widthPx(z)
+const w = mode === 'map' ? MAP_W / mpp(z) : widthPx(z)
 const feats = fc.features.filter((f) => colour[f.properties.line]).sort((a, b) => band(a.properties.line) - band(b.properties.line) || (LINES[a.properties.line] ?? 99) - (LINES[b.properties.line] ?? 99))
 const pathOf = (f) => {
   const P = f.geometry.coordinates.map(px)

@@ -1,5 +1,5 @@
 // The /lab track-geometry experiments (built by scripts/lab/build-lab-tracks.js).
-export type LabVariant = { slug: 'graph' | 'graph2' | 'graph3' | 'levels' | 'morph'; title: string; blurb: string }
+export type LabVariant = { slug: 'graph' | 'graph2' | 'graph3' | 'graph4' | 'graph5' | 'levels' | 'morph'; title: string; blurb: string }
 
 export const VARIANTS: LabVariant[] = [
   {
@@ -19,6 +19,18 @@ export const VARIANTS: LabVariant[] = [
     title: 'Graph 3',
     blurb:
       'Graph 2 without the pre-bundling pass: the routed tracks go straight into the /london ribbon builder, so a line is either fully in a corridor or on its own true track: no partial pulls or wobbles, at the cost of some neighbouring tracks staying apart.',
+  },
+  {
+    slug: 'graph4',
+    title: 'Graph 4',
+    blurb:
+      'Graph 2 plus network-wide lane order: where a line passes from one shared corridor to the next, both corridors put it on the same side, so lane order agrees along the whole route instead of being chosen corridor by corridor (fewer crossings at hand-overs and junctions).',
+  },
+  {
+    slug: 'graph5',
+    title: 'Graph 5',
+    blurb:
+      'Everything, built for map-scale sizing (lines a fixed ~43 m wide, like the streets): tracks share a corridor only where they are within one line width; network-wide lane order; and lane offsets baked into the geometry as continuous curves, so a line holds its lane until its real track moves out past it, then peels off smoothly. Scorecard measured at that fixed width.',
   },
   {
     slug: 'levels',

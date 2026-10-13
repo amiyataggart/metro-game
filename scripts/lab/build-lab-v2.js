@@ -9,9 +9,10 @@
  *    wins (shared track, e.g. Thameslink/EMR). Tube + DLR keep their single raw
  *    OSM centreline (as /london): the graph has one tunnel per direction and the
  *    router zig-zagged between them (Piccadilly, Kennington).
- *  - STRATA. Every piece is tagged 'tunnel' or 'surface' from the OSM tracks
- *    under it; lines only bundle within the same stratum (the deep Jubilee no
- *    longer snaps onto the Waterloo East viaduct).
+ *  - STRATA. Every piece is tagged surface / main-line tunnel / tube tunnel /
+ *    light-rail tunnel from the OSM tracks under it; lines only bundle within
+ *    the same stratum (the deep Jubilee no longer snaps onto the Waterloo East
+ *    viaduct, Great Northern no longer onto the Piccadilly at King's Cross).
  *  - HAND RULES ON. NO_SNAP etc. stay enabled (West Hampstead, St Pancras,
  *    Warren St); NO_SNAP zones are also frozen during mean-shift bundling.
  *  - TERMINI reach the station: end cost weighted 3x (Cannon Street stopped
@@ -42,9 +43,16 @@ const TUBE = new Set([
   'Bakerloo', 'Central', 'Circle', 'District', 'HammersmithAndCity', 'Jubilee',
   'Metropolitan', 'Northern', 'Piccadilly', 'Victoria', 'WaterlooAndCity', 'DLR',
 ])
+// graph4 = graph2 + network-wide lane order. graph5 = everything, for map-scale
+// sizing (line width fixed in METRES, MAP_W ~43 m): corridors only where tracks
+// are within one line width (D = MAP_W), network lane order, and lane offsets
+// BAKED into the geometry as continuous curves (no stepped pieces, laneOff 0).
+const { MAP_W } = require('./score.js')
 const VARIANTS = [
   { id: 'graph2', d: 35, ribbon: { D: 35 / 3, D2: 70 / 3 } },
   { id: 'graph3', d: 0, ribbon: {} },
+  { id: 'graph4', d: 35, ribbon: { D: 35 / 3, D2: 70 / 3, GLOBAL_ORDER: 4 } },
+  { id: 'graph5', d: MAP_W, sameLine: true, ribbon: { D: MAP_W, D2: 130, GLOBAL_ORDER: 4 }, bake: true },
 ]
 // Thameslink's 5 km NO_SNAP north of King's Cross keeps it off the Piccadilly /
 // Victoria at Finsbury Park; with strata those tunnels can't bundle with it
@@ -94,7 +102,10 @@ function strataOf(G, info, xy, R, prefer) {
       if (prefer && info.type[j] & prefer && d < bdP) { bdP = d; bestP = j }
     }
     const j = bestP >= 0 ? bestP : best
-    return j >= 0 && info.tun[j] ? 'tunnel' : 'surface'
+    // tunnels by kind: a deep tube tunnel and a main-line tunnel (Gasworks /
+    // Copenhagen, under King's Cross) are different strata too
+    if (j < 0 || !info.tun[j]) return 'surface'
+    return info.type[j] & 2 ? 'tunnel-subway' : info.type[j] & 4 ? 'tunnel-light' : 'tunnel-rail'
   })
   const cum = [0]
   for (let i = 1; i < xy.length; i++) cum.push(cum[i - 1] + dist(xy[i - 1], xy[i]))
@@ -131,7 +142,9 @@ function splitByStratum(poly, st) {
 // ---------------------------------------------------------------- bundling
 // build-lab-tracks bundle(), plus: only same-stratum points attract, and points
 // inside a NO_SNAP zone for their own line neither move nor attract.
-function bundle2(polys, d, noSnap) {
+// sameLine: only a line's own parallel copies attract (a line routed over the
+// fast AND slow tracks becomes one line), never two different lines.
+function bundle2(polys, d, noSnap, sameLine = false) {
   const STEP = 10
   const P = polys.map((p) => {
     const xy = resample(p.xy, STEP)
@@ -158,7 +171,7 @@ function bundle2(polys, d, noSnap) {
         let sw = 1, so = 0
         for (let gx = cx - 1; gx <= cx + 1; gx++) for (let gy = cy - 1; gy <= cy + 1; gy++)
           for (const [pj, j] of grid.get(gx + ',' + gy) || []) {
-            if (pj === pi || P[pj].st !== p.st) continue
+            if (pj === pi || P[pj].st !== p.st || (sameLine && P[pj].line !== p.line)) continue
             const o = P[pj].xy[j]
             const r = Math.hypot(o[0] - q[0], o[1] - q[1])
             if (r >= d) continue
@@ -191,7 +204,11 @@ function bundle2(polys, d, noSnap) {
 // pieces whose laneOff eases (smoothstep) from the shared value at the joint to
 // the feature's own value. At a fork the trunk keeps its value; branches ease
 // out of it.
-function taper(fc) {
+// opts.geoW (metres, map-scale sizing only): a branch leaving a corridor onto
+// its own track keeps its lane until its true track has moved out past that
+// lane, then hands over (smooth max of lane offset and true separation), so
+// it never swings back towards the corridor before peeling off (no S-bend).
+function taper(fc, opts = {}) {
   const byLine = new Map()
   fc.features.forEach((f, fi) => {
     const l = f.properties.line
@@ -248,13 +265,17 @@ function taper(fc) {
         const lo = fc.features[e.fi].properties.laneOff || 0
         return { ...e, o: e.atStart ? lo : -lo, t: outTan(e.fi, e.atStart), len: G(e.fi).cum.at(-1) }
       })
-      const set = (e, mOut, L) => {
+      const set = (e, mOut, L, geoRamp = false) => {
         if (Math.abs(mOut - e.o) < 1e-6 || L < TAPER_STEP) return
         if (!ramps.has(e.fi)) ramps.set(e.fi, {})
-        ramps.get(e.fi)[e.atStart ? 'start' : 'end'] = { L, m: e.atStart ? mOut : -mOut }
+        ramps.get(e.fi)[e.atStart ? 'start' : 'end'] = { L, m: e.atStart ? mOut : -mOut, ...(geoRamp ? { geo: { J: nd.p, t: e.t, mOut, atStart: e.atStart } } : {}) }
         joints++
       }
-      if (inc.length === 2) {
+      const solo = (e) => Math.abs(e.o) < 1e-6
+      if (opts.geoW && inc.length === 2 && solo(inc[0]) !== solo(inc[1])) {
+        const [cor, own] = solo(inc[0]) ? [inc[1], inc[0]] : [inc[0], inc[1]]
+        set(own, -cor.o, Math.min(400, 0.9 * own.len), true)
+      } else if (inc.length === 2) {
         const [a, b] = inc
         const mB = (b.o - a.o) / 2 // joint value in b's outward frame
         set(a, -mB, Math.min(TAPER_M / 2, 0.45 * a.len))
@@ -267,7 +288,7 @@ function taper(fc) {
           for (const o of inc) if (o !== e) s += e.t[0] * o.t[0] + e.t[1] * o.t[1]
           if (s < best) { best = s; trunk = e }
         }
-        for (const e of inc) if (e !== trunk) set(e, -trunk.o, Math.min(TAPER_M, 0.45 * e.len))
+        for (const e of inc) if (e !== trunk) set(e, -trunk.o, opts.geoW && solo(e) ? Math.min(400, 0.9 * e.len) : Math.min(TAPER_M, 0.45 * e.len), !!opts.geoW && solo(e))
       }
     }
   }
@@ -279,9 +300,45 @@ function taper(fc) {
     const { xy, cum } = G(fi)
     const L = cum.at(-1)
     const lo = f.properties.laneOff || 0
+    const W = opts.geoW
+    // geo ramp: outward-frame lane offset that keeps the line at
+    // smoothmax(lane position, its true lateral distance from the joint)
+    const geoVal = (g, s, Lr, p) => {
+      const rn = [g.t[1], -g.t[0]] // right of the outward direction
+      const d = (p[0] - g.J[0]) * rn[0] + (p[1] - g.J[1]) * rn[1]
+      const sg = Math.sign(g.mOut), a = Math.abs(g.mOut) * W, b = Math.max(0, d * sg), k = W / 2
+      const smax = (a + b + Math.sqrt((a - b) ** 2 + k * k)) / 2 - (Math.sqrt(a * a + k * k) - a) / 2
+      const fade = s < 0.7 * Lr ? 1 : 1 - ease((s - 0.7 * Lr) / (0.3 * Lr))
+      const v = ((sg * smax - d) / W) * fade
+      return g.atStart ? v : -v
+    }
+    // geo ramps are precomputed outward from the joint every 10 m and made
+    // one-way: once the line has left its lane it never drifts back (a
+    // curving track would otherwise pull the offset in and out again).
+    const pointAt = (s) => {
+      let k = 1
+      while (k < cum.length - 1 && cum[k] < s) k++
+      const t = (s - cum[k - 1]) / (cum[k] - cum[k - 1] || 1)
+      return [xy[k - 1][0] + (xy[k][0] - xy[k - 1][0]) * t, xy[k - 1][1] + (xy[k][1] - xy[k - 1][1]) * t]
+    }
+    const profiles = {}
+    for (const side of ['start', 'end']) {
+      const rr = r[side]
+      if (!rr || !rr.geo) continue
+      const prof = []
+      let lim = Infinity
+      for (let u = 0; u <= rr.L + 1e-6; u += 10) {
+        const v = geoVal(rr.geo, u, rr.L, pointAt(side === 'start' ? u : L - u))
+        const sg = Math.sign(rr.m) || 1
+        lim = Math.min(lim, Math.max(0, v * sg))
+        prof.push(sg * lim)
+      }
+      profiles[side] = prof
+    }
+    const look = (prof, u) => { const k = Math.min(prof.length - 1, Math.max(0, u / 10)); const a = Math.floor(k), b = Math.min(prof.length - 1, a + 1); return prof[a] + (prof[b] - prof[a]) * (k - a) }
     const val = (s) => {
-      if (r.start && s < r.start.L) return r.start.m + (lo - r.start.m) * ease(s / r.start.L)
-      if (r.end && L - s < r.end.L) return r.end.m + (lo - r.end.m) * ease((L - s) / r.end.L)
+      if (r.start && s < r.start.L) return profiles.start ? look(profiles.start, s) : r.start.m + (lo - r.start.m) * ease(s / r.start.L)
+      if (r.end && L - s < r.end.L) return profiles.end ? look(profiles.end, L - s) : r.end.m + (lo - r.end.m) * ease((L - s) / r.end.L)
       return lo
     }
     // densify inside the ramps, keep original vertices elsewhere
@@ -309,6 +366,68 @@ function taper(fc) {
     }
   })
   return { fc: { ...fc, features: out }, joints }
+}
+
+// ---------------------------------------------------------------- bake
+// For map-scale sizing only (a line is W metres wide at every zoom): per line,
+// chain the (tapered) pieces end to end, give every vertex its laneOff, smooth
+// that along the chain, and move the vertex laneOff * W metres to the right of
+// the chain's smoothed direction (MapLibre's +offset side). One continuous
+// curve per chain; output laneOff 0.
+function bake(fc, W) {
+  const out = [], byLine = new Map()
+  for (const f of fc.features) {
+    if (PASSTHROUGH.has(f.properties.line) || f.geometry.type !== 'LineString') { out.push(f); continue }
+    if (!byLine.has(f.properties.line)) byLine.set(f.properties.line, [])
+    byLine.get(f.properties.line).push(f)
+  }
+  const key = (p) => Math.round(p[0]) + ',' + Math.round(p[1])
+  for (const [line, fs_] of byLine) {
+    const P = fs_.map((f) => ({ xy: f.geometry.coordinates.map(toXY), lo: f.properties.laneOff || 0, props: f.properties }))
+    const ends = new Map()
+    P.forEach((p, i) => { for (const [k, atStart] of [[key(p.xy[0]), true], [key(p.xy.at(-1)), false]]) { if (!ends.has(k)) ends.set(k, []); ends.get(k).push({ i, atStart }) } })
+    const used = new Uint8Array(P.length)
+    const take = (i, reverse) => { used[i] = 1; const p = P[i]; return reverse ? { xy: [...p.xy].reverse(), lo: -p.lo } : { xy: p.xy, lo: p.lo } }
+    const extend = (chain, endPt) => {
+      for (;;) {
+        const at = ends.get(key(endPt)) || []
+        if (at.length !== 2) return
+        const nx = at.find((e) => !used[e.i])
+        if (!nx) return
+        const piece = take(nx.i, !nx.atStart)
+        chain.push(piece); endPt = piece.xy.at(-1)
+      }
+    }
+    // start chains at non-degree-2 ends first, then whatever is left (loops)
+    const order = P.map((p, i) => i).sort((a, b) => ((ends.get(key(P[a].xy[0])) || []).length === 2) - ((ends.get(key(P[b].xy[0])) || []).length === 2))
+    for (const i of order) {
+      if (used[i]) continue
+      const chain = [take(i, false)]
+      extend(chain, chain[0].xy.at(-1))
+      // grow backwards too
+      const back = []
+      const rev = (c) => ({ xy: [...c.xy].reverse(), lo: -c.lo })
+      const tmp = [rev(chain[0])]
+      extend(tmp, tmp[0].xy.at(-1))
+      for (let k = tmp.length - 1; k >= 1; k--) back.push(rev(tmp[k]))
+      const all = [...back, ...chain]
+      // concatenate, per-vertex offset
+      const xy = [], off = []
+      for (const c of all) c.xy.forEach((q, k) => { if (xy.length && k === 0) return; xy.push(q); off.push(c.lo) })
+      if (xy.length < 2) continue
+      const R = resample(xy, 10)
+      // carry offsets onto the resampled points by arc length
+      const cum = [0]; for (let k = 1; k < xy.length; k++) cum.push(cum[k - 1] + dist(xy[k - 1], xy[k]))
+      const rc = [0]; for (let k = 1; k < R.length; k++) rc.push(rc[k - 1] + dist(R[k - 1], R[k]))
+      let j = 0
+      const ro = rc.map((s) => { while (j < cum.length - 2 && cum[j + 1] < s) j++; return off[Math.min(off.length - 1, j + 1)] })
+      const sm = ro.map((_, k) => { let a = 0, c = 0; for (let q = Math.max(0, k - 3); q <= Math.min(ro.length - 1, k + 3); q++) { a += ro[q]; c++ } return a / c })
+      const tan = tangentsOf(R, 2)
+      const baked = R.map((q, k) => [q[0] + sm[k] * W * tan[k][1], q[1] - sm[k] * W * tan[k][0]])
+      out.push({ type: 'Feature', properties: { ...fs_[i].properties, laneOff: 0 }, geometry: { type: 'LineString', coordinates: L1.simplify(baked, 1.5).map(toLL) } })
+    }
+  }
+  return { ...fc, features: out }
 }
 
 // ---------------------------------------------------------------- main
@@ -363,24 +482,27 @@ function main() {
     base.push(...splitByStratum({ line: f.properties.line, xy }, strataOf(G, info, xy, 25, prefer)))
   }
   const km = (st) => (base.filter((p) => p.st === st).reduce((s, p) => s + p.xy.reduce((a, q, i) => (i ? a + dist(p.xy[i - 1], q) : 0), 0), 0) / 1000).toFixed(0)
-  console.log(`${base.length} pieces: ${km('surface')} km surface, ${km('tunnel')} km tunnel`)
+  console.log(`${base.length} pieces: ${km('surface')} km surface, ${['tunnel-rail', 'tunnel-subway', 'tunnel-light'].map((t) => `${km(t)} km ${t}`).join(', ')}`)
 
   const { score } = require('./score.js')
   const scoresPath = path.join(OUTDIR, 'scores.json')
   const cards = JSON.parse(fs.readFileSync(scoresPath, 'utf8'))
   const meta = { fallbacks, failures, variants: {} }
+  // baseline for map-scale variants: /london measured at the same fixed width
+  cards['london-map'] = score([11, 12, 13, 14, 15], () => london, 'map')
   for (const V of VARIANTS) {
     if (only && !only.includes(V.id)) continue
     const t1 = Date.now()
-    const polys = V.d ? bundle2(base, V.d, noSnap) : base
+    const polys = V.d ? bundle2(base, V.d, noSnap, !!V.sameLine) : base
     const cfg = { ...V.ribbon, NO_SNAP_DROP, ORIENT_SPINES: true, EXIT_ORDER: !process.argv.includes("--no-exit"), STRATA: !process.argv.includes('--no-strata') }
     const fcIn = polys.map((p) => ({ ...p, props: { stratum: p.st } }))
     let built = ribbonsWithProps(fcIn, colorOf, orderOf, passthrough, V.id, cfg)
     for (const f of built.features) delete f.properties.stratum
-    const tp = process.argv.includes('--no-taper') ? { fc: built, joints: 0 } : taper(built)
+    const tp = process.argv.includes('--no-taper') ? { fc: built, joints: 0 } : taper(built, V.bake ? { geoW: MAP_W } : {})
     built = tp.fc
+    if (V.bake) built = bake(built, MAP_W)
     if (!process.argv.includes("--dry")) fs.writeFileSync(path.join(OUTDIR, `routes.${V.id}.json`), JSON.stringify(built))
-    cards[V.id] = score([11, 12, 13, 14, 15], () => built, 'lane')
+    cards[V.id] = score([11, 12, 13, 14, 15], () => built, V.bake ? 'map' : 'lane')
     meta.variants[V.id] = { d: V.d, ribbon: cfg, features: built.features.length, taperedEnds: tp.joints }
     console.log(`${V.id}: ${built.features.length} features, ${tp.joints} tapered ends (${((Date.now() - t1) / 1000).toFixed(0)} s)`)
   }

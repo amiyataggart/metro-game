@@ -2,11 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import type maplibregl from 'maplibre-gl'
-import GamePage, { MorphConfig, RouteLevel } from '@/components/GamePage'
+import GamePage, { LabSizing, MorphConfig, RouteLevel } from '@/components/GamePage'
 import { DataFeatureCollection, RoutesFeatureCollection } from '@/lib/types'
 import type { LabVariant } from './variants'
 
-const FIXED_SIZE_ZOOM = 12.4 // = MAP_CONFIG.zoom, the opening view
+// Sizing tests (?size=…). 12.4 = MAP_CONFIG.zoom, the opening view.
+const SIZINGS: Record<string, { label: string; sizing?: LabSizing }> = {
+  current: { label: 'current' },
+  clamp: { label: 'clamped z11.4–12.4', sizing: { kind: 'clamp', min: 11.4, max: 12.4 } },
+  map: { label: 'scales with the map', sizing: { kind: 'map', ref: 12.4 } },
+}
 
 export type Scorecard = Record<string, { overlapKm: number; twists: number; widthM: number }>
 
@@ -21,6 +26,7 @@ export default function LabGame({
   cityData,
   score,
   baseline,
+  forceMapScale = false,
 }: {
   variant: LabVariant
   fc: DataFeatureCollection
@@ -31,13 +37,17 @@ export default function LabGame({
   cityData?: any
   score: Scorecard
   baseline: Scorecard
+  forceMapScale?: boolean
 }) {
   const [zoom, setZoom] = useState<number | null>(null)
-  // Sizing test: ?size=fixed freezes every zoom-dependent size at the opening
-  // zoom (12.4), so lines, stations and labels all keep one on-screen size.
-  // Read before the map mounts (map init only runs once).
-  const [fixedSize, setFixedSize] = useState<boolean | null>(null)
-  useEffect(() => setFixedSize(new URLSearchParams(window.location.search).get('size') === 'fixed'), [])
+  // Sizing test from ?size= (current | clamp | map), read before the map mounts
+  // (map init only runs once). `forceMapScale`: variants whose geometry
+  // assumes map-scale sizing.
+  const [size, setSize] = useState<string | null>(null)
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('size') || 'current'
+    setSize(forceMapScale ? 'map' : SIZINGS[q] ? q : 'current')
+  }, [forceMapScale])
   const [open, setOpen] = useState(true)
   const onMap = (m: maplibregl.Map) => {
     ;(window as any).__labMap = m // debugging hook for /lab
@@ -54,8 +64,8 @@ export default function LabGame({
       : null
   return (
     <>
-      {fixedSize != null && (
-        <GamePage fc={fc} routes={routes} routeLevels={routeLevels} morph={morph} onMap={onMap} fixedSizeZoom={fixedSize ? FIXED_SIZE_ZOOM : undefined} maskData={maskData} cityData={cityData} />
+      {size != null && (
+        <GamePage fc={fc} routes={routes} routeLevels={routeLevels} morph={morph} onMap={onMap} sizing={size ? SIZINGS[size].sizing : undefined} maskData={maskData} cityData={cityData} />
       )}
       <div className="fixed bottom-3 left-3 z-50 max-w-[calc(100vw-24px)] rounded-lg bg-white/95 p-3 text-xs text-zinc-800 shadow-lg ring-1 ring-zinc-200 dark:bg-zinc-900/95 dark:text-zinc-100 dark:ring-zinc-700">
         <div className="flex items-center gap-2">
@@ -72,9 +82,16 @@ export default function LabGame({
         </div>
         <div className="mt-1 flex items-center gap-2">
           <span className="text-zinc-500">Sizing:</span>
-          <a href="?" className={fixedSize ? 'text-blue-600 hover:underline dark:text-blue-400' : 'font-bold'}>grows with zoom</a>
-          <span className="text-zinc-400">|</span>
-          <a href="?size=fixed" className={fixedSize ? 'font-bold' : 'text-blue-600 hover:underline dark:text-blue-400'}>fixed (as at z12.4)</a>
+          {forceMapScale ? (
+            <span className="font-bold">scales with the map (built for it)</span>
+          ) : (
+            Object.entries(SIZINGS).map(([k, v], i) => (
+              <span key={k} className="flex items-center gap-2">
+                {i > 0 && <span className="text-zinc-400">|</span>}
+                <a href={k === 'current' ? '?' : `?size=${k}`} className={size === k ? 'font-bold' : 'text-blue-600 hover:underline dark:text-blue-400'}>{v.label}</a>
+              </span>
+            ))
+          )}
         </div>
         {open && (
           <>
@@ -97,7 +114,7 @@ export default function LabGame({
                 ))}
               </tbody>
             </table>
-            <p className="mt-1 text-zinc-400">(in brackets: current /london)</p>
+            <p className="mt-1 text-zinc-400">(in brackets: current /london{forceMapScale ? ", measured at the same map-scale width" : ""})</p>
           </>
         )}
       </div>

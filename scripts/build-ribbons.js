@@ -157,6 +157,12 @@ const CONFIG = {
   // leaves/joins it on (left exits take left lanes), so a line peels off the
   // outside of a stack instead of cutting across its neighbours. Config order
   // breaks ties; spines under an ORDER_OVERRIDE keep the override ranking.
+  GLOBAL_ORDER: 0, // lab: passes of network-wide lane ordering (needs
+  // ORIENT_SPINES). After a first packing, every place a line moves from one
+  // spine to the next asks the next spine to put it on the SAME side (in its
+  // direction of travel) as on the previous one; each spine re-ranks its lanes
+  // by those hints (+ EXIT_ORDER exit sides), repeated N passes, so lane order
+  // agrees from corridor to corridor instead of being chosen per corridor.
   STRATA: false, // lab: features carry a `stratum` property (e.g. 'tunnel' /
   // 'surface'); a line only snaps onto spines laid in the same stratum, so a
   // deep tube tunnel never bundles with the viaduct above it.
@@ -1049,7 +1055,8 @@ function main() {
   }
 
   // ---- lane packing per spine (per BIN, sorted by order) ----
-  for (const sp of spines) {
+  // hintAt(sp, line, s): GLOBAL_ORDER desired lane index (or null).
+  const packLanes = (hintAt) => { for (const sp of spines) {
     const total = sp.cum.at(-1)
     const nb = Math.max(1, Math.ceil(total / CONFIG.BIN))
     sp.nb = nb
@@ -1078,15 +1085,56 @@ function main() {
       // sorting by exitSide * sign puts left-leaving lines in left lanes.
       const keyOf = top
         ? (l) => { const i = top.indexOf(l); return i >= 0 ? i : top.length + (ORDER[l] ?? 999) }
-        : CONFIG.EXIT_ORDER && !spOv.length
-          ? (l) => Math.round(exitSideAt(sp, l, mid) * sp.sign * 4) * 1000 + (ORDER[l] ?? 999)
-          : (l) => ORDER[l] ?? 999
+        : hintAt && !spOv.length
+          ? (l) => (CONFIG.EXIT_ORDER ? 2 * exitSideAt(sp, l, mid) * sp.sign : 0) + (hintAt(sp, l, mid) ?? 0) + (ORDER[l] ?? 999) * 1e-4
+          : CONFIG.EXIT_ORDER && !spOv.length
+            ? (l) => Math.round(exitSideAt(sp, l, mid) * sp.sign * 4) * 1000 + (ORDER[l] ?? 999)
+            : (l) => ORDER[l] ?? 999
       present.sort((a, c) => keyOf(a) - keyOf(c) || (a < c ? -1 : 1))
       const m = present.length
       sp.mcount[b] = m
       for (let r = 0; r < m; r++) {
         sp.lanes.get(present[r])[b] = r - (m - 1) / 2 // signed lane INDEX
       }
+    }
+  } }
+  packLanes(null)
+  if (CONFIG.GLOBAL_ORDER) {
+    // transitions: consecutive non-solo segments of a feature within ORIENT_GAP
+    const trans = []
+    for (const f of lineFeats) {
+      const segs = f.segments.filter((g) => g.kind !== 'solo').map((g) => {
+        const sp = spines[g.spineId]
+        const dir = g.kind === 'own' ? 1 : projectArc(sp, f.xy[g.hi]) - projectArc(sp, f.xy[g.lo]) >= 0 ? 1 : -1
+        return { sp, dir, s0: projectArc(sp, f.xy[g.lo]), s1: projectArc(sp, f.xy[g.hi]), lo: g.lo, hi: g.hi }
+      })
+      for (let k = 1; k < segs.length; k++) {
+        const a = segs[k - 1], b = segs[k]
+        if (a.sp === b.sp || f.cum[b.lo] - f.cum[a.hi] > CONFIG.ORIENT_GAP) continue
+        trans.push({ line: f.line, a, b })
+      }
+    }
+    for (let pass = 0; pass < CONFIG.GLOBAL_ORDER; pass++) {
+      const hints = new Map() // spine id -> Map(line -> [[arc, lane]])
+      const put = (sp, line, arc, v) => {
+        if (!hints.has(sp.id)) hints.set(sp.id, new Map())
+        const m = hints.get(sp.id)
+        if (!m.has(line)) m.set(line, [])
+        m.get(line).push([arc, v])
+      }
+      for (const { line, a, b } of trans) {
+        // left-of-travel position = lane * sign * dir; carry it across
+        const la = laneAt(a.sp, line, a.s1), lb = laneAt(b.sp, line, b.s0)
+        put(b.sp, line, b.s0, la * a.sp.sign * a.dir * b.sp.sign * b.dir)
+        put(a.sp, line, a.s1, lb * b.sp.sign * b.dir * a.sp.sign * a.dir)
+      }
+      packLanes((sp, line, s) => {
+        const hs = hints.get(sp.id)?.get(line)
+        if (!hs) return null
+        let w = 0, v = 0
+        for (const [arc, val] of hs) { const k = 1 / (1 + Math.abs(arc - s) / 500); w += k; v += k * val }
+        return v / w
+      })
     }
   }
   const spacingFor = (m) => CONFIG.LANE_SPACING[m] ?? CONFIG.LANE_SPACING_DEFAULT

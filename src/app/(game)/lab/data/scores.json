@@ -109,56 +109,137 @@
   },
   "graph2": {
     "11": {
-      "overlapKm": 135.8,
-      "twists": 847,
+      "overlapKm": 145.7,
+      "twists": 835,
       "widthM": 96.4
     },
     "12": {
-      "overlapKm": 89.6,
-      "twists": 664,
+      "overlapKm": 98.8,
+      "twists": 652,
       "widthM": 54.2
     },
     "13": {
-      "overlapKm": 65.7,
-      "twists": 544,
+      "overlapKm": 73.4,
+      "twists": 549,
       "widthM": 30.1
     },
     "14": {
-      "overlapKm": 50.6,
-      "twists": 482,
+      "overlapKm": 56.1,
+      "twists": 495,
       "widthM": 17.1
     },
     "15": {
-      "overlapKm": 38.4,
-      "twists": 430,
+      "overlapKm": 41.5,
+      "twists": 445,
       "widthM": 9.5
     }
   },
   "graph3": {
     "11": {
-      "overlapKm": 149.1,
-      "twists": 801,
+      "overlapKm": 158.4,
+      "twists": 804,
       "widthM": 96.4
     },
     "12": {
-      "overlapKm": 103.5,
-      "twists": 619,
+      "overlapKm": 111.9,
+      "twists": 618,
       "widthM": 54.2
     },
     "13": {
-      "overlapKm": 70.6,
-      "twists": 585,
+      "overlapKm": 77.4,
+      "twists": 589,
       "widthM": 30.1
     },
     "14": {
-      "overlapKm": 52.6,
-      "twists": 536,
+      "overlapKm": 58.5,
+      "twists": 556,
       "widthM": 17.1
     },
     "15": {
-      "overlapKm": 42.4,
-      "twists": 536,
+      "overlapKm": 46.3,
+      "twists": 560,
       "widthM": 9.5
+    }
+  },
+  "graph4": {
+    "11": {
+      "overlapKm": 141.2,
+      "twists": 743,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 96.9,
+      "twists": 585,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 69.9,
+      "twists": 479,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 52.4,
+      "twists": 423,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 38.3,
+      "twists": 370,
+      "widthM": 9.5
+    }
+  },
+  "graph5": {
+    "11": {
+      "overlapKm": 89.1,
+      "twists": 498,
+      "widthM": 42.9
+    },
+    "12": {
+      "overlapKm": 89.1,
+      "twists": 498,
+      "widthM": 42.9
+    },
+    "13": {
+      "overlapKm": 89.1,
+      "twists": 498,
+      "widthM": 42.9
+    },
+    "14": {
+      "overlapKm": 89.1,
+      "twists": 498,
+      "widthM": 42.9
+    },
+    "15": {
+      "overlapKm": 89.1,
+      "twists": 498,
+      "widthM": 42.9
+    }
+  },
+  "london-map": {
+    "11": {
+      "overlapKm": 64.2,
+      "twists": 442,
+      "widthM": 42.9
+    },
+    "12": {
+      "overlapKm": 64.2,
+      "twists": 442,
+      "widthM": 42.9
+    },
+    "13": {
+      "overlapKm": 64.2,
+      "twists": 442,
+      "widthM": 42.9
+    },
+    "14": {
+      "overlapKm": 64.2,
+      "twists": 442,
+      "widthM": 42.9
+    },
+    "15": {
+      "overlapKm": 64.2,
+      "twists": 442,
+      "widthM": 42.9
     }
   }
 }

@@ -18,10 +18,14 @@ function widthPx(z) {
 }
 // metres per CSS pixel in MapLibre (512-px tiles) at London's latitude
 const mpp = (z) => (78271.517 * Math.cos((51.5 * Math.PI) / 180)) / 2 ** z
-// line-offset (px) of a feature at zoom z; mode 'lane' or a MORPH config
+// /lab ?size=map: line width pinned to the map at its z12.4 size (~43 m)
+const MAP_REF_Z = 12.4
+const MAP_W = widthPx(MAP_REF_Z) * mpp(MAP_REF_Z)
+// line-offset (px) of a feature at zoom z; mode 'lane', 'map' or a MORPH config
 function offsetPx(p, z, mode) {
   const lf = p.laneOff || 0
   if (mode === 'lane') return lf * widthPx(z)
+  if (mode === 'map') return (lf * MAP_W) / mpp(z)
   // blend in GROUND space: (1-t)·bundled + t·true, t linear in zoom
   const coarse = (p.dm || 0) / mpp(z) + (p.lc ?? lf) * widthPx(z)
   const fine = lf * widthPx(z)
@@ -30,7 +34,7 @@ function offsetPx(p, z, mode) {
 }
 
 function scoreAt(fc, z, mode) {
-  const W = widthPx(z) * mpp(z)
+  const W = mode === 'map' ? MAP_W : widthPx(z) * mpp(z)
   const samples = []
   for (const f of fc.features) {
     const line = f.properties.line
@@ -87,4 +91,4 @@ function score(zooms, fcAt, mode) {
   for (const z of zooms) out[z] = scoreAt(fcAt(z), z, mode)
   return out
 }
-module.exports = { score, scoreAt, widthPx, mpp, offsetPx }
+module.exports = { score, scoreAt, widthPx, mpp, offsetPx, MAP_W }
