@@ -128,9 +128,16 @@ describe('network trimmed to scope (spec §3)', () => {
     const page = readFileSync(path.join(__dirname, 'page.tsx'), 'utf8')
     expect(page).toMatch(/import \{[^}]*\blondonConfig\b[^}]*\} from '\.\/config'/)
     expect(page).toMatch(/\bscopedStationFeatures\(/)
-    expect(page).toMatch(/\bscopedRouteFeatures\(/)
     expect(page).not.toMatch(/\bvisible(Station|Route)Features\b/)
     expect(page).not.toMatch(/import config\b/)
+    // Route geometry: either filtered here, or (since Oct 2026) the promoted lab
+    // geometry served as static files from public/london-data/, which can't be
+    // filtered per line, so no line may be hidden while that's the case.
+    if (/\/london-data\//.test(page)) expect(visibility.HIDDEN_LINES.size).toBe(0)
+    else expect(page).toMatch(/\bscopedRouteFeatures\(/)
+    // the previous map keeps the scoped route filter
+    const old = readFileSync(path.join(__dirname, '..', 'london-old-oct-26', 'page.tsx'), 'utf8')
+    expect(old).toMatch(/\bscopedRouteFeatures\(/)
   })
 
   // /newtracks and /newtracks2 (untracked experiments, not to be edited) import
