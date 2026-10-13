@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type maplibregl from 'maplibre-gl'
 import GamePage, { MorphConfig, RouteLevel } from '@/components/GamePage'
 import { DataFeatureCollection, RoutesFeatureCollection } from '@/lib/types'
 import type { LabVariant } from './variants'
+
+const FIXED_SIZE_ZOOM = 12.4 // = MAP_CONFIG.zoom, the opening view
 
 export type Scorecard = Record<string, { overlapKm: number; twists: number; widthM: number }>
 
@@ -31,6 +33,11 @@ export default function LabGame({
   baseline: Scorecard
 }) {
   const [zoom, setZoom] = useState<number | null>(null)
+  // Sizing test: ?size=fixed freezes every zoom-dependent size at the opening
+  // zoom (12.4), so lines, stations and labels all keep one on-screen size.
+  // Read before the map mounts (map init only runs once).
+  const [fixedSize, setFixedSize] = useState<boolean | null>(null)
+  useEffect(() => setFixedSize(new URLSearchParams(window.location.search).get('size') === 'fixed'), [])
   const [open, setOpen] = useState(true)
   const onMap = (m: maplibregl.Map) => {
     ;(window as any).__labMap = m // debugging hook for /lab
@@ -47,7 +54,9 @@ export default function LabGame({
       : null
   return (
     <>
-      <GamePage fc={fc} routes={routes} routeLevels={routeLevels} morph={morph} onMap={onMap} maskData={maskData} cityData={cityData} />
+      {fixedSize != null && (
+        <GamePage fc={fc} routes={routes} routeLevels={routeLevels} morph={morph} onMap={onMap} fixedSizeZoom={fixedSize ? FIXED_SIZE_ZOOM : undefined} maskData={maskData} cityData={cityData} />
+      )}
       <div className="fixed bottom-3 left-3 z-50 max-w-[calc(100vw-24px)] rounded-lg bg-white/95 p-3 text-xs text-zinc-800 shadow-lg ring-1 ring-zinc-200 dark:bg-zinc-900/95 dark:text-zinc-100 dark:ring-zinc-700">
         <div className="flex items-center gap-2">
           <a href="/lab" className="font-bold text-blue-600 hover:underline dark:text-blue-400">Lab</a>
@@ -60,6 +69,12 @@ export default function LabGame({
           <button onClick={() => setOpen(!open)} className="ml-1 rounded px-1 hover:bg-zinc-100 dark:hover:bg-zinc-800" aria-label="Toggle details">
             {open ? '–' : '+'}
           </button>
+        </div>
+        <div className="mt-1 flex items-center gap-2">
+          <span className="text-zinc-500">Sizing:</span>
+          <a href="?" className={fixedSize ? 'text-blue-600 hover:underline dark:text-blue-400' : 'font-bold'}>grows with zoom</a>
+          <span className="text-zinc-400">|</span>
+          <a href="?size=fixed" className={fixedSize ? 'font-bold' : 'text-blue-600 hover:underline dark:text-blue-400'}>fixed (as at z12.4)</a>
         </div>
         {open && (
           <>
