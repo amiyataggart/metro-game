@@ -173,6 +173,10 @@ const CONFIG = {
   STRATA_TUBE: [], // lab (with STRATA): these lines (the Underground) may
   // bundle with each other across 'surface' / 'tunnel-subway' (District and
   // Piccadilly through West Kensington), never with other lines across strata.
+  D_XSTRATA: 0, // lab (with STRATA): lines in incompatible strata may still
+  // share a corridor where they already lie within this many metres (they
+  // would overlap when drawn anyway: the Victoria / Piccadilly tunnels right
+  // under Great Northern south of Finsbury Park), but are never pulled farther.
   STRATA: false, // lab: features carry a `stratum` property (e.g. 'tunnel' /
   // 'surface'); a line only snaps onto spines laid in the same stratum, so a
   // deep tube tunnel never bundles with the viaduct above it.
@@ -853,8 +857,11 @@ function main() {
     const assign = new Array(n).fill(-1)
     for (let i = 0; i < n; i++) {
       const e = WIDE.size
-        ? grid.nearest(f.xy[i], f.tan[i], CONFIG.D_WIDE, CONFIG.ANG_COS, -1, (c) =>
-            (!okS || okS(c)) && Math.hypot(c.x - f.xy[i][0], c.y - f.xy[i][1]) < (fWide || spines[c.spineId].wide ? CONFIG.D_WIDE : CONFIG.D))
+        ? grid.nearest(f.xy[i], f.tan[i], CONFIG.D_WIDE, CONFIG.ANG_COS, -1, (c) => {
+            const d = Math.hypot(c.x - f.xy[i][0], c.y - f.xy[i][1])
+            if (okS && !okS(c)) return d < CONFIG.D_XSTRATA
+            return d < (fWide || spines[c.spineId].wide ? CONFIG.D_WIDE : CONFIG.D)
+          })
         : grid.nearest(f.xy[i], f.tan[i], CONFIG.D, CONFIG.ANG_COS, -1, okS)
       if (e) assign[i] = e.spineId
     }

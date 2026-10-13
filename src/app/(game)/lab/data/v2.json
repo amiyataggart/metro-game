@@ -120,6 +120,7 @@
           "WaterlooAndCity",
           "DLR"
         ],
+        "D_XSTRATA": 15,
         "NO_SNAP_DROP": [
           {
             "line": "Thameslink",
@@ -143,8 +144,8 @@
         "EXIT_ORDER": true,
         "STRATA": true
       },
-      "features": 8607,
-      "taperedEnds": 4599,
+      "features": 10224,
+      "taperedEnds": 5483,
       "endHooksTrimmed": 73
     },
     "graph5": {
