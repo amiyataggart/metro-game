@@ -311,8 +311,11 @@ node scripts/lab/build-lab-v2.js         # /lab/graph2..graph5 (surface lines ro
                                           # centrelines, strata, tapers, exit-side + network lane
                                           # order, graph5 baked for map-scale sizing); run after
                                           # build-lab-tracks.js (merges into scores.json)
-node scripts/lab/pack-staging.js         # /lab/staging2 data: packed graph4/graph5 -> public/lab-data/staging2/
+node scripts/lab/pack-staging.js         # staging data: packed graph5/graph7/graph7t -> public/lab-data/staging3/
 node scripts/lab/render.js <variant> <lng,lat> <zoom> [name] [WxH]   # browser-free PNG -> qa/out/lab/
+node scripts/lab/find-kinks.js graph7 [--sheet 27]   # network-wide QA at z14.35: kinks, loose ends, doubled lines -> qa/out/lab/kinks-*.{json,png}
+node scripts/lab/compare.js <name> london,graph7 16 "lng,lat:label" ...   # side-by-side close-ups -> qa/out/lab/cmp-<name>.png
+                                          # env SIZE=map|staging (lab sizing), STATIONS=1 (markers + names)
 ```
 
 `build-ribbons.js` gained lab-only options (`--config` JSON; `ORIENT_SPINES`,

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 /*
- * LAB — pack the /lab/staging2 line data (efficiency pass over staging1's).
+ * LAB — pack the /lab/staging3* line data (the Staging 2 efficiency pass).
  *
- * Staging 1 imports routes.graph4.json + routes.graph5.json into the page, so
- * ~4 MB of GeoJSON is inlined in the HTML, parsed by the page, held in React
- * props and copied again to MapLibre's worker. Staging 2 instead serves small
- * static files from public/lab-data/staging2/ that MapLibre fetches and parses
+ * Importing routes.*.json into a page inlines megabytes of GeoJSON in the
+ * HTML, parsed by the page, held in React props and copied again to
+ * MapLibre's worker. The staging pages instead serve small
+ * static files from public/lab-data/staging3/ that MapLibre fetches and parses
  * in its worker. This script shrinks them:
  *  - properties: only what the map reads (`line`, `order`, `laneOff` — omitted
  *    when 0, the paint expressions coalesce it);
@@ -18,15 +18,15 @@
  * Diagnostics: DP=1e5 (coordinate precision), QL=0.1 (laneOff step),
  * NOMERGE=1. Defaults reproduce staging1's scorecard exactly.
  *
- *   node scripts/lab/pack-staging.js     (after build-lab-v2.js)
+ *   node scripts/lab/pack-staging.js [graph5,graph7,graph7t]   (after build-lab-v2.js)
  */
 const fs = require('fs')
 const path = require('path')
-const { score, STAGING } = require('./score.js')
 
 const ROOT = path.join(__dirname, '..', '..')
 const LAB = path.join(ROOT, 'src', 'app', '(game)', 'lab', 'data')
-const OUT = path.join(ROOT, 'public', 'lab-data', 'staging2')
+const OUT = path.join(ROOT, 'public', 'lab-data', 'staging3')
+const IDS = (process.argv[2] || 'graph5,graph7,graph7t').split(',')
 const Q_LANE = +(process.env.QL || 0.05)
 const SIMPLIFY_M = +(process.env.SIMPLIFY ?? 0.75) // Douglas-Peucker tolerance (m)
 
@@ -85,22 +85,14 @@ function pack(fc) {
 
 function main() {
   fs.mkdirSync(OUT, { recursive: true })
-  const packed = {}
-  for (const id of ['graph4', 'graph5']) {
+  for (const id of IDS) {
     const src = path.join(LAB, `routes.${id}.json`)
     const fc = JSON.parse(fs.readFileSync(src, 'utf8'))
-    packed[id] = pack(fc)
+    const packed = pack(fc)
     const out = path.join(OUT, `${id}.json`)
-    fs.writeFileSync(out, JSON.stringify(packed[id]))
-    console.log(`${id}: ${fc.features.length} -> ${packed[id].features.length} features, ${(fs.statSync(src).size / 1e6).toFixed(2)} -> ${(fs.statSync(out).size / 1e6).toFixed(2)} MB`)
+    fs.writeFileSync(out, JSON.stringify(packed))
+    console.log(`${id}: ${fc.features.length} -> ${packed.features.length} features, ${(fs.statSync(src).size / 1e6).toFixed(2)} -> ${(fs.statSync(out).size / 1e6).toFixed(2)} MB`)
   }
-  const scoresPath = path.join(LAB, 'scores.json')
-  const cards = JSON.parse(fs.readFileSync(scoresPath, 'utf8'))
-  cards.staging2 = score([11, 12, 13, 14, 15], (z) => (z < 11.4 ? packed.graph5 : packed.graph4), STAGING)
-  fs.writeFileSync(scoresPath, JSON.stringify(cards, null, 2))
-  const c = cards.staging2, s = cards.staging1
-  console.log('staging2 vs staging1 (overlap km / crossings):')
-  for (const z of [11, 12, 13, 14, 15]) console.log(`  z${z}: ${c[z].overlapKm} / ${c[z].twists}   (${s ? `${s[z].overlapKm} / ${s[z].twists}` : '-'})`)
 }
 
 main()

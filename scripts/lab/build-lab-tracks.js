@@ -187,13 +187,16 @@ function makeRouter(G) {
   const gScore = new Float64Array(n).fill(Infinity)
   const prev = new Int32Array(n).fill(-1)
   const touched = []
-  return function route(srcs, dsts, nodeFactor, goal) {
+  // edgeFactor(u, v) (optional, <= 1): extra multiplier per edge, e.g. a
+  // discount for track the line already uses; hScale = its minimum, so the
+  // heuristic stays admissible.
+  return function route(srcs, dsts, nodeFactor, goal, edgeFactor = null, hScale = 1) {
     for (const i of touched) { gScore[i] = Infinity; prev[i] = -1 }
     touched.length = 0
     let slack = Infinity
     for (const c of dsts.values()) slack = Math.min(slack, c)
     // admissible: straight distance to the goal point minus the target radius
-    const h = (i) => Math.max(0, Math.hypot(X[i] - goal[0], Y[i] - goal[1]) - 300) + slack
+    const h = (i) => Math.max(0, Math.hypot(X[i] - goal[0], Y[i] - goal[1]) - 300) * hScale + slack
     const heap = []
     const push = (f, i) => { heap.push([f, i]); let k = heap.length - 1; while (k > 0) { const p = (k - 1) >> 1; if (heap[p][0] <= heap[k][0]) break;[heap[p], heap[k]] = [heap[k], heap[p]]; k = p } }
     const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let k = 0; for (;;) { const l = 2 * k + 1, r = l + 1; let m = k; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === k) break;[heap[m], heap[k]] = [heap[k], heap[m]]; k = m } } return top }
@@ -207,7 +210,7 @@ function makeRouter(G) {
       if (++expanded > 400000) break
       const fu = nodeFactor(u)
       for (const v of adj[u]) {
-        const g = gScore[u] + Math.hypot(X[v] - X[u], Y[v] - Y[u]) * (fu + nodeFactor(v)) / 2
+        const g = gScore[u] + Math.hypot(X[v] - X[u], Y[v] - Y[u]) * (fu + nodeFactor(v)) / 2 * (edgeFactor ? edgeFactor(u, v) : 1)
         if (g < gScore[v]) {
           if (gScore[v] === Infinity) touched.push(v)
           gScore[v] = g; prev[v] = u; push(g + h(v), v)
@@ -309,6 +312,10 @@ function ownPathFinder(polys) {
 // (Cannon Street stopped mid-bridge, 330 m short). opts.lines: only route these.
 function routeLines(G, services, coordOf, ownGrid, ownPolys, opts = {}) {
   const endK = opts.endK ?? 1
+  // opts.reuse (0..1): cost multiplier on track this line already uses, so its
+  // services share one track where they can instead of each taking its own
+  // parallel track (fast/slow, up/down) — one line, not a braid. v1: off.
+  const reuse = opts.reuse ?? 1
   // opts.extendEnds: after routing, extend each service's FIRST/LAST stop
   // along the shortest track path (<= 800 m) to the track nearest the station,
   // where the route ends > 40 m short of it (termini whose raw geometry stops
@@ -365,7 +372,9 @@ function routeLines(G, services, coordOf, ownGrid, ownPolys, opts = {}) {
       const dsts = new Map(cands(b))
       const goal = coordOf.get(b + '|' + line)
       let ids = null
-      if (srcs.length && dsts.size) ids = route(srcs, dsts, nf, toXY(goal))
+      const used = edgesOf.get(line)
+      const ef = reuse < 1 ? (u, v) => (used.has(u < v ? u + ':' + v : v + ':' + u) ? reuse : 1) : null
+      if (srcs.length && dsts.size) ids = route(srcs, dsts, nf, toXY(goal), ef, reuse < 1 ? reuse : 1)
       const A = srcs.length ? 0 : -1, B = dsts.size ? 0 : -1
       pairCache.set(pk, ids)
       // Reject a route that strays from the line's own geometry (> 50 m away

@@ -163,6 +163,34 @@ const CONFIG = {
   // direction of travel) as on the previous one; each spine re-ranks its lanes
   // by those hints (+ EXIT_ORDER exit sides), repeated N passes, so lane order
   // agrees from corridor to corridor instead of being chosen per corridor.
+  WIDE_LINES: [], // lab: lines snapped with the /london radii (D_WIDE, D2_WIDE)
+  // instead of D / D2 — raw OSM tube centrelines (duplicates per branch,
+  // branches stopping short of their trunk, wobbles) need /london's loose snap;
+  // routed track geometry keeps the tight one. A pair uses the wide radii when
+  // either side (the feature, or the line that laid the spine) is WIDE.
+  D_WIDE: 34,
+  ANG_COS_TIGHT: 0, // lab (with WIDE_LINES): tangent gate for pairs where
+  // neither side is WIDE (precise routed track): real co-running track is
+  // within ~10°, so a stricter gate stops lines that merely CROSS at a shallow
+  // angle being snapped into each other's corridor (HS1 over the North London
+  // Line at York Way). 0 = use ANG_COS for every pair.
+  D2_WIDE: 130,
+  STRATA_TUBE: [], // lab (with STRATA): these lines (the Underground) may
+  // bundle with each other across 'surface' / 'tunnel-subway' (District and
+  // Piccadilly through West Kensington), never with other lines across strata.
+  D_XSTRATA: 0, // lab (with STRATA + WIDE_LINES): a WIDE (tube) line and a
+  // non-WIDE line in incompatible strata may still share a corridor where they
+  // already lie within this many metres (they'd overlap when drawn anyway: the
+  // Victoria / Piccadilly tunnels right under Great Northern south of Finsbury
+  // Park); never pulled farther, and never rail tunnel vs surface rail (HS1).
+  SOLO_LINES: [], // lab: lines that only ever share a corridor with themselves
+  // (dedicated track: HS1 on the St Pancras approach)
+  WIDE_STATIC_ORDER: false, // lab: corridors laid by a WIDE (tube) line keep
+  // /london's static config-order lane ranking (+ ORDER_OVERRIDES) instead of
+  // EXIT_ORDER / GLOBAL_ORDER, which flipped lanes along tube corridors
+  // (Barbican: Elizabeth and Circle swapping sides).
+  RAIL_TUNNEL_TUBE: false, // lab (with D_XSTRATA): a WIDE (tube) line and a
+  // main-line tunnel ('tunnel-rail', e.g. the Elizabeth line) are compatible.
   STRATA: false, // lab: features carry a `stratum` property (e.g. 'tunnel' /
   // 'surface'); a line only snaps onto spines laid in the same stratum, so a
   // deep tube tunnel never bundles with the viaduct above it.
@@ -650,10 +678,28 @@ function main() {
       closeArc: CONFIG.DEDUP_CLOSE, minRun: CONFIG.DEDUP_MIN_RUN,
     })
     const xy = resample(deSpike(collapsed, CONFIG.SPIKE_ANGLE), CONFIG.S)
+    // CONFIG.STRATA: per-vertex stratum. `props.st` (one per input coordinate)
+    // is carried onto the resampled vertices by nearest input vertex (walking
+    // forward), so a line is ONE feature through tunnel portals; a single
+    // `props.stratum` still works.
+    let st = null
+    if (CONFIG.STRATA) {
+      if (Array.isArray(f.properties.st)) {
+        const src = f.geometry.coordinates.map(toXY), sst = f.properties.st
+        let k = 0
+        st = xy.map((q) => {
+          let best = k, bd = dist(src[k], q)
+          for (let j = k + 1; j < Math.min(src.length, k + 40); j++) { const d = dist(src[j], q); if (d < bd) { bd = d; best = j } }
+          k = best
+          return sst[best]
+        })
+      } else st = xy.map(() => f.properties.stratum ?? null)
+    }
     feats.push({
       line,
       order: ORDER[line] != null ? ORDER[line] : 999,
       props: f.properties,
+      st,
       xy,
       tan: smoothTangents(tangents(xy)),
       cum: cumlen(xy),
@@ -739,17 +785,22 @@ function main() {
 
   // ---- spines ----
   const spines = [] // {id, xy, tan, cum, members:Map(line->[[s0,s1]]), sign}
-  let layingStratum = null // CONFIG.STRATA: stratum of the feature laying spines
-  const grid = new SpineGrid(CONFIG.D)
+  let layingLine = null
+  const TUBE_SET = new Set(CONFIG.STRATA_TUBE)
+  const TUBE_PAIR = new Set(['surface', 'tunnel-subway'])
+  const strataOk = (sa, la, sb, lb) =>
+    sa === sb || (TUBE_SET.has(la) && TUBE_SET.has(lb) && TUBE_PAIR.has(sa) && TUBE_PAIR.has(sb))
+  const WIDE = new Set(CONFIG.WIDE_LINES)
+  const grid = new SpineGrid(WIDE.size ? Math.max(CONFIG.D, CONFIG.D_WIDE) : CONFIG.D)
 
-  function addSpine(xy) {
+  function addSpine(xy, st = null) {
     const tan = smoothTangents(tangents(xy))
     const cum = cumlen(xy)
     const id = spines.length
     const nseq = projectNodes(xy, cum) // ordered nodes along this spine
     const npos = new Map() // node -> index in nseq
     nseq.forEach((e, k) => npos.set(e.node, k))
-    spines.push({ id, xy, tan, cum, members: new Map(), sign: 1, nseq, npos, stratum: layingStratum })
+    spines.push({ id, xy, tan, cum, members: new Map(), sign: 1, nseq, npos, st, layLine: layingLine, wide: WIDE.has(layingLine) })
     for (let i = 0; i < xy.length; i++)
       grid.add(id, i, xy[i][0], xy[i][1], tan[i][0], tan[i][1])
     return id
@@ -828,13 +879,37 @@ function main() {
 
   for (const { f } of procOrder) {
     const n = f.xy.length
-    const fStratum = CONFIG.STRATA ? f.props.stratum ?? null : null
-    const okS = CONFIG.STRATA ? (e) => spines[e.spineId].stratum === fStratum : null
-    layingStratum = fStratum
+    // per-vertex strata: a spine vertex's stratum vs this feature's at vertex i
+    const spSt = (e) => (spines[e.spineId].st ? spines[e.spineId].st[e.idx] : null)
+    const SOLO = new Set(CONFIG.SOLO_LINES)
+    const soloOk = (e) => { const l = spines[e.spineId].layLine; return l === f.line || (!SOLO.has(l) && !SOLO.has(f.line)) }
+    const okS = CONFIG.STRATA || SOLO.size
+      ? (e, i) => soloOk(e) && (!CONFIG.STRATA || strataOk(spSt(e), spines[e.spineId].layLine, f.st[i], f.line))
+      : null
+    layingLine = f.line
+    const fWide = WIDE.has(f.line)
     // 1) assign each point to nearest existing spine (or -1)
     const assign = new Array(n).fill(-1)
     for (let i = 0; i < n; i++) {
-      const e = grid.nearest(f.xy[i], f.tan[i], CONFIG.D, CONFIG.ANG_COS, -1, okS)
+      const e = WIDE.size
+        ? grid.nearest(f.xy[i], f.tan[i], CONFIG.D_WIDE, CONFIG.ANG_COS, -1, (c) => {
+            const d = Math.hypot(c.x - f.xy[i][0], c.y - f.xy[i][1])
+            const wide = fWide || spines[c.spineId].wide
+            if (!wide && CONFIG.ANG_COS_TIGHT && Math.abs(f.tan[i][0] * c.tx + f.tan[i][1] * c.ty) < CONFIG.ANG_COS_TIGHT) return false
+            // across strata only tube vs non-tube (tube tunnels under National
+            // Rail at Finsbury Park), never rail tunnel vs surface rail (HS1)
+            if (!soloOk(c)) return false
+            if (okS && !okS(c, i)) {
+              if (fWide === spines[c.spineId].wide) return false
+              // a main-line TUNNEL (Elizabeth line) with a tube line: both
+              // underground, bundle as /london does (Barbican, Bond Street)
+              const railSt = fWide ? spSt(c) : f.st[i]
+              if (CONFIG.RAIL_TUNNEL_TUBE && railSt === 'tunnel-rail') return d < CONFIG.D_WIDE
+              return d < CONFIG.D_XSTRATA
+            }
+            return d < (wide ? CONFIG.D_WIDE : CONFIG.D)
+          })
+        : grid.nearest(f.xy[i], f.tan[i], CONFIG.D, CONFIG.ANG_COS, -1, okS ? (c) => okS(c, i) : null)
       if (e) assign[i] = e.spineId
     }
     const clean = hysteresis(assign, f.xy)
@@ -844,14 +919,13 @@ function main() {
     // the geometric radius misses. Only fills -1 (solo) vertices, and only
     // where f stays within D2 of the spine (rules out same-name-far-apart).
     for (const X of spines) {
-      if (CONFIG.STRATA && X.stratum !== fStratum) continue
       for (const run of sharedNodeRuns(f.nodes, X)) {
         // Within each shared-station span, fill each solo vertex onto X — but
         // only where f actually stays within the D2 corridor of X (per-vertex,
         // so the close "bow" stretches bundle while any genuinely-divergent
         // middle does not). Captures Met's ~50-60m bow off Circle north trunk.
         for (let i = run.vLo; i <= run.vHi; i++)
-          if (clean[i] === -1 && grid.nearest(f.xy[i], null, CONFIG.D2, 0, X.id)) clean[i] = X.id
+          if (clean[i] === -1 && grid.nearest(f.xy[i], null, WIDE.size && (fWide || X.wide) ? CONFIG.D2_WIDE : CONFIG.D2, 0, X.id, okS ? (c) => okS(c, i) : null)) clean[i] = X.id
       }
     }
     // FORCE_SNAP overrides: bind this line onto a corridor near the given points,
@@ -907,7 +981,7 @@ function main() {
         // lay a new spine from this feature's own run
         const runXY = f.xy.slice(lo, hi + 1)
         if (runXY.length >= 2) {
-          const id = addSpine(runXY)
+          const id = addSpine(runXY, f.st ? f.st.slice(lo, hi + 1) : null)
           addMember(id, f.line, 0, spines[id].cum.at(-1))
           // own run maps to spine vertices 1:1 (offset lo)
           f.segments.push({ kind: 'own', spineId: id, lo, hi, base: lo })
@@ -1085,9 +1159,9 @@ function main() {
       // sorting by exitSide * sign puts left-leaving lines in left lanes.
       const keyOf = top
         ? (l) => { const i = top.indexOf(l); return i >= 0 ? i : top.length + (ORDER[l] ?? 999) }
-        : hintAt && !spOv.length
+        : hintAt && !spOv.length && !(CONFIG.WIDE_STATIC_ORDER && sp.wide)
           ? (l) => (CONFIG.EXIT_ORDER ? 2 * exitSideAt(sp, l, mid) * sp.sign : 0) + (hintAt(sp, l, mid) ?? 0) + (ORDER[l] ?? 999) * 1e-4
-          : CONFIG.EXIT_ORDER && !spOv.length
+          : CONFIG.EXIT_ORDER && !spOv.length && !(CONFIG.WIDE_STATIC_ORDER && sp.wide)
             ? (l) => Math.round(exitSideAt(sp, l, mid) * sp.sign * 4) * 1000 + (ORDER[l] ?? 999)
             : (l) => ORDER[l] ?? 999
       present.sort((a, c) => keyOf(a) - keyOf(c) || (a < c ? -1 : 1))

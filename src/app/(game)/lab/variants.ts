@@ -1,19 +1,26 @@
 // The /lab track-geometry experiments (built by scripts/lab/build-lab-tracks.js).
-export type LabVariant = { slug: 'staging1' | 'staging2' | 'graph' | 'graph2' | 'graph3' | 'graph4' | 'graph5' | 'levels' | 'morph'; title: string; blurb: string }
+export type LabVariant = { slug: 'staging3' | 'staging3t' | 'staging1' | 'graph' | 'graph2' | 'graph3' | 'graph4' | 'graph5' | 'graph7' | 'levels' | 'morph'; title: string; blurb: string }
 
 export const VARIANTS: LabVariant[] = [
+  {
+    slug: 'staging3',
+    title: 'Staging 3',
+    blurb:
+      'Staging 1 with Graph 7 from z11.4 in: National Rail / Overground routed over the real track (as Graph 4), but tube and DLR drawn from their raw OSM centrelines snapped the way /london does (repeated per-branch stretches removed first), so tube junctions like West Kensington and Camden look as clean as /london or better. Same sizing and z11.4 switch to Graph 5 as Staging 1; line data loads as packed files off the main thread (the Staging 2 efficiency pass).',
+  },
+  {
+    slug: 'staging3t',
+    title: 'Staging 3 · true track',
+    blurb:
+      'Staging 3, but from z13.5 in it switches to a “true track” geometry (Graph 7T): National Rail / Overground lines are not pulled together and only share a corridor where they are on the same physical track, so zoomed in you see each line on its real tracks. Below z13.5 it is Staging 3.',
+  },
   {
     slug: 'staging1',
     title: 'Staging 1',
     blurb:
       'Graph 4 from z11.4 in, with clamped sizing (lines and stations half their z12.4 size at z11.4, growing linearly to full size at z12.4, then fixed). Zoom out past z11.4 and it switches to Graph 5: its baked, smooth-split geometry, with everything scaling with the map (halving per zoom level). Sizes match at the switch; the geometry cross-fades over ±0.25 zoom.',
   },
-  {
-    slug: 'staging2',
-    title: 'Staging 2',
-    blurb:
-      'Staging 1, made lighter: the line data is served as packed files (~22% fewer pieces, ~20% less data) that the map loads and parses off the main thread instead of being embedded in the page; each data source only builds the map tiles it can show; and the lab panel no longer re-renders the whole game on every zoom frame. Same look and scorecard as Staging 1.',
-  },
+
   {
     slug: 'graph',
     title: 'Graph',
@@ -43,6 +50,12 @@ export const VARIANTS: LabVariant[] = [
     title: 'Graph 5',
     blurb:
       'Everything, built for map-scale sizing (lines a fixed ~43 m wide, like the streets): tracks share a corridor only where they are within one line width; network-wide lane order; and lane offsets baked into the geometry as continuous curves, so a line holds its lane until its real track moves out past it, then peels off smoothly. Scorecard measured at that fixed width.',
+  },
+  {
+    slug: 'graph7',
+    title: 'Graph 7',
+    blurb:
+      'Graph 4 for surface lines; tube and DLR from their raw OSM centrelines with repeated stretches removed, snapped with /london’s looser radii (34 m, 130 m between shared stations). Tight snapping suits precise routed track, not raw tube data.',
   },
   {
     slug: 'levels',
