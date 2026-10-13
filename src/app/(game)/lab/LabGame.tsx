@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type maplibregl from 'maplibre-gl'
 import GamePage, { LabSizing, MorphConfig, RouteLevel } from '@/components/GamePage'
 import { DataFeatureCollection, RoutesFeatureCollection } from '@/lib/types'
@@ -53,11 +53,25 @@ export default function LabGame({
     setSize(forceSize ?? (SWITCHABLE.includes(q) ? q : 'current'))
   }, [forceSize])
   const [open, setOpen] = useState(true)
-  const onMap = (m: maplibregl.Map) => {
+  const onMap = useCallback((m: maplibregl.Map) => {
     ;(window as any).__labMap = m // debugging hook for /lab
     setZoom(m.getZoom())
-    m.on('zoom', () => setZoom(m.getZoom()))
-  }
+    // readout only: throttled to one update per animation frame
+    let raf = 0
+    m.on('zoom', () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => { raf = 0; setZoom(m.getZoom()) })
+    })
+  }, [])
+  // The game is memoised so the zoom readout above (state in this component)
+  // never re-renders the whole GamePage on every zoom frame.
+  const game = useMemo(
+    () =>
+      size != null ? (
+        <GamePage fc={fc} routes={routes} routeLevels={routeLevels} morph={morph} onMap={onMap} sizing={SIZINGS[size].sizing} maskData={maskData} cityData={cityData} />
+      ) : null,
+    [size, fc, routes, routeLevels, morph, onMap, maskData, cityData],
+  )
   const level =
     zoom != null && routeLevels
       ? routeLevels.find((l) => zoom >= (l.minzoom ?? 0) && zoom < (l.maxzoom ?? 99))?.id
@@ -68,9 +82,7 @@ export default function LabGame({
       : null
   return (
     <>
-      {size != null && (
-        <GamePage fc={fc} routes={routes} routeLevels={routeLevels} morph={morph} onMap={onMap} sizing={size ? SIZINGS[size].sizing : undefined} maskData={maskData} cityData={cityData} />
-      )}
+      {game}
       <div className="fixed bottom-3 left-3 z-50 max-w-[calc(100vw-24px)] rounded-lg bg-white/95 p-3 text-xs text-zinc-800 shadow-lg ring-1 ring-zinc-200 dark:bg-zinc-900/95 dark:text-zinc-100 dark:ring-zinc-700">
         <div className="flex items-center gap-2">
           <a href="/lab" className="font-bold text-blue-600 hover:underline dark:text-blue-400">Lab</a>

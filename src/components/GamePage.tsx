@@ -64,9 +64,15 @@ const tripleStripeOffsetExpr = (side: -1 | 1) =>
 // (later in the list) fades in over the coarser one across ±LEVEL_FADE zoom.
 export type RouteLevel = {
   id: string
-  routes: RoutesFeatureCollection
+  /** the GeoJSON, or a URL MapLibre fetches and parses in its worker (keeps
+   *  megabytes of line data out of the page HTML, React props and main heap) */
+  routes: RoutesFeatureCollection | string
   minzoom?: number
   maxzoom?: number
+  /** GeoJSON source tiling options (MapLibre defaults: maxzoom 18, buffer 128,
+   *  tolerance 0.375). A lower maxzoom stops re-tiling when zooming in (tiles
+   *  are over-zoomed instead); a smaller buffer cuts per-tile geometry. */
+  source?: { maxzoom?: number; buffer?: number; tolerance?: number }
 }
 // Morph: features carry `dm` (m to the same line's bundled corridor, + = right)
 // and `lc` (bundled lane); line-offset blends from bundled (z <= zCoarse) to
@@ -534,7 +540,7 @@ export default function GamePage({
         // amount at every zoom, so the lower line is never hidden when zoomed
         // out and the geometry stays on the true track.
 
-        for (const lv of levels) m.addSource(levelPrefix(lv), { type: 'geojson', data: lv.routes })
+        for (const lv of levels) m.addSource(levelPrefix(lv), { type: 'geojson', data: lv.routes as any, ...(lv.source || {}) })
         // Render-time parallel-ribbon separation, shared by every base + stripe
         // layer: each feature carries a signed `laneOff` (lane units); we offset by
         // laneOff × the zoom-scaled line width so adjacent ribbons sit one width

@@ -57,6 +57,10 @@ const VARIANTS = [
   // WIDE_LINES): tight snapping is right for routed track geometry but wrong
   // for raw tube data, which /london's loose snap absorbs
   { id: 'graph7', tubeRaw: 'dedupe', preSame: 12, preSameTunnel: 30, dedupe: 12, dedupeTunnel: 30, d: 35, ribbon: { D: 35 / 3, D2: 70 / 3, GLOBAL_ORDER: 4 } },
+  // graph7t = 'true track' for the zoomed-in end (/lab/staging3t, z >= 13.5):
+  // as Graph 7, but surface lines are not pulled toward other lines and only
+  // share a corridor on the same physical track (snap 6 m)
+  { id: 'graph7t', tubeRaw: 'dedupe', preSame: 12, preSameTunnel: 30, dedupe: 12, dedupeTunnel: 30, d: 0, ribbon: { D: 6, D2: 12, GLOBAL_ORDER: 4 } },
   { id: 'graph5', d: MAP_W, sameLine: true, ribbon: { D: MAP_W, D2: 130, GLOBAL_ORDER: 4 }, bake: true },
 ]
 // experiments: VX='{"id":"graph4x","from":"graph4","ribbon":{...},...}' adds a
@@ -1055,6 +1059,10 @@ function main() {
   cards['london-staging'] = score([11, 12, 13, 14, 15], () => london, STAGING)
   const g7 = fromDisk('graph7')
   cards.staging3 = score([11, 12, 13, 14, 15], (z) => (z < 11.4 ? g5 : g7), STAGING)
+  if (fs.existsSync(path.join(OUTDIR, 'routes.graph7t.json'))) {
+    const g7t = fromDisk('graph7t')
+    cards.staging3t = score([11, 12, 13, 14, 15], (z) => (z < 11.4 ? g5 : z < 13.5 ? g7 : g7t), STAGING)
+  }
   if (process.argv.includes('--dry')) { for (const V of VARIANTS) if (cards[V.id]) console.log(V.id, JSON.stringify(Object.values(cards[V.id]).map((c) => [+c.overlapKm.toFixed(1), c.twists]))); return }
   fs.writeFileSync(scoresPath, JSON.stringify(cards, null, 2))
   fs.writeFileSync(path.join(OUTDIR, 'v2.json'), JSON.stringify(meta, null, 2))

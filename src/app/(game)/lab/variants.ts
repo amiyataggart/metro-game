@@ -1,12 +1,18 @@
 // The /lab track-geometry experiments (built by scripts/lab/build-lab-tracks.js).
-export type LabVariant = { slug: 'staging3' | 'staging1' | 'graph' | 'graph2' | 'graph3' | 'graph4' | 'graph5' | 'graph7' | 'levels' | 'morph'; title: string; blurb: string }
+export type LabVariant = { slug: 'staging3' | 'staging3t' | 'staging1' | 'graph' | 'graph2' | 'graph3' | 'graph4' | 'graph5' | 'graph7' | 'levels' | 'morph'; title: string; blurb: string }
 
 export const VARIANTS: LabVariant[] = [
   {
     slug: 'staging3',
     title: 'Staging 3',
     blurb:
-      'Staging 1 with Graph 7 from z11.4 in: National Rail / Overground routed over the real track (as Graph 4), but tube and DLR drawn from their raw OSM centrelines snapped the way /london does (repeated per-branch stretches removed first), so tube junctions like West Kensington and Camden look as clean as /london or better. Same sizing and z11.4 switch to Graph 5 as Staging 1.',
+      'Staging 1 with Graph 7 from z11.4 in: National Rail / Overground routed over the real track (as Graph 4), but tube and DLR drawn from their raw OSM centrelines snapped the way /london does (repeated per-branch stretches removed first), so tube junctions like West Kensington and Camden look as clean as /london or better. Same sizing and z11.4 switch to Graph 5 as Staging 1; line data loads as packed files off the main thread (the Staging 2 efficiency pass).',
+  },
+  {
+    slug: 'staging3t',
+    title: 'Staging 3 · true track',
+    blurb:
+      'Staging 3, but from z13.5 in it switches to a “true track” geometry (Graph 7T): National Rail / Overground lines are not pulled together and only share a corridor where they are on the same physical track, so zoomed in you see each line on its real tracks. Below z13.5 it is Staging 3.',
   },
   {
     slug: 'staging1',
@@ -14,6 +20,7 @@ export const VARIANTS: LabVariant[] = [
     blurb:
       'Graph 4 from z11.4 in, with clamped sizing (lines and stations half their z12.4 size at z11.4, growing linearly to full size at z12.4, then fixed). Zoom out past z11.4 and it switches to Graph 5: its baked, smooth-split geometry, with everything scaling with the map (halving per zoom level). Sizes match at the switch; the geometry cross-fades over ±0.25 zoom.',
   },
+
   {
     slug: 'graph',
     title: 'Graph',
