@@ -1125,14 +1125,21 @@ export default function GamePage({
       lineWidth: (sizing ? resize(LINE_WIDTH_EXPR, sizing) : LINE_WIDTH_EXPR) as maplibregl.ExpressionSpecification,
     }
     const flashWidthAt = sizing ? sizeAt(sizing) : undefined
+    // multi-level pages: flash the geometry level shown at the current zoom
+    const flashSource = (() => {
+      if (!routeLevels || !map) return undefined
+      const z = map.getZoom()
+      const lv = routeLevels.find((l) => z >= (l.minzoom ?? 0) && z < (l.maxzoom ?? 99)) ?? routeLevels[routeLevels.length - 1]
+      return levelPrefix(lv)
+    })()
     if (newlyCompleteLines.length) {
       celebrateLines(newlyCompleteLines.map((k) => LINES[k]), region)
-      if (map) flashLines(map, newlyCompleteLines, flashExpr, { widthAt: flashWidthAt })
+      if (map) flashLines(map, newlyCompleteLines, flashExpr, { widthAt: flashWidthAt, source: flashSource })
     }
     if (allJustCompleted) {
       const visible = Object.keys(stationsPerLine).filter((k) => stationsPerLine[k] > 0)
       celebrateFinale(visible.map((k) => LINES[k]), region)
-      if (map) flashLines(map, visible, flashExpr, { finale: true, widthAt: flashWidthAt })
+      if (map) flashLines(map, visible, flashExpr, { finale: true, widthAt: flashWidthAt, source: flashSource })
     }
 
     // Always advance, even when nothing fired (e.g. a line toggled off), so the
@@ -1148,6 +1155,7 @@ export default function GamePage({
     celebrateLines,
     celebrateFinale,
     sizing,
+    routeLevels,
   ])
 
   const revealAll = useCallback(() => {
