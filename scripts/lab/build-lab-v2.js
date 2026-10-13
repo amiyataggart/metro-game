@@ -51,9 +51,21 @@ const { MAP_W } = require('./score.js')
 const VARIANTS = [
   { id: 'graph2', d: 35, ribbon: { D: 35 / 3, D2: 70 / 3 } },
   { id: 'graph3', d: 0, ribbon: {} },
-  { id: 'graph4', preSame: 60, d: 35, ribbon: { D: 35 / 3, D2: 70 / 3, GLOBAL_ORDER: 4 } },
+  { id: 'graph4', preSame: 60, dedupe: 20, d: 35, ribbon: { D: 35 / 3, D2: 70 / 3, GLOBAL_ORDER: 4 } },
+  // graph7 = graph4 for surface lines; tube/DLR from their raw OSM centrelines
+  // with only repeated stretches removed, snapped with /london's radii (see
+  // WIDE_LINES): tight snapping is right for routed track geometry but wrong
+  // for raw tube data, which /london's loose snap absorbs
+  { id: 'graph7', tubeRaw: 'dedupe', preSame: 60, dedupe: 20, d: 35, ribbon: { D: 35 / 3, D2: 70 / 3, GLOBAL_ORDER: 4 } },
   { id: 'graph5', d: MAP_W, sameLine: true, ribbon: { D: MAP_W, D2: 130, GLOBAL_ORDER: 4 }, bake: true },
 ]
+// experiments: VX='{"id":"graph4x","from":"graph4","ribbon":{...},...}' adds a
+// variant cloned from another with overrides (writes routes.<id>.json only)
+if (process.env.VX) {
+  const x = JSON.parse(process.env.VX)
+  const base = VARIANTS.find((v) => v.id === x.from)
+  VARIANTS.push({ ...base, ...x, ribbon: { ...base.ribbon, ...(x.ribbon || {}) }, experiment: true })
+}
 // Thameslink's 5 km NO_SNAP north of King's Cross keeps it off the Piccadilly /
 // Victoria at Finsbury Park; with strata those tunnels can't bundle with it
 // anyway, and the rule split Thameslink from Great Northern on shared track.
@@ -167,6 +179,120 @@ function splitByStratum(poly, st) {
   return out
 }
 
+// ---------------------------------------------------------------- raw smoothing
+// Raw OSM tube / DLR centrelines are coarse: corners and 5–15 m wobbles a real
+// tunnel never has (the Victoria at Arsenal, the District at West Brompton and
+// Fulham Broadway; /london shows them too). Gaussian-smooth the 10 m-resampled
+// line (sigma RAW_SIGMA m; window shrinks towards the ends, which stay put),
+// never moving a point more than RAW_MAXD m, so stations and junctions keep
+// their place.
+const RAW_SIGMA = 25, RAW_MAXD = 8
+function smoothRaw(xy) {
+  const n = xy.length
+  if (n < 5) return xy
+  const step = 10, half = Math.ceil((2.5 * RAW_SIGMA) / step)
+  const w = []
+  for (let k = -half; k <= half; k++) w.push(Math.exp(-((k * step) ** 2) / (2 * RAW_SIGMA ** 2)))
+  return xy.map((p, i) => {
+    const h = Math.min(half, i, n - 1 - i) // symmetric window: ends stay fixed
+    if (!h) return p
+    let sx = 0, sy = 0, sw = 0
+    for (let k = -h; k <= h; k++) { const wk = w[k + half]; sx += wk * xy[i + k][0]; sy += wk * xy[i + k][1]; sw += wk }
+    const q = [sx / sw, sy / sw], d = dist(p, q)
+    return d <= RAW_MAXD ? q : [p[0] + ((q[0] - p[0]) * RAW_MAXD) / d, p[1] + ((q[1] - p[1]) * RAW_MAXD) / d]
+  })
+}
+
+// ---------------------------------------------------------------- raw duplicates
+// Raw OSM tube relations trace shared trunks more than once: one feature per
+// branch route (the Piccadilly's Heathrow and Uxbridge features both run the
+// whole trunk from Cockfosters, through West Kensington, 5–25 m apart). The
+// tight Graph 4 snap can't merge them, so they braid and their lanes disagree.
+// Per line, longest feature first: drop the STRETCHES of a feature covered
+// (within RAW_DUP_M, near-parallel) by features already kept; keep its
+// uncovered runs (>= RAW_DUP_RUN m) with one point of overlap each side, which
+// cleanEnds() then joins onto the kept trunk.
+const RAW_DUP_M = 40, RAW_DUP_RUN = 60, RAW_MEET_M = 6, RAW_FOLLOW_M = 300
+function dropDuplicateRaw(fc) {
+  const items = fc.features.map((f) => ({ f, line: f.properties.line, st: '', xy: resample(f.geometry.coordinates.map(toXY), 10) }))
+  const r = dedupeXY(items, RAW_DUP_M)
+  console.log(`raw tube/DLR: ${(r.dropped / 1000).toFixed(1)} km of repeated trunk dropped`)
+  return { ...fc, features: r.items.map((it) => ({ ...it.f, geometry: { type: 'LineString', coordinates: it.xy.map(toLL) } })) }
+}
+// Per line (+ stratum), longest first: drop the stretches of an item running
+// near-parallel within M of geometry already kept; keep uncovered runs, each
+// extended along its dropped stretch until it meets the kept line (see above).
+// items: [{line, st, xy (resampled ~10 m), ...}] -> {items, dropped (m)}
+function dedupeXY(items, M) {
+  const groups = new Map()
+  for (const it of items) { const k = it.line + '|' + it.st; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(it) }
+  const out = []
+  let dropped = 0
+  const len = (xy) => xy.reduce((a, q, i) => (i ? a + dist(xy[i - 1], q) : 0), 0)
+  for (const P of groups.values()) {
+    P.sort((a, b) => len(b.xy) - len(a.xy))
+    const CELL = 100, grid = new Map()
+    const addKept = (xy) => {
+      for (let j = 1; j < xy.length; j++) {
+        const a = xy[j - 1], b = xy[j]
+        const x0 = Math.floor((Math.min(a[0], b[0]) - M) / CELL), x1 = Math.floor((Math.max(a[0], b[0]) + M) / CELL)
+        const y0 = Math.floor((Math.min(a[1], b[1]) - M) / CELL), y1 = Math.floor((Math.max(a[1], b[1]) + M) / CELL)
+        for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { const k = x + ',' + y; if (!grid.has(k)) grid.set(k, []); grid.get(k).push([a, b]) }
+      }
+    }
+    for (const p of P) {
+      if (p.xy.length < 2) continue
+      const tan = tangentsOf(p.xy, 1)
+      // per point: distance + projection onto the kept geometry (near-parallel only)
+      const near = p.xy.map((q, i) => {
+        const t = tan[i]
+        let bd = Infinity, proj = null
+        for (const [a, b] of grid.get(Math.floor(q[0] / CELL) + ',' + Math.floor(q[1] / CELL)) || []) {
+          const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy
+          if (!L2 || Math.abs((dx * t[0] + dy * t[1]) / Math.sqrt(L2)) < 0.8) continue
+          const u = Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / L2))
+          const pr = [a[0] + u * dx, a[1] + u * dy], d = dist(pr, q)
+          if (d < bd) { bd = d; proj = pr }
+        }
+        return { d: bd, proj }
+      })
+      const covered = near.map((n) => n.d < M)
+      // from a cut, follow the dropped stretch until it really meets the kept
+      // line (< RAW_MEET_M; else its closest point within RAW_FOLLOW_M) and
+      // end ON it, so the branch merges instead of stopping short
+      const follow = (from, dir) => {
+        const pts = []
+        let best = -1, bd = Infinity, run = 0
+        for (let i = from; i >= 0 && i < p.xy.length && covered[i] && run <= RAW_FOLLOW_M; i += dir) {
+          pts.push(i)
+          if (near[i].d < bd) { bd = near[i].d; best = pts.length - 1 }
+          if (near[i].d < RAW_MEET_M) break
+          if (i !== from) run += dist(p.xy[i], p.xy[i - dir])
+        }
+        if (best < 0) return []
+        const idx = pts.slice(0, best + 1)
+        return [...idx.map((i) => p.xy[i]), near[idx.at(-1)].proj]
+      }
+      let s0 = 0
+      for (let i = 1; i <= p.xy.length; i++) {
+        if (i < p.xy.length && covered[i] === covered[s0]) continue
+        const lo = s0, hi = i - 1
+        s0 = i
+        if (covered[lo]) { dropped += len(p.xy.slice(lo, hi + 1)); continue }
+        const run = [
+          ...(lo > 0 ? follow(lo - 1, -1).reverse() : []),
+          ...p.xy.slice(lo, hi + 1),
+          ...(hi < p.xy.length - 1 ? follow(hi + 1, 1) : []),
+        ]
+        if (len(run) < RAW_DUP_RUN && (lo > 0 || hi < p.xy.length - 1)) { dropped += len(run); continue }
+        addKept(run)
+        out.push({ ...p, xy: run })
+      }
+    }
+  }
+  return { items: out, dropped }
+}
+
 // ---------------------------------------------------------------- line ends
 // Per line, on the base pieces (metric): an end that no other piece of the
 // line shares is either a loose end near the line itself (raw tube loop arms
@@ -175,7 +301,7 @@ function splitByStratum(poly, st) {
 // line loses its sharply-turning tail and is joined onto that piece; any other
 // end loses a short sharply-turning tail (a crossover onto the next platform
 // at New Cross / Clapham Junction drawn as a hook).
-const JOIN_M = 40, HOOK_M = 40, HOOK_DEG = 50, HOOK_SWING = 25
+const TOUCH_M = 10, JOIN_M = 40, HOOK_M = 40, HOOK_DEG = 50, HOOK_SWING = 25, CONT_M = 70, OVER_M = 8, OVER_RUN = 150, SHOOT_M = 60, SHOOT_D = 4
 const turn = (a, b, c) => {
   const ux = b[0] - a[0], uy = b[1] - a[1], vx = c[0] - b[0], vy = c[1] - b[1]
   const d = (ux * vx + uy * vy) / ((Math.hypot(ux, uy) * Math.hypot(vx, vy)) || 1)
@@ -210,8 +336,8 @@ const trimTail = (xy) => {
   return [...head, ...tail.slice(0, cut + 1)]
 }
 function cleanEnds(pieces) {
-  const nearestOn = (p, segs) => {
-    let best = null, bd = JOIN_M
+  const nearestOn = (p, segs, R = JOIN_M) => {
+    let best = null, bd = R
     for (const [a, b] of segs) {
       const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy
       const t = L ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L)) : 0
@@ -237,8 +363,63 @@ function cleanEnds(pieces) {
         const o = out[j].xy
         for (let k = 1; k < o.length; k++) segs.push([o[k - 1], o[k]])
       }
+      // an end already touching its own line mid-piece is a junction (a branch
+      // curving into its trunk: the District's Olympia branch at Earl's
+      // Court), not a hook: attach it as it is, no trimming
+      {
+        const touch = nearestOn(e, segs, TOUCH_M)
+        if (touch) {
+          if (dist(touch, e) > 0.5) { xy = [...xy, touch]; out[i].xy = atEnd ? xy : xy.slice().reverse() }
+          joined++
+          continue
+        }
+      }
+      let overlapCut = false
+      // a loose end that runs ALONGSIDE another piece of its own line (raw
+      // branches overlapping past a junction: the Charing Cross branch runs
+      // ~30 m up beside the Edgware branch at Camden Town) is cut back to
+      // where the overlap starts; the join below then attaches it there
+      {
+        const near = (p) => { let bd = Infinity; for (const [a, b] of segs) { const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy; const tt = L ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L)) : 0; bd = Math.min(bd, dist(p, [a[0] + tt * dx, a[1] + tt * dy])) } return bd }
+        // overshoot: in its last SHOOT_M the end passes within SHOOT_D of
+        // another piece of the line and carries on past it (a branch drawn
+        // ~20 m beyond the junction at Camden Town) -> cut at that crossing
+        {
+          let best = -1, bd = SHOOT_D, run2 = 0
+          for (let m = xy.length - 2; m >= 1 && run2 <= SHOOT_M; m--) {
+            run2 += dist(xy[m + 1], xy[m])
+            const dm = near(xy[m])
+            if (dm < bd) { bd = dm; best = m }
+          }
+          if (best >= 1 && dist(xy[best], xy.at(-1)) > 5) { xy = xy.slice(0, best + 1); trimmed++; overlapCut = true }
+        }
+        let k = xy.length - 1, run = 0
+        while (k > 0 && run <= OVER_RUN && near(xy[k]) < OVER_M) { run += dist(xy[k], xy[k - 1]); k-- }
+        if (k < xy.length - 1 && run <= OVER_RUN && k >= 1) { xy = xy.slice(0, k + 2); trimmed++; overlapCut = true }
+      }
       const t = trimTail(xy)
-      let q = nearestOn(t.at(-1), segs) || nearestOn(e, segs)
+      // first choice: continue END-TO-END into another unshared end of the
+      // line just ahead (Camden Town: the Charing Cross branch stops ~30 m
+      // short of where the Edgware / High Barnet branch starts; joining it
+      // sideways onto the Bank branch drew a tick)
+      let q = null
+      {
+        const k0 = back(t, t.length - 1, 30)
+        const a0 = t[k0 >= 0 ? k0 : 0], p0 = t.at(-1)
+        let bd = CONT_M
+        for (const j of ids) {
+          if (j === i) continue
+          const o = out[j].xy
+          for (const [c, nx] of [[o[0], o[Math.min(1, o.length - 1)]], [o.at(-1), o[Math.max(0, o.length - 2)]]]) {
+            const d = dist(p0, c)
+            if (d >= bd || d < 1) continue
+            const free = !ids.some((m) => m !== j && (dist(out[m].xy[0], c) < 3 || dist(out[m].xy.at(-1), c) < 3))
+            // straight on: little turn into the gap, and the other piece carries on the same way
+            if (free && turn(a0, p0, c) < 35 && turn(p0, c, nx) < 35) { bd = d; q = c }
+          }
+        }
+      }
+      q = q || nearestOn(t.at(-1), segs) || nearestOn(e, segs)
       // only join onto the line AHEAD (or right here): a parallel platform
       // road beside a terminus is not a continuation
       if (q && dist(q, t.at(-1)) > 8) {
@@ -247,7 +428,7 @@ function cleanEnds(pieces) {
         if (turn(a, t.at(-1), q) > 60) q = null
       }
       if (q) { xy = [...t, q]; joined++ }
-      else if (t.length < xy.length) { xy = t; trimmed++ }
+      else if (t.length < xy.length || overlapCut) { xy = t; trimmed++ }
       else continue
       out[i].xy = atEnd ? xy : xy.slice().reverse()
     }
@@ -340,6 +521,13 @@ function trimFeatureHooks(fc) {
 // ---------------------------------------------------------------- bundling
 // build-lab-tracks bundle(), plus: only same-stratum points attract, and points
 // inside a NO_SNAP zone for their own line neither move nor attract.
+// Underground lines may bundle with each other across surface / tube tunnel
+// (District + Piccadilly through West Kensington); any other pair only within
+// one stratum (Jubilee tunnel vs the Waterloo East viaduct). Same rule is
+// passed to build-ribbons as STRATA_TUBE.
+const UNDERGROUND = [...TUBE].filter((l) => l !== 'DLR')
+const strataOk = (sa, la, sb, lb) =>
+  sa === sb || (UNDERGROUND.includes(la) && UNDERGROUND.includes(lb) && [sa, sb].every((x) => x === 'surface' || x === 'tunnel-subway'))
 // sameLine: only a line's own parallel copies attract (a line routed over the
 // fast AND slow tracks becomes one line), never two different lines.
 function bundle2(polys, d, noSnap, sameLine = false) {
@@ -369,7 +557,7 @@ function bundle2(polys, d, noSnap, sameLine = false) {
         let sw = 1, so = 0
         for (let gx = cx - 1; gx <= cx + 1; gx++) for (let gy = cy - 1; gy <= cy + 1; gy++)
           for (const [pj, j] of grid.get(gx + ',' + gy) || []) {
-            if (pj === pi || P[pj].st !== p.st || (sameLine && P[pj].line !== p.line)) continue
+            if (pj === pi || !strataOk(P[pj].st, P[pj].line, p.st, p.line) || (sameLine && P[pj].line !== p.line)) continue
             const o = P[pj].xy[j]
             const r = Math.hypot(o[0] - q[0], o[1] - q[1])
             if (r >= d) continue
@@ -675,9 +863,19 @@ function main() {
   // tube + DLR: raw OSM centrelines, clipped to scope like /london
   const { clipToScope, loadScope } = require('../clip-to-scope.js')
   const tubeFC = { ...raw, features: raw.features.filter((f) => TUBE.has(f.properties.line) && f.geometry.type === 'LineString') }
-  const clipped = clipToScope(tubeFC, stationsFC, loadScope()).fc
+  const clippedRaw = clipToScope(tubeFC, stationsFC, loadScope()).fc
+  const clipped = dropDuplicateRaw(clippedRaw)
+  // tubeRaw variants: the raw centrelines (as /london gets them) with repeated
+  // stretches removed at source (one OSM feature per branch / direction); no
+  // smoothing or end clean-up, split only by stratum
+  const rawTubeDedup = []
   for (const f of clipped.features) {
     const xy = resample(f.geometry.coordinates.map(toXY), 10)
+    const prefer = f.properties.line === 'DLR' ? 4 : 2
+    rawTubeDedup.push(...splitByStratum({ line: f.properties.line, xy }, strataOf(G, info, xy, 80, prefer, true)))
+  }
+  for (const f of clipped.features) {
+    const xy = smoothRaw(resample(f.geometry.coordinates.map(toXY), 10))
     const prefer = f.properties.line === 'DLR' ? 4 : 2
     base.push(...splitByStratum({ line: f.properties.line, xy }, strataOf(G, info, xy, 80, prefer, true)))
   }
@@ -710,9 +908,20 @@ function main() {
     const t1 = Date.now()
     // preSame: first merge each line's own parallel copies (twin tube tunnels,
     // fast/slow tracks) so it is drawn once, then bundle different lines
-    const pre = V.preSame ? bundle2(base, V.preSame, noSnap, true) : base
-    const polys = V.d ? bundle2(pre, V.d, noSnap, !!V.sameLine) : pre
-    const cfg = { ...V.ribbon, NO_SNAP_DROP, ORIENT_SPINES: true, EXIT_ORDER: !process.argv.includes("--no-exit"), STRATA: !process.argv.includes('--no-strata') }
+    // tubeRaw: tube/DLR pieces are the raw centrelines and skip every
+    // pre-processing step below; build-ribbons snaps them with /london's radii
+    const tubeSet = V.tubeRaw ? rawTubeDedup : []
+    const src = V.tubeRaw ? base.filter((p) => !TUBE.has(p.line)) : base
+    let pre = V.preSame ? bundle2(src, V.preSame, noSnap, true) : src
+    // then drop what is left of each line's parallel copies (fast/slow tracks
+    // used by different services: Southern drawn twice side by side)
+    if (V.dedupe) {
+      const r = dedupeXY(pre, V.dedupe)
+      console.log(`${V.id}: ${(r.dropped / 1000).toFixed(1)} km of same-line copies dropped`)
+      pre = r.items
+    }
+    const polys = [...(V.d ? bundle2(pre, V.d, noSnap, !!V.sameLine) : pre), ...tubeSet]
+    const cfg = { ...V.ribbon, ...(V.tubeRaw ? { WIDE_LINES: [...TUBE] } : {}), NO_SNAP_DROP, STRATA_TUBE: UNDERGROUND, ORIENT_SPINES: true, EXIT_ORDER: !process.argv.includes("--no-exit"), STRATA: !process.argv.includes('--no-strata') }
     const fcIn = polys.map((p) => ({ ...p, props: { stratum: p.st } }))
     let built = ribbonsWithProps(fcIn, colorOf, orderOf, passthrough, V.id, cfg)
     for (const f of built.features) delete f.properties.stratum
@@ -732,6 +941,8 @@ function main() {
   const g4 = fromDisk('graph4'), g5 = fromDisk('graph5')
   cards.staging1 = score([11, 12, 13, 14, 15], (z) => (z < 11.4 ? g5 : g4), STAGING)
   cards['london-staging'] = score([11, 12, 13, 14, 15], () => london, STAGING)
+  const g7 = fromDisk('graph7')
+  cards.staging3 = score([11, 12, 13, 14, 15], (z) => (z < 11.4 ? g5 : g7), STAGING)
   if (process.argv.includes('--dry')) { for (const V of VARIANTS) if (cards[V.id]) console.log(V.id, JSON.stringify(Object.values(cards[V.id]).map((c) => [+c.overlapKm.toFixed(1), c.twists]))); return }
   fs.writeFileSync(scoresPath, JSON.stringify(cards, null, 2))
   fs.writeFileSync(path.join(OUTDIR, 'v2.json'), JSON.stringify(meta, null, 2))

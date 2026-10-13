@@ -312,6 +312,8 @@ node scripts/lab/build-lab-v2.js         # /lab/graph2..graph5 (surface lines ro
                                           # order, graph5 baked for map-scale sizing); run after
                                           # build-lab-tracks.js (merges into scores.json)
 node scripts/lab/render.js <variant> <lng,lat> <zoom> [name] [WxH]   # browser-free PNG -> qa/out/lab/
+node scripts/lab/find-kinks.js graph7 [--sheet 27]   # network-wide QA at z14.35: kinks, loose ends, doubled lines -> qa/out/lab/kinks-*.{json,png}
+node scripts/lab/compare.js <name> london,graph7 16 "lng,lat:label" ...   # side-by-side close-ups -> qa/out/lab/cmp-<name>.png
                                           # env SIZE=map|staging (lab sizing), STATIONS=1 (markers + names)
 ```
 
