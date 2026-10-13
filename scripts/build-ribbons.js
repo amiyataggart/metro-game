@@ -169,14 +169,20 @@ const CONFIG = {
   // routed track geometry keeps the tight one. A pair uses the wide radii when
   // either side (the feature, or the line that laid the spine) is WIDE.
   D_WIDE: 34,
+  ANG_COS_TIGHT: 0, // lab (with WIDE_LINES): tangent gate for pairs where
+  // neither side is WIDE (precise routed track): real co-running track is
+  // within ~10°, so a stricter gate stops lines that merely CROSS at a shallow
+  // angle being snapped into each other's corridor (HS1 over the North London
+  // Line at York Way). 0 = use ANG_COS for every pair.
   D2_WIDE: 130,
   STRATA_TUBE: [], // lab (with STRATA): these lines (the Underground) may
   // bundle with each other across 'surface' / 'tunnel-subway' (District and
   // Piccadilly through West Kensington), never with other lines across strata.
-  D_XSTRATA: 0, // lab (with STRATA): lines in incompatible strata may still
-  // share a corridor where they already lie within this many metres (they
-  // would overlap when drawn anyway: the Victoria / Piccadilly tunnels right
-  // under Great Northern south of Finsbury Park), but are never pulled farther.
+  D_XSTRATA: 0, // lab (with STRATA + WIDE_LINES): a WIDE (tube) line and a
+  // non-WIDE line in incompatible strata may still share a corridor where they
+  // already lie within this many metres (they'd overlap when drawn anyway: the
+  // Victoria / Piccadilly tunnels right under Great Northern south of Finsbury
+  // Park); never pulled farther, and never rail tunnel vs surface rail (HS1).
   STRATA: false, // lab: features carry a `stratum` property (e.g. 'tunnel' /
   // 'surface'); a line only snaps onto spines laid in the same stratum, so a
   // deep tube tunnel never bundles with the viaduct above it.
@@ -859,8 +865,12 @@ function main() {
       const e = WIDE.size
         ? grid.nearest(f.xy[i], f.tan[i], CONFIG.D_WIDE, CONFIG.ANG_COS, -1, (c) => {
             const d = Math.hypot(c.x - f.xy[i][0], c.y - f.xy[i][1])
-            if (okS && !okS(c)) return d < CONFIG.D_XSTRATA
-            return d < (fWide || spines[c.spineId].wide ? CONFIG.D_WIDE : CONFIG.D)
+            const wide = fWide || spines[c.spineId].wide
+            if (!wide && CONFIG.ANG_COS_TIGHT && Math.abs(f.tan[i][0] * c.tx + f.tan[i][1] * c.ty) < CONFIG.ANG_COS_TIGHT) return false
+            // across strata only tube vs non-tube (tube tunnels under National
+            // Rail at Finsbury Park), never rail tunnel vs surface rail (HS1)
+            if (okS && !okS(c)) return fWide !== spines[c.spineId].wide && d < CONFIG.D_XSTRATA
+            return d < (wide ? CONFIG.D_WIDE : CONFIG.D)
           })
         : grid.nearest(f.xy[i], f.tan[i], CONFIG.D, CONFIG.ANG_COS, -1, okS)
       if (e) assign[i] = e.spineId
