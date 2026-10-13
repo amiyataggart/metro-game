@@ -109,109 +109,109 @@
   },
   "graph2": {
     "11": {
-      "overlapKm": 125.8,
-      "twists": 538,
+      "overlapKm": 123.7,
+      "twists": 473,
       "widthM": 96.4
     },
     "12": {
-      "overlapKm": 84.4,
-      "twists": 399,
+      "overlapKm": 81,
+      "twists": 380,
       "widthM": 54.2
     },
     "13": {
-      "overlapKm": 59.9,
-      "twists": 334,
+      "overlapKm": 52.3,
+      "twists": 303,
       "widthM": 30.1
     },
     "14": {
-      "overlapKm": 46.8,
-      "twists": 297,
+      "overlapKm": 36.9,
+      "twists": 271,
       "widthM": 17.1
     },
     "15": {
-      "overlapKm": 26.6,
-      "twists": 293,
+      "overlapKm": 24.5,
+      "twists": 257,
       "widthM": 9.5
     }
   },
   "graph3": {
     "11": {
-      "overlapKm": 130.5,
-      "twists": 451,
+      "overlapKm": 118.4,
+      "twists": 438,
       "widthM": 96.4
     },
     "12": {
-      "overlapKm": 86.8,
-      "twists": 328,
+      "overlapKm": 76.6,
+      "twists": 311,
       "widthM": 54.2
     },
     "13": {
-      "overlapKm": 59.3,
-      "twists": 291,
+      "overlapKm": 49.5,
+      "twists": 266,
       "widthM": 30.1
     },
     "14": {
-      "overlapKm": 44,
-      "twists": 268,
+      "overlapKm": 34.2,
+      "twists": 253,
       "widthM": 17.1
     },
     "15": {
-      "overlapKm": 32.8,
-      "twists": 281,
+      "overlapKm": 23.4,
+      "twists": 257,
       "widthM": 9.5
     }
   },
   "graph4": {
     "11": {
-      "overlapKm": 109.5,
-      "twists": 474,
+      "overlapKm": 119.7,
+      "twists": 410,
       "widthM": 96.4
     },
     "12": {
-      "overlapKm": 72.1,
-      "twists": 375,
+      "overlapKm": 83.3,
+      "twists": 314,
       "widthM": 54.2
     },
     "13": {
-      "overlapKm": 48.9,
-      "twists": 321,
+      "overlapKm": 57,
+      "twists": 269,
       "widthM": 30.1
     },
     "14": {
-      "overlapKm": 37.8,
-      "twists": 262,
+      "overlapKm": 43.9,
+      "twists": 248,
       "widthM": 17.1
     },
     "15": {
-      "overlapKm": 25.3,
-      "twists": 257,
+      "overlapKm": 31.2,
+      "twists": 218,
       "widthM": 9.5
     }
   },
   "graph5": {
     "11": {
-      "overlapKm": 59.1,
-      "twists": 238,
+      "overlapKm": 55.8,
+      "twists": 212,
       "widthM": 42.9
     },
     "12": {
-      "overlapKm": 59.1,
-      "twists": 238,
+      "overlapKm": 55.8,
+      "twists": 212,
       "widthM": 42.9
     },
     "13": {
-      "overlapKm": 59.1,
-      "twists": 238,
+      "overlapKm": 55.8,
+      "twists": 212,
       "widthM": 42.9
     },
     "14": {
-      "overlapKm": 59.1,
-      "twists": 238,
+      "overlapKm": 55.8,
+      "twists": 212,
       "widthM": 42.9
     },
     "15": {
-      "overlapKm": 59.1,
-      "twists": 238,
+      "overlapKm": 55.8,
+      "twists": 212,
       "widthM": 42.9
     }
   },
@@ -244,28 +244,28 @@
   },
   "staging1": {
     "11": {
-      "overlapKm": 59.1,
-      "twists": 238,
+      "overlapKm": 55.8,
+      "twists": 212,
       "widthM": 42.9
     },
     "12": {
-      "overlapKm": 63.8,
-      "twists": 337,
+      "overlapKm": 73.9,
+      "twists": 284,
       "widthM": 45.3
     },
     "13": {
-      "overlapKm": 47.1,
-      "twists": 315,
+      "overlapKm": 55,
+      "twists": 284,
       "widthM": 28.3
     },
     "14": {
-      "overlapKm": 34.1,
-      "twists": 250,
+      "overlapKm": 40.4,
+      "twists": 219,
       "widthM": 14.2
     },
     "15": {
-      "overlapKm": 18.4,
-      "twists": 274,
+      "overlapKm": 21.9,
+      "twists": 227,
       "widthM": 7.1
     }
   },
@@ -298,55 +298,55 @@
   },
   "graph7": {
     "11": {
-      "overlapKm": 113.3,
-      "twists": 524,
+      "overlapKm": 115.7,
+      "twists": 470,
       "widthM": 96.4
     },
     "12": {
-      "overlapKm": 73.6,
+      "overlapKm": 77.3,
       "twists": 315,
       "widthM": 54.2
     },
     "13": {
-      "overlapKm": 49.6,
-      "twists": 270,
+      "overlapKm": 51.3,
+      "twists": 244,
       "widthM": 30.1
     },
     "14": {
-      "overlapKm": 36.9,
-      "twists": 240,
+      "overlapKm": 37.7,
+      "twists": 232,
       "widthM": 17.1
     },
     "15": {
-      "overlapKm": 25.1,
-      "twists": 224,
+      "overlapKm": 27.7,
+      "twists": 223,
       "widthM": 9.5
     }
   },
   "staging3": {
     "11": {
-      "overlapKm": 59.1,
-      "twists": 238,
+      "overlapKm": 55.8,
+      "twists": 212,
       "widthM": 42.9
     },
     "12": {
-      "overlapKm": 65.8,
-      "twists": 291,
+      "overlapKm": 67.9,
+      "twists": 293,
       "widthM": 45.3
     },
     "13": {
-      "overlapKm": 47.4,
-      "twists": 272,
+      "overlapKm": 49,
+      "twists": 244,
       "widthM": 28.3
     },
     "14": {
-      "overlapKm": 34.1,
-      "twists": 216,
+      "overlapKm": 35.2,
+      "twists": 231,
       "widthM": 14.2
     },
     "15": {
-      "overlapKm": 16,
-      "twists": 230,
+      "overlapKm": 17.3,
+      "twists": 227,
       "widthM": 7.1
     }
   }

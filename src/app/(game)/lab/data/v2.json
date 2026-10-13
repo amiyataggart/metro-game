@@ -5,101 +5,6 @@
   ],
   "failures": [],
   "variants": {
-    "graph2": {
-      "d": 35,
-      "ribbon": {
-        "D": 11.666666666666666,
-        "D2": 23.333333333333332,
-        "NO_SNAP_DROP": [
-          {
-            "line": "Thameslink",
-            "radius": 5000
-          }
-        ],
-        "STRATA_TUBE": [
-          "Bakerloo",
-          "Central",
-          "Circle",
-          "District",
-          "HammersmithAndCity",
-          "Jubilee",
-          "Metropolitan",
-          "Northern",
-          "Piccadilly",
-          "Victoria",
-          "WaterlooAndCity"
-        ],
-        "ORIENT_SPINES": true,
-        "EXIT_ORDER": true,
-        "STRATA": true
-      },
-      "features": 9183,
-      "taperedEnds": 4876,
-      "endHooksTrimmed": 38
-    },
-    "graph3": {
-      "d": 0,
-      "ribbon": {
-        "NO_SNAP_DROP": [
-          {
-            "line": "Thameslink",
-            "radius": 5000
-          }
-        ],
-        "STRATA_TUBE": [
-          "Bakerloo",
-          "Central",
-          "Circle",
-          "District",
-          "HammersmithAndCity",
-          "Jubilee",
-          "Metropolitan",
-          "Northern",
-          "Piccadilly",
-          "Victoria",
-          "WaterlooAndCity"
-        ],
-        "ORIENT_SPINES": true,
-        "EXIT_ORDER": true,
-        "STRATA": true
-      },
-      "features": 9401,
-      "taperedEnds": 5028,
-      "endHooksTrimmed": 6
-    },
-    "graph4": {
-      "d": 35,
-      "ribbon": {
-        "D": 11.666666666666666,
-        "D2": 23.333333333333332,
-        "GLOBAL_ORDER": 4,
-        "NO_SNAP_DROP": [
-          {
-            "line": "Thameslink",
-            "radius": 5000
-          }
-        ],
-        "STRATA_TUBE": [
-          "Bakerloo",
-          "Central",
-          "Circle",
-          "District",
-          "HammersmithAndCity",
-          "Jubilee",
-          "Metropolitan",
-          "Northern",
-          "Piccadilly",
-          "Victoria",
-          "WaterlooAndCity"
-        ],
-        "ORIENT_SPINES": true,
-        "EXIT_ORDER": true,
-        "STRATA": true
-      },
-      "features": 8916,
-      "taperedEnds": 4775,
-      "endHooksTrimmed": 83
-    },
     "graph7": {
       "d": 35,
       "ribbon": {
@@ -121,6 +26,11 @@
           "DLR"
         ],
         "D_XSTRATA": 15,
+        "RAIL_TUNNEL_TUBE": true,
+        "WIDE_STATIC_ORDER": true,
+        "SOLO_LINES": [
+          "SoutheasternHighSpeed"
+        ],
         "NO_SNAP_DROP": [
           {
             "line": "Thameslink",
@@ -144,42 +54,9 @@
         "EXIT_ORDER": true,
         "STRATA": true
       },
-      "features": 10188,
-      "taperedEnds": 5511,
-      "endHooksTrimmed": 35
-    },
-    "graph5": {
-      "d": 42.91122728852295,
-      "ribbon": {
-        "D": 42.91122728852295,
-        "D2": 130,
-        "GLOBAL_ORDER": 4,
-        "NO_SNAP_DROP": [
-          {
-            "line": "Thameslink",
-            "radius": 5000
-          }
-        ],
-        "STRATA_TUBE": [
-          "Bakerloo",
-          "Central",
-          "Circle",
-          "District",
-          "HammersmithAndCity",
-          "Jubilee",
-          "Metropolitan",
-          "Northern",
-          "Piccadilly",
-          "Victoria",
-          "WaterlooAndCity"
-        ],
-        "ORIENT_SPINES": true,
-        "EXIT_ORDER": true,
-        "STRATA": true
-      },
-      "features": 453,
-      "taperedEnds": 4914,
-      "endHooksTrimmed": 13
+      "features": 8897,
+      "taperedEnds": 5071,
+      "endHooksTrimmed": 41
     }
   }
 }

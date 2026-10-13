@@ -56,7 +56,7 @@ const VARIANTS = [
   // with only repeated stretches removed, snapped with /london's radii (see
   // WIDE_LINES): tight snapping is right for routed track geometry but wrong
   // for raw tube data, which /london's loose snap absorbs
-  { id: 'graph7', tubeRaw: 'dedupe', preSame: 12, dedupe: 12, d: 35, ribbon: { D: 35 / 3, D2: 70 / 3, GLOBAL_ORDER: 4 } },
+  { id: 'graph7', tubeRaw: 'dedupe', preSame: 12, preSameTunnel: 30, dedupe: 12, dedupeTunnel: 30, d: 35, ribbon: { D: 35 / 3, D2: 70 / 3, GLOBAL_ORDER: 4 } },
   { id: 'graph5', d: MAP_W, sameLine: true, ribbon: { D: MAP_W, D2: 130, GLOBAL_ORDER: 4 }, bake: true },
 ]
 // experiments: VX='{"id":"graph4x","from":"graph4","ribbon":{...},...}' adds a
@@ -166,6 +166,19 @@ function strataOf(G, info, xy, R, prefer, preferOnly = false) {
   }
   return raw
 }
+// Carry per-point strata from an old polyline onto a new one (resampled,
+// trimmed or moved), by nearest old vertex walking forward.
+function mapSt(newXY, oldXY, oldSts) {
+  if (!oldSts) return null
+  let k = 0
+  return newXY.map((q) => {
+    let best = k, bd = dist(oldXY[k], q)
+    for (let j = Math.max(0, k - 5); j < Math.min(oldXY.length, k + 60); j++) { const d = dist(oldXY[j], q); if (d < bd) { bd = d; best = j } }
+    k = best
+    return oldSts[best]
+  })
+}
+const isTunnel = (st) => st && st !== 'surface'
 // Split a polyline where its stratum changes (the split vertex is shared).
 function splitByStratum(poly, st) {
   const out = []
@@ -224,14 +237,15 @@ function dropDuplicateRaw(fc) {
 // near-parallel within M of geometry already kept; keep uncovered runs, each
 // extended along its dropped stretch until it meets the kept line (see above).
 // items: [{line, st, xy (resampled ~10 m), ...}] -> {items, dropped (m)}
-function dedupeXY(items, M) {
+function dedupeXY(items, M0, Mtunnel = M0) {
   const groups = new Map()
-  for (const it of items) { const k = it.line + '|' + it.st; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(it) }
+  for (const it of items) { const k = it.line; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(it) }
   const out = []
   let dropped = 0
   const len = (xy) => xy.reduce((a, q, i) => (i ? a + dist(xy[i - 1], q) : 0), 0)
   for (const P of groups.values()) {
     P.sort((a, b) => len(b.xy) - len(a.xy))
+    const M = Math.max(M0, Mtunnel) // grid reach; the threshold is per point
     const CELL = 100, grid = new Map()
     const addKept = (xy) => {
       for (let j = 1; j < xy.length; j++) {
@@ -261,7 +275,7 @@ function dedupeXY(items, M) {
       // DUP_MIN_COVER m; a shallow CROSSING of another route of the same line
       // is not a duplicate (Great Northern's Moorgate branch crossing the main
       // line at Arsenal lost a stretch and left a hook)
-      const covered = near.map((n) => n.d < M)
+      const covered = near.map((n, i) => n.d < (isTunnel(p.sts && p.sts[i]) ? Mtunnel : M0))
       {
         let s0 = 0
         for (let i = 1; i <= covered.length; i++) {
@@ -289,22 +303,25 @@ function dedupeXY(items, M) {
         }
         if (best < 0) return []
         const idx = pts.slice(0, best + 1)
-        return [...idx.map((i) => p.xy[i]), near[idx.at(-1)].proj]
+        return [...idx, -idx.at(-1) - 1] // -(i+1): the projection of point i onto the kept line
       }
+      const ptOf = (k) => (k >= 0 ? p.xy[k] : near[-k - 1].proj)
+      const stOf = (k) => (p.sts ? p.sts[k >= 0 ? k : -k - 1] : undefined)
       let s0 = 0
       for (let i = 1; i <= p.xy.length; i++) {
         if (i < p.xy.length && covered[i] === covered[s0]) continue
         const lo = s0, hi = i - 1
         s0 = i
         if (covered[lo]) { dropped += len(p.xy.slice(lo, hi + 1)); continue }
-        const run = [
+        const ids = [
           ...(lo > 0 ? follow(lo - 1, -1).reverse() : []),
-          ...p.xy.slice(lo, hi + 1),
+          ...Array.from({ length: hi - lo + 1 }, (_, k) => lo + k),
           ...(hi < p.xy.length - 1 ? follow(hi + 1, 1) : []),
         ]
+        const run = ids.map(ptOf)
         if (len(run) < RAW_DUP_RUN && (lo > 0 || hi < p.xy.length - 1)) { dropped += len(run); continue }
         addKept(run)
-        out.push({ ...p, xy: run })
+        out.push({ ...p, xy: run, sts: p.sts ? ids.map(stOf) : p.sts })
       }
     }
   }
@@ -451,6 +468,8 @@ function cleanEnds(pieces) {
       out[i].xy = atEnd ? xy : xy.slice().reverse()
     }
   }
+  // ends were trimmed / extended: re-carry each piece's per-point strata
+  out.forEach((q, i) => { q.sts = mapSt(q.xy, pieces[i].xy, pieces[i].sts) })
   return { pieces: out, joined, trimmed }
 }
 
@@ -544,16 +563,23 @@ function trimFeatureHooks(fc) {
 // one stratum (Jubilee tunnel vs the Waterloo East viaduct). Same rule is
 // passed to build-ribbons as STRATA_TUBE.
 const UNDERGROUND = [...TUBE].filter((l) => l !== 'DLR')
+// lines on their own dedicated track throughout the lab area: bundled only
+// with themselves (HS1 was pulled into the Midland / Thameslink corridor on
+// the St Pancras approach). Passed to build-ribbons as SOLO_LINES.
+const SOLO = new Set(['SoutheasternHighSpeed'])
 const strataOk = (sa, la, sb, lb) =>
   sa === sb || (UNDERGROUND.includes(la) && UNDERGROUND.includes(lb) && [sa, sb].every((x) => x === 'surface' || x === 'tunnel-subway'))
 // sameLine: only a line's own parallel copies attract (a line routed over the
 // fast AND slow tracks becomes one line), never two different lines.
-function bundle2(polys, d, noSnap, sameLine = false) {
+// dTun: radius for pairs of points both in tunnel (a line's twin bores run
+// ~20–30 m apart, its surface tracks 5–15 m); d for every other pair.
+function bundle2(polys, d0, noSnap, sameLine = false, dTun = d0) {
   const STEP = 10
+  const d = Math.max(d0, dTun)
   const P = polys.map((p) => {
     const xy = resample(p.xy, STEP)
     const frozen = xy.map((q) => noSnap.some((o) => o.line === p.line && dist(q, o.atXY) < o.radius))
-    return { ...p, xy, frozen }
+    return { ...p, xy, sts: mapSt(xy, p.xy, p.sts), frozen }
   })
   if (d <= STEP) return P
   // Chains: a line's pieces joined end to end where exactly two of its pieces
@@ -622,13 +648,16 @@ function bundle2(polys, d, noSnap, sameLine = false) {
         let sw = 1, so = 0
         for (let gx = cx - 1; gx <= cx + 1; gx++) for (let gy = cy - 1; gy <= cy + 1; gy++)
           for (const [pj, j] of grid.get(gx + ',' + gy) || []) {
-            if (pj === pi || !strataOk(P[pj].st, P[pj].line, p.st, p.line) || (sameLine && P[pj].line !== p.line)) continue
+            const sa = P[pj].sts ? P[pj].sts[j] : null, sb = p.sts ? p.sts[i] : null
+            if (pj === pi || !strataOk(sa, P[pj].line, sb, p.line) || (sameLine && P[pj].line !== p.line)) continue
+            if (SOLO.has(p.line) !== SOLO.has(P[pj].line) || (SOLO.has(p.line) && P[pj].line !== p.line)) continue
             const o = P[pj].xy[j]
             const r = Math.hypot(o[0] - q[0], o[1] - q[1])
-            if (r >= d) continue
+            const dd = isTunnel(sa) && isTunnel(sb) ? dTun : d0
+            if (r >= dd) continue
             const tj = tans[pj][j]
             if (Math.abs(t[0] * tj[0] + t[1] * tj[1]) < COS) continue
-            const w = kernel(r)
+            const w = (1 - (r / dd) ** 2) ** 2
             sw += w; so += w * ((o[0] - q[0]) * nx + (o[1] - q[1]) * ny)
           }
         const off = so / sw
@@ -932,11 +961,11 @@ function main() {
   for (const line of [...edgesOf.keys()].sort()) {
     for (const xy of pruneChains(L1.chains(G, edgesOf.get(line), true), stationXY.get(line) || [])) {
       const st = strataOf(G, info, xy, 2, 0)
-      base.push(...splitByStratum({ line, xy }, st))
+      base.push({ line, xy, sts: st })
     }
     for (const xy of extraPolys.get(line) || []) {
       const st = strataOf(G, info, xy, 25, 0)
-      base.push(...splitByStratum({ line, xy }, st))
+      base.push({ line, xy, sts: st })
     }
   }
   // tube + DLR: raw OSM centrelines, clipped to scope like /london
@@ -951,12 +980,12 @@ function main() {
   for (const f of clipped.features) {
     const xy = resample(f.geometry.coordinates.map(toXY), 10)
     const prefer = f.properties.line === 'DLR' ? 4 : 2
-    rawTubeDedup.push(...splitByStratum({ line: f.properties.line, xy }, strataOf(G, info, xy, 80, prefer, true)))
+    rawTubeDedup.push({ line: f.properties.line, xy, sts: strataOf(G, info, xy, 80, prefer, true) })
   }
   for (const f of clipped.features) {
     const xy = smoothRaw(resample(f.geometry.coordinates.map(toXY), 10))
     const prefer = f.properties.line === 'DLR' ? 4 : 2
-    base.push(...splitByStratum({ line: f.properties.line, xy }, strataOf(G, info, xy, 80, prefer, true)))
+    base.push({ line: f.properties.line, xy, sts: strataOf(G, info, xy, 80, prefer, true) })
   }
   // DEBUG_AT=lng,lat: print base pieces passing within 150 m (diagnostics)
   const dbg = (tag) => {
@@ -964,7 +993,7 @@ function main() {
     const P = toXY(process.env.DEBUG_AT.split(',').map(Number))
     for (const p of base) {
       const m = Math.min(...p.xy.map((q) => dist(q, P)))
-      if (m < 150) console.log(tag, p.line, p.st, 'n', p.xy.length, 'min', m.toFixed(0), 'start', dist(p.xy[0], P).toFixed(0), 'end', dist(p.xy.at(-1), P).toFixed(0), 'tail', p.xy.slice(-4).map((q) => dist(q, P).toFixed(0)).join(','))
+      if (m < 150) console.log(tag, p.line, p.sts ? [...new Set(p.sts)].join('/') : '-', 'n', p.xy.length, 'min', m.toFixed(0), 'start', dist(p.xy[0], P).toFixed(0), 'end', dist(p.xy.at(-1), P).toFixed(0), 'tail', p.xy.slice(-4).map((q) => dist(q, P).toFixed(0)).join(','))
     }
   }
   dbg('before')
@@ -973,7 +1002,7 @@ function main() {
   base.push(...ce.pieces)
   console.log(`line ends: ${ce.joined} loose end(s) joined, ${ce.trimmed} hook(s) trimmed`)
   dbg('after')
-  const km = (st) => (base.filter((p) => p.st === st).reduce((s, p) => s + p.xy.reduce((a, q, i) => (i ? a + dist(p.xy[i - 1], q) : 0), 0), 0) / 1000).toFixed(0)
+  const km = (st) => (base.reduce((s, p) => s + p.xy.reduce((a, q, i) => (i && p.sts && p.sts[i] === st ? a + dist(p.xy[i - 1], q) : a), 0), 0) / 1000).toFixed(0)
   console.log(`${base.length} pieces: ${km('surface')} km surface, ${['tunnel-rail', 'tunnel-subway', 'tunnel-light'].map((t) => `${km(t)} km ${t}`).join(', ')}`)
 
   const { score } = require('./score.js')
@@ -991,19 +1020,23 @@ function main() {
     // pre-processing step below; build-ribbons snaps them with /london's radii
     const tubeSet = V.tubeRaw ? rawTubeDedup : []
     const src = V.tubeRaw ? base.filter((p) => !TUBE.has(p.line)) : base
-    let pre = V.preSame ? bundle2(src, V.preSame, noSnap, true) : src
+    // same-line merge radius by stratum: twin tunnel bores of one line run
+    // ~20–30 m apart (Elizabeth line west of Whitechapel), surface tracks of
+    // one line 5–15 m (a larger surface radius merges separate routes of the
+    // line early: Great Northern's Moorgate branch at Arsenal)
+    let pre = V.preSame ? bundle2(src, V.preSame, noSnap, true, V.preSameTunnel || V.preSame) : src
     // then drop what is left of each line's parallel copies (fast/slow tracks
     // used by different services: Southern drawn twice side by side)
     if (V.dedupe) {
-      const r = dedupeXY(pre, V.dedupe)
+      const r = dedupeXY(pre, V.dedupe, V.dedupeTunnel)
       console.log(`${V.id}: ${(r.dropped / 1000).toFixed(1)} km of same-line copies dropped`)
       pre = r.items
     }
     const polys = [...(V.d ? bundle2(pre, V.d, noSnap, !!V.sameLine) : pre), ...tubeSet]
-    const cfg = { ...V.ribbon, ...(V.tubeRaw ? { WIDE_LINES: [...TUBE], D_XSTRATA: 15 } : {}), NO_SNAP_DROP, STRATA_TUBE: UNDERGROUND, ORIENT_SPINES: true, EXIT_ORDER: !process.argv.includes("--no-exit"), STRATA: !process.argv.includes('--no-strata') }
-    const fcIn = polys.map((p) => ({ ...p, props: { stratum: p.st } }))
+    const cfg = { ...V.ribbon, ...(V.tubeRaw ? { WIDE_LINES: [...TUBE], D_XSTRATA: 15, RAIL_TUNNEL_TUBE: true, WIDE_STATIC_ORDER: true, SOLO_LINES: [...SOLO] } : {}), NO_SNAP_DROP, STRATA_TUBE: UNDERGROUND, ORIENT_SPINES: true, EXIT_ORDER: !process.argv.includes("--no-exit"), STRATA: !process.argv.includes('--no-strata') }
+    const fcIn = polys.map((p) => ({ ...p, props: { st: p.sts } }))
     let built = ribbonsWithProps(fcIn, colorOf, orderOf, passthrough, V.id, cfg)
-    for (const f of built.features) delete f.properties.stratum
+    for (const f of built.features) { delete f.properties.stratum; delete f.properties.st }
     const th = trimFeatureHooks(built)
     built = th.fc
     const tp = process.argv.includes('--no-taper') ? { fc: built, joints: 0 } : taper(built, V.bake ? { geoW: MAP_W } : {})
