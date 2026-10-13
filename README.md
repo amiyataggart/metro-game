@@ -182,7 +182,7 @@ track no scoped service uses are dropped. `FULL_LINES` are untouched.
 `scope.data.test.ts` checks that no line runs on beyond its end stations and
 that everything lies inside `maxBounds`.
 
-**`/newtracks`, `/newtracks2` (experimental).** They read a frozen copy of
+**`/newtracks`, `/newtracks2` (experimental; local untracked work, not in the repo).** They read a frozen copy of
 main's stations, `newtracks/data/features.london-main.json` (=
 `git show d2b8aa3:src/app/(game)/london/data/features.json`), not the rebuilt
 London `features.json`, so their stations match their own unscoped
@@ -308,7 +308,7 @@ node scripts/qa-junctions.js [route]     # drives the in-app search to screensho
   the enabled lines (`restrictToEnabled`), so grouped names (King's Cross /
   St Pancras) work in any line selection.
 - `visibility.ts` — `HIDDEN_LINES` (fully removed lines) and `THAMESLINK_TRIM`.
-- Default enabled lines live in `GamePage` (`defaultEnabled`); bump the
+- Default enabled lines live in `src/lib/defaultEnabledLines.ts`; bump the
   `${CITY_NAME}-enabled-lines-vN` storage key when changing defaults.
 
 ## Deploy (Cloudflare)
