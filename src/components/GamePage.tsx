@@ -88,7 +88,7 @@ const mppAt = (z: number) => (78271.517 * Math.cos((51.5 * Math.PI) / 180)) / 2 
 // line-offset for morph mode; `widthFrac` adds ±W/5 for the triple stripe
 // The blend is linear in GROUND space between bundled and true positions
 // (t linear in zoom), sampled every half zoom level across the blend.
-const morphOffsetExpr = (cfg: MorphConfig, widthFrac = 0) => {
+const morphOffsetExpr = (cfg: MorphConfig, widthFrac = 0, wAt: (z: number) => number = widthAt) => {
   const lf = ['coalesce', ['get', 'laneOff'], 0]
   const blend: number[] = []
   for (let z = cfg.zCoarse; z < cfg.zFine; z += 0.5) blend.push(z)
@@ -97,7 +97,7 @@ const morphOffsetExpr = (cfg: MorphConfig, widthFrac = 0) => {
     'interpolate', ['linear'], ['zoom'],
     ...stops.flatMap((z) => {
       const t = Math.max(0, Math.min(1, (z - cfg.zCoarse) / (cfg.zFine - cfg.zCoarse)))
-      const w = widthAt(z)
+      const w = wAt(z)
       return [
         z,
         ['+',
@@ -127,12 +127,33 @@ const levelZoomRange = (lv: RouteLevel) => ({
 })
 const levelPrefix = (lv: RouteLevel) => (lv.id ? `lines-${lv.id}` : 'lines')
 
+// /lab sizing test (`fixedSizeZoom`): every zoom-interpolated SIZE (line width
+// and lane offset, stripes, station radius/stroke, pie size, label size) is
+// replaced by its value at one zoom, so nothing on the map changes size as
+// you zoom. Opacity fades (/lab/levels) and the morph blend stay zoom-based.
+const SIZE_PROPS = ['line-width', 'line-offset', 'circle-radius', 'circle-stroke-width', 'icon-size', 'text-size']
+const atZoom = (e: unknown, z: number): unknown => {
+  if (!Array.isArray(e) || e[0] !== 'interpolate' || !Array.isArray(e[2]) || e[2][0] !== 'zoom') return e
+  const st = e.slice(3)
+  const n = st.length / 2
+  if (z <= st[0]) return st[1]
+  for (let i = 1; i < n; i++)
+    if (z <= st[2 * i]) {
+      const z0 = st[2 * i - 2], z1 = st[2 * i], a = st[2 * i - 1], b = st[2 * i + 1]
+      const t = (z - z0) / (z1 - z0)
+      if (typeof a === 'number' && typeof b === 'number') return a + (b - a) * t
+      return ['+', ['*', 1 - t, a], ['*', t, b]]
+    }
+  return st[2 * n - 1]
+}
+
 export default function GamePage({
   fc,
   routes,
   routeLevels,
   morph,
   onMap,
+  fixedSizeZoom,
   maskData,
   cityData,
 }: {
@@ -144,6 +165,8 @@ export default function GamePage({
   morph?: MorphConfig
   /** /lab only: called once the map is ready (e.g. for a zoom readout). */
   onMap?: (m: maplibregl.Map) => void
+  /** /lab only: freeze every zoom-dependent size at this zoom (sizing test). */
+  fixedSizeZoom?: number
   maskData?: any
   cityData?: any
 }) {
@@ -369,6 +392,20 @@ export default function GamePage({
   // -------- Map setup --------
   useEffect(() => {
     const m = new maplibregl.Map({ ...MAP_CONFIG, container: 'map' })
+    if (fixedSizeZoom != null) {
+      const add = m.addLayer.bind(m)
+      const fz = fixedSizeZoom
+      m.addLayer = ((layer: any, before?: string) => {
+        const L = { ...layer, paint: { ...(layer.paint || {}) }, layout: { ...(layer.layout || {}) } }
+        for (const part of [L.paint, L.layout])
+          for (const k of SIZE_PROPS)
+            if (k in part && !(morph && k === 'line-offset')) part[k] = atZoom(part[k], fz)
+        if (L.type === 'symbol') delete L.minzoom // labels: no zoom cut-off either
+        return add(L, before)
+      }) as typeof m.addLayer
+    }
+    // morph keeps its zoom blend; only its lane spacing uses the fixed width
+    const mWidth = fixedSizeZoom != null ? () => widthAt(fixedSizeZoom) : widthAt
     // Drop the centre below the top control bar so the configured centre
     // (Charing Cross) sits midway between the entry box and the page bottom,
     // not the page centre. Set before first paint so there's no flash.
@@ -468,7 +505,7 @@ export default function GamePage({
         // laneOff × the zoom-scaled line width so adjacent ribbons sit one width
         // apart — a CONSTANT screen amount at every zoom (never hide when zoomed
         // out) while geometry stays on the true track. +offset = right of line dir.
-        const lineOffset = morph ? morphOffsetExpr(morph) : LINE_OFFSET_EXPR
+        const lineOffset = morph ? morphOffsetExpr(morph, 0, mWidth) : LINE_OFFSET_EXPR
         // ~50% thicker than the previous pass; white stripes ~1/3 of that.
         const lineWidth = LINE_WIDTH_EXPR
         const stripeWidth = [
@@ -569,7 +606,7 @@ export default function GamePage({
                 paint: {
                   'line-color': '#ffffff',
                   'line-width': TRIPLE_STRIPE_WIDTH_EXPR,
-                  'line-offset': morph ? morphOffsetExpr(morph, side / 5) : tripleStripeOffsetExpr(side),
+                  'line-offset': morph ? morphOffsetExpr(morph, side / 5, mWidth) : tripleStripeOffsetExpr(side),
                   'line-opacity': levelOpacity(lv, 1),
                 },
                 layout: { 'line-sort-key': bandSortKey, 'line-cap': 'butt', 'line-join': 'round' },
@@ -1042,20 +1079,19 @@ export default function GamePage({
       }
     })()
 
+    const flashExpr = {
+      lineOffset: (fixedSizeZoom != null ? atZoom(LINE_OFFSET_EXPR, fixedSizeZoom) : LINE_OFFSET_EXPR) as maplibregl.ExpressionSpecification,
+      lineWidth: (fixedSizeZoom != null ? atZoom(LINE_WIDTH_EXPR, fixedSizeZoom) : LINE_WIDTH_EXPR) as maplibregl.ExpressionSpecification,
+    }
+    const flashFixedWidth = fixedSizeZoom != null ? widthAt(fixedSizeZoom) : undefined
     if (newlyCompleteLines.length) {
       celebrateLines(newlyCompleteLines.map((k) => LINES[k]), region)
-      if (map) flashLines(map, newlyCompleteLines, {
-        lineOffset: LINE_OFFSET_EXPR,
-        lineWidth: LINE_WIDTH_EXPR,
-      })
+      if (map) flashLines(map, newlyCompleteLines, flashExpr, { fixedWidth: flashFixedWidth })
     }
     if (allJustCompleted) {
       const visible = Object.keys(stationsPerLine).filter((k) => stationsPerLine[k] > 0)
       celebrateFinale(visible.map((k) => LINES[k]), region)
-      if (map) flashLines(map, visible, {
-        lineOffset: LINE_OFFSET_EXPR,
-        lineWidth: LINE_WIDTH_EXPR,
-      }, { finale: true })
+      if (map) flashLines(map, visible, flashExpr, { finale: true, fixedWidth: flashFixedWidth })
     }
 
     // Always advance, even when nothing fired (e.g. a line toggled off), so the
@@ -1070,6 +1106,7 @@ export default function GamePage({
     LINES,
     celebrateLines,
     celebrateFinale,
+    fixedSizeZoom,
   ])
 
   const revealAll = useCallback(() => {
