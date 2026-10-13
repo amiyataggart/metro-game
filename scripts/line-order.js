@@ -38,4 +38,7 @@ module.exports = {
   Southeastern: 30,
   SoutheasternHighSpeed: 31,
   Southern: 32,
+  LondonNorthwestern: 33,
+  Eurostar: 34,
+  CableCar: 35,
 }

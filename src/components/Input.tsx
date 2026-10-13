@@ -2,17 +2,16 @@
 
 import classNames from 'classnames'
 import { useState, KeyboardEventHandler, useCallback } from 'react'
-import Fuse from 'fuse.js'
 import maplibregl from 'maplibre-gl'
 import { DataFeature } from '@/lib/types'
 import { Transition } from '@headlessui/react'
 import { Feature, Point } from 'geojson'
 import useTranslation from '@/hooks/useTranslation'
-import useNormalizeString from '@/hooks/useNormalizeString'
+import { Resolution, selectNewIds } from '@/lib/matching'
 import usePushEvent from '@/hooks/usePushEvent'
 
 const Input = ({
-  fuse,
+  matcher,
   found,
   setFound,
   setIsNewPlayer,
@@ -20,7 +19,7 @@ const Input = ({
   map,
   idMap,
 }: {
-  fuse: Fuse<DataFeature>
+  matcher: (q: string) => Resolution
   found: number[]
   setFound: (found: number[]) => void
   setIsNewPlayer: (isNewPlayer: boolean) => void
@@ -29,11 +28,11 @@ const Input = ({
   idMap: Map<number, DataFeature>
 }) => {
   const { t } = useTranslation()
-  const normalizeString = useNormalizeString()
   const [search, setSearch] = useState<string>('')
   const [wrong, setWrong] = useState<boolean>(false)
   const [success, setSuccess] = useState<boolean>(false)
   const [alreadyFound, setAlreadyFound] = useState<boolean>(false)
+  const [ambiguous, setAmbiguous] = useState<boolean>(false)
   const pushEvent = usePushEvent()
 
   const zoomToStation = useCallback(
@@ -68,65 +67,48 @@ const Input = ({
 
       e.preventDefault()
 
-      const sanitizedSearch = normalizeString(search)
-      const results = fuse.search(sanitizedSearch)
-      let someAlreadyFound = false
-      const matches: number[] = []
-      for (let i = 0; i < results.length; i++) {
-        const result = results[i]
-        if (
-          result.matches &&
-          result.matches.length &&
-          result.matches.some(
-            (match) =>
-              match.indices[0][0] === 0 &&
-              match.value!.length - match.indices[match.indices.length - 1][1] <
-                2 &&
-              Math.abs(match.value!.length - sanitizedSearch.length) < 4,
-          )
-        ) {
-          if ((found || []).indexOf(+result.item.id!) === -1) {
-            matches.push(+result.item.id!)
-          } else {
-            someAlreadyFound = true
-            setAlreadyFound(true)
-            setTimeout(() => setAlreadyFound(false), 1200)
-          }
-        }
+      const result = matcher(search)
+      if (result.kind === 'ambiguous') {
+        setAmbiguous(true)
+        setTimeout(() => setAmbiguous(false), 1500)
+        return
       }
-
-      if (matches.length === 0 && !someAlreadyFound) {
+      if (result.kind === 'none') {
         setWrong(true)
         setTimeout(() => setWrong(false), 500)
         return
-      } else {
-        setSuccess(true)
-        setTimeout(() => setSuccess(false), 250)
-        if (map) {
+      }
+      const { fresh, allFound } = selectNewIds(result.ids, found || [])
+      if (allFound) {
+        setAlreadyFound(true)
+        setTimeout(() => setAlreadyFound(false), 1200)
+        setSearch('')
+        return
+      }
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 250)
+      if (map) {
+        ;(map.getSource('hovered') as maplibregl.GeoJSONSource).setData({
+          type: 'FeatureCollection',
+          features: fresh.map((id) => idMap.get(id)!).filter(Boolean),
+        })
+        setTimeout(() => {
           ;(map.getSource('hovered') as maplibregl.GeoJSONSource).setData({
             type: 'FeatureCollection',
-            features: (matches || []).map((id) => idMap.get(id)!),
+            features: [],
           })
-
-          setTimeout(() => {
-            ;(map.getSource('hovered') as maplibregl.GeoJSONSource).setData({
-              type: 'FeatureCollection',
-              features: [],
-            })
-          }, 1500)
-        }
-
-        zoomToStation(matches[0])
-        setFound([...matches, ...(found || [])])
-        setIsNewPlayer(false)
-        setSearch('')
-        pushEvent(matches)
+        }, 1500)
       }
+      zoomToStation(fresh[0])
+      setFound([...fresh, ...(found || [])])
+      setIsNewPlayer(false)
+      setSearch('')
+      pushEvent(fresh)
     },
     [
       search,
       setSearch,
-      fuse,
+      matcher,
       found,
       setFound,
       setWrong,
@@ -134,7 +116,6 @@ const Input = ({
       map,
       idMap,
       zoomToStation,
-      normalizeString,
       pushEvent,
     ],
   )
@@ -171,6 +152,21 @@ const Input = ({
       >
         <div className="my-1 mr-2 flex items-center justify-center rounded-full border-green-400 bg-green-200 px-2 py-1 text-sm font-bold text-green-800">
           {t('alreadyFound')}
+        </div>
+      </Transition>
+      <Transition
+        show={ambiguous}
+        as="div"
+        className="pointer-events-none absolute right-0 top-0 z-50 my-auto mt-1 flex h-auto items-center"
+        enter="transition-opacity duration-300"
+        enterFrom="opacity-0"
+        enterTo="opacity-100"
+        leave="transition-opacity duration-500"
+        leaveFrom="opacity-100"
+        leaveTo="opacity-0"
+      >
+        <div className="my-1 mr-2 flex items-center justify-center rounded-full border-amber-400 bg-amber-100 px-2 py-1 text-sm font-bold text-amber-800">
+          {t('beMoreSpecific')}
         </div>
       </Transition>
     </div>

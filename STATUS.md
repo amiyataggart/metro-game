@@ -1,16 +1,27 @@
 # STATUS
 
-_Updated 2026-05-29 · branch `main` · pushed to `origin` at `b1623f2` · deploys to Cloudflare as a static export._
+_Updated 2026-10-12 · branch `feature/coverage-matching` (network-coverage-and-matching work, uncommitted, on top of `main` at `d2b8aa3`) · deploys to Cloudflare as a static export._
 
 ## Where it stands
 
-- **Lines shown by default:** Underground + Overground + Elizabeth + DLR. **Thameslink** off by default (toggleable). **Southern / Great Northern / Gatwick Express** hidden (`HIDDEN_LINES`).
+- **Network:** Underground, Overground, Elizabeth, DLR, Thameslink and Cable Car (on by default), Trams, Heathrow Express, c2c, and the other London National Rail operators incl. new London Northwestern and Eurostar (off by default, toggleable). Scope = Greater London + selected commuter destinations (`scope.ts`, spec §3): ~1208 station×line features; nothing hidden (`HIDDEN_LINES` empty).
+- **Stations & scope:** the per-line service tables (`london/services/`) are the source of truth for which stations a line has; `scope.ts` sets each line's end stations. Both are applied at build time (`build-stations.js`, `clip-to-scope.js` via `build-ribbons.js`); there is no render-time clipping. Station ids come from the append-only ledger `data/station-ids.json`.
+- **Matching:** deterministic matcher in `src/lib/matching/` (normalisation, aliases, one-typo tolerance with GB station-name decoys), built once over every station; results are restricted to the enabled lines (`restrictToEnabled`), so curated groups/aliases work in any line selection. `npm test` runs the Vitest suite (unit + data tests).
 - **Geometry:** parallel-ribbon corridors rebuilt by `scripts/build-ribbons.js` (shared-centreline corridors + station-anchored membership + lane order by config `order`; de-spike / de-weld / collapse-doubling cleanup). Default **offset mode**: lines sit on the shared centreline carrying a `laneOff`, separated at render by `line-offset = laneOff × line-width(zoom)` → co-runners stay parallel, never flip, separate by a constant screen amount at every zoom (no hiding when zoomed out), geometry stays on the true track. (`--mode baked` available.) See README "Data pipeline". Source of truth is `routes.osm.json` (raw OSM); build `routes.json` from it, never from `routes.json` itself.
 - **Stations:** hollow when un-found; colour dot (single-line) or segmented pie (interchange) when found; identical borders; **scale with zoom**.
 - **Map furniture:** operator line picker, draggable timer, Greater London grey-out + border, red-dashed City of London, greener parks / bluer water, default view on Charing Cross (Zone 1).
 - **Verification:** Puppeteer render + browser-free geometry scorecard harness (`scripts/qa-*.js`).
 
 ## Latest changes (action → result)
+
+- **Network coverage & matching (2026-10-12, spec `docs/superpowers/specs/2026-10-12-network-coverage-and-matching-design.md`).**
+  - Vitest suite + deterministic matcher (`src/lib/matching/`) replacing Fuse.js fuzzy matching; GB station names as decoys, so out-of-scope places (Upwey, Peterborough, Colchester, Nottingham, St James' Park, Hamstead) match nothing — an exact real station name not in the game is always rejected (a "London wins" variant was tried and reverted at the user's request). `jn`/`jct`/`junc` mean "junction".
+  - Curated per-line service tables + `scope.ts`; `features.json` rebuilt from them by `build-stations.js` (1630 → 1208 features; London Northwestern, Eurostar, Cable Car added).
+  - `routes.osm.json` refreshed for 11 lines; 25 graph-routed gap fills (`route-over-rail-graph.js`) persisted in `data/routes.gap-fills.json`; the merge is now `scripts/merge-osm-routes.js`, and given the Task-8 fetch (a scratch file, not committed) the repo scripts rebuild `routes.osm.json` byte-for-byte; a fresh refetch will differ slightly (Overpass data changes).
+  - **Scope trim at build time:** `clip-to-scope.js` (run by `build-ribbons.js`) clips trimmed lines at their end stations (Eurostar stops at Ebbsfleet; Coastway, Redhill–Tonbridge, ECML north of Hitchin, beyond Reading/Woking/Guildford etc. gone). `routes.json` 7448 → 6327 features (after the fix round). `/london` no longer clips at render time (`scopedStationFeatures`/`scopedRouteFeatures`, `londonConfig`); the `DISPLAY_BOUNDS` clip / `THAMESLINK_TRIM` survive only as `@deprecated` legacy exports for `/newtracks*`; `maxBounds` refitted to the scoped network + ~10% (`[-1.15, 50.69]`–`[0.97, 52.37]`). Unchanged (full) lines moved ≤ 7 m vs a control rebuild; `qa-ribbons.js` scorecard identical.
+  - Saved progress: stored found ids not in the data are dropped on load (`filterKnownIds`); `Input` now gets all stored finds, so a guess made while a line is disabled no longer erases that line's finds. Reveal-all keeps finds on disabled lines too (`addFound`). The `enabled-lines` key was bumped v5 → v6 on this branch (Phase A: new lines) and v6 → v7 for the new default selection (all TfL + Thameslink + Cable Car, user decision 2026-10-13). The `${CITY_NAME}-stations` key is unchanged, so progress survives.
+  - Southeastern Charing Cross – Gravesend via Blackheath & Woolwich added (OSM relation 452776) so the Blackheath–Charlton spur is drawn; Chiltern's 64 m raw junction gap at Neasden closed by a graph-routed fill in `routes.gap-fills.json`.
+  - Station id ledger `data/station-ids.json` (all pairs ever assigned + high-water mark): ids survive rebuilds, a dropped station that returns gets its old id, retired ids are never reused; the id test no longer shells out to git.
 
 - **Declarative cartography overrides** (`build-ribbons.js`, re-applied on every build → survive a data re-fetch). Five mechanisms, all near the top of the file:
   - `ORDER_OVERRIDES` — force cross-track lane order near a point; optional `axis` (`lat` default / `lng`) for N–S corridors, and `noFlip` to rank lanes WITHOUT asserting a spine sign (for overrides riding the §4-locked Circle-loop spine). Fixes: Mile End, Jubilee above Met, Suffragette below Victoria, Victoria below Northern at Euston, the King's Cross stack, and Thameslink west of the subsurface at Farringdon.
@@ -50,12 +61,15 @@ _Updated 2026-05-29 · branch `main` · pushed to `origin` at `b1623f2` · deplo
 
 ## Open / queued
 
+- **Scope/geometry follow-ups:** Thameslink London Bridge → Deptford ribbon zig-zags at North Kent East Jn (cosmetic; an `ORDER_OVERRIDE` was tried and did not help — the swap is between separate geometries, not lane order). Pre-existing uncovered stop pairs: Thameslink Streatham → Tooting, GatEx Victoria → Gatwick, GWR South Greenford → Greenford, SEHS St Pancras → Stratford Intl.
+- **`/newtracks`, `/newtracks2`** read a frozen copy of main's stations, `newtracks/data/features.london-main.json` (= main's london features.json; line 1 of both pages changed with the user's permission), so their visible stations and routes are identical to main (hash-checked). Rebuilding their routes needs `build-ribbons.js --no-clip` to match the old output. They keep their pre-scope camera and render clip via legacy exports (default `config` with the old camera box `DISPLAY_BOUNDS`, and `visibleStationFeatures`/`visibleRouteFeatures`, which still clip to it); `/london` uses the scoped `MAP_CONFIG` and `scopedStationFeatures`/`scopedRouteFeatures`.
+
 - **#16 geometry fixes** — Oval right-angle jumps, Waterloo&City + DLR cut short of Bank, stray track off Wandsworth Road, acute-angle kinks (Angel/Warren St/KX/Charing Cross — pin-aware weld preserving corners), Weaver not reaching Cheshunt.
 - **#17 raw-geometry Settings toggle** — needs an OSM re-fetch of unprocessed ways.
 - **#18 real per-line station positions** — needs OSM per-line stop coords (for Edgware Rd / Paddington / Canary Wharf etc.); current per-location pies only cover cases already split in the data.
 
 ## Caveats
 
-- `routes.json` is a **human-reviewed baked snapshot**; re-running the pipeline produces equivalent-but-not-byte-identical geometry.
-- The Thameslink Peterborough branch is a **straight station-to-station reconstruction**, not a track-faithful trace.
+- `routes.json` is a **human-reviewed build output**; `build-ribbons.js` is deterministic for a given input, but any input change (clip, refetch) shifts nearby geometry slightly.
+- `scripts/rename-stations.js` and `transform-data.js` are **obsolete** — don't run them (they conflict with the service-table names / are superseded by `build-stations.js`).
 - **Don't** run `npm run build` while `npm run dev` is running (shared `.next/`).

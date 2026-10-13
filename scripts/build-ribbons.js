@@ -62,8 +62,14 @@
  *   node scripts/build-ribbons.js \
  *     --in src/app/(game)/london/data/routes.osm.json \
  *     --out src/app/(game)/london/data/routes.json
- * `routes.osm.json` is produced by scripts/fetch-osm-routes.js. build-ribbons
- * refuses an already-processed input (one carrying `laneOff`).
+ * `routes.osm.json` is produced by scripts/fetch-osm-routes.js (+
+ * merge-osm-routes.js). build-ribbons refuses an already-processed input (one
+ * carrying `laneOff`).
+ *
+ * Scope clip: before anything else the input is clipped to the network scope
+ * (scripts/clip-to-scope.js — trimmed lines end at their end stations,
+ * scope.ts), using the services and features.json next to --in. `--no-clip`
+ * skips it (diagnostics only).
  */
 
 const fs = require('fs')
@@ -558,6 +564,7 @@ function parseArgs() {
     else if (a[i] === '--debug-line') o.debugLine = a[++i]
     else if (a[i] === '--mode') o.mode = a[++i] // 'offset' (default) | 'baked'
     else if (a[i] === '--force') o.force = true // allow building from processed input
+    else if (a[i] === '--no-clip') o.noClip = true // skip the scope clip (diagnostics)
   }
   return o
 }
@@ -568,7 +575,7 @@ function main() {
   NO_SNAP.forEach((o) => (o.atXY = toXY(o.at)))
   FORCE_SNAP.forEach((o) => (o.atXY = toXY(o.at)))
   NUDGE.forEach((o) => (o.atXY = toXY(o.at)))
-  const raw = JSON.parse(fs.readFileSync(args.in, 'utf8'))
+  let raw = JSON.parse(fs.readFileSync(args.in, 'utf8'))
   // Footgun guard: always build from the pristine pre-offset source, never from
   // an already-processed routes.json (that double-snaps / double-offsets).
   const alreadyProcessed = raw.features.some((f) => f.properties && 'laneOff' in f.properties)
@@ -580,6 +587,15 @@ function main() {
         `(use --force to override).`,
     )
     process.exit(1)
+  }
+  if (!args.noClip) {
+    // Clip the trimmed lines to scope (end stations) before building ribbons.
+    const { clipToScope, loadScope, logStats } = require('./clip-to-scope.js')
+    const stationsFC = JSON.parse(fs.readFileSync(path.join(path.dirname(args.in), 'features.json'), 'utf8'))
+    const clipped = clipToScope(raw, stationsFC, loadScope())
+    console.log(`scope clip: ${raw.features.length} -> ${clipped.fc.features.length} raw features`)
+    logStats(clipped.stats)
+    raw = clipped.fc
   }
   const ORDER = require('./line-order.js') // {lineKey: order}
 

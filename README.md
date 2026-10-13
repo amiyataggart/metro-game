@@ -3,12 +3,27 @@
 A self-hosted memory game for the London rail network. Type station names from
 memory; correct guesses light up on a real-geography MapLibre map.
 
-By default the map shows the **London Underground** (11 lines), **London
-Overground** (6 lines), the **Elizabeth line**, and the **DLR**. **Thameslink**
-is included but **off by default** — toggle it (or any individual line) from the
-line picker next to the legend. Southern, Great Northern and Gatwick Express
-remain in the data but are currently hidden (`HIDDEN_LINES` in
-`visibility.ts`).
+The network: the **London Underground** (11 lines), **London Overground**
+(6 lines), the **Elizabeth line**, the **DLR**, **London Trams**, the **Cable
+Car**, **Heathrow Express**, **c2c**, and the National Rail operators
+around London — **Thameslink**, **Great Northern**, **Southern**, **Gatwick
+Express**, **South Western Railway**, **GWR**, **Chiltern**, **London
+Northwestern**, **East Midlands Railway**, **Greater Anglia**, **Southeastern**,
+**Southeastern high speed** and **Eurostar** (St Pancras only; line drawn to
+Ebbsfleet). Underground, Overground, Elizabeth line, DLR, Thameslink and the
+Cable Car are on by default (`src/lib/defaultEnabledLines.ts`); Trams and the
+other National Rail lines are toggled on from the line picker next to the legend.
+
+**Scope** (`src/app/(game)/london/scope.ts`, spec
+`docs/superpowers/specs/2026-10-12-network-coverage-and-matching-design.md` §3):
+Greater London plus selected commuter destinations. Lines in `FULL_LINES` are
+kept whole; every other line runs out to its `END_STATIONS` (e.g. Thameslink to
+Bedford / Cambridge / Brighton / Gravesend, SWR to Reading / Guildford / Woking,
+Greater Anglia to Chelmsford / Southend Victoria / Cambridge North). Medway,
+Basingstoke, Milton Keynes, Colchester and Tonbridge / Tunbridge Wells are out.
+Trimming happens at build time — stations come only from the scoped service
+tables and route geometry is clipped at the end stations — so nothing beyond
+scope reaches the game.
 
 Forked from [benjamintd/metro-memory.com](https://github.com/benjamintd/metro-memory.com)
 (MIT). The original shows the Underground only; this fork covers the wider
@@ -22,7 +37,12 @@ of London boundary overlays.
 - **Next.js 14** App Router + TypeScript, **React 18**
 - **MapLibre GL JS** with the Carto Positron (no-labels) basemap — no token;
   parks/water are recoloured in-app for contrast
-- **TailwindCSS**, **Fuse.js** (fuzzy station-name matching)
+- **TailwindCSS**; guess matching by a deterministic matcher in
+  `src/lib/matching/` (normalisation incl. `jn`/`jct`/`junc` → junction,
+  aliases, one-typo tolerance with GB station-name decoys: a real station
+  name that is not in the game, typed exactly or near-exactly, is never
+  accepted)
+- **Vitest** unit + data tests (`npm test`)
 - Data: **OpenStreetMap** (Overpass), the upstream metro-memory features file,
   **TfL**/**ONS** boundaries, and a curated alias table
 - Dev tooling: **Puppeteer** + **sharp** for the QA render/geometry harness
@@ -37,6 +57,12 @@ npm run dev
 
 Open [http://localhost:3000/](http://localhost:3000/) (the home page redirects
 to `/london`).
+
+```sh
+npm test         # vitest: matcher unit tests, data tests (service tables, scope, ids), script tests
+npm run lint
+npx tsc --noEmit
+```
 
 > Do **not** run `npm run build` while `npm run dev` is running — they share
 > `.next/` and the production build will break the dev server until restarted.
@@ -66,13 +92,23 @@ src/
     (game)/london/
       page.tsx                     # builds fc/routes, applies visibility + interchange annotation
       config.ts                    # LINES (colour/order/stripe), MAP_CONFIG (centre/zoom/maxBounds), MAP_STYLE
-      visibility.ts                # HIDDEN_LINES + Thameslink-trim filters (server-side)
+      visibility.ts                # HIDDEN_LINES filter (server-side; scoped* for /london); legacy
+                                   # DISPLAY_BOUNDS clip kept only for /newtracks*
+      scope.ts                     # FULL_LINES, END_STATIONS, DRAWN_TO: the network scope (spec §3)
+      services/                    # curated per-line service tables (stop lists) — source of truth
+                                   # for which stations each line has
       interchanges.ts              # tags stations with lineCount / pie colours, clustered by location
+      *.data.test.ts               # data tests: services vs features, ids, scope, matching goldens
       data/
-        features.json             # station GeoJSON (Point per station-line pair)
-        routes.json               # baked line geometry (line-offset is 0 at render)
+        features.json             # station GeoJSON (Point per station-line pair), from build-stations.js
+        station-ids.json          # append-only id ledger (every pair ever assigned + high-water mark)
+        routes.osm.json           # pristine raw-OSM route source (unclipped)
+        routes.gap-fills.json     # graph-routed gap fills merged into routes.osm.json
+        routes.json               # ribbon geometry built from routes.osm.json (clipped to scope)
+        aliases.ts, gb-station-names.json  # matcher aliases and decoy station names
         london-mask.json          # Greater London grey-out mask (+ city-of-london.json outline)
-        stations-extras.json      # National-Rail TOC stations from OSM
+        stations-extras.json      # (legacy) National-Rail TOC stations from OSM
+  lib/matching/                    # the guess matcher (+ unit tests)
   components/                      # GamePage, LinePicker, Timer, FoundSummary, Input, SettingsModal, ...
 scripts/                           # data pipeline + QA harness (see below)
 wrangler.jsonc                     # Cloudflare static-assets deploy config
@@ -80,27 +116,88 @@ wrangler.jsonc                     # Cloudflare static-assets deploy config
 
 ## Data pipeline
 
-`routes.json` / `features.json` are committed pre-built snapshots.
+**Sources of truth.** The service tables (`services/<Line>.ts`) decide which
+stations each line has; `scope.ts` decides how far each line runs.
+`features.json` and `routes.json` are committed, human-reviewed build outputs.
 `routes.osm.json` is the **pristine raw-OSM source** (chained per-branch
-centrelines, double-track-averaged, platform/siding-stripped — straight from
-Overpass, no welds). **Always build `routes.json` from `routes.osm.json`**, never
-from `routes.json` itself (`build-ribbons` refuses already-processed input):
+centrelines, double-track-averaged, platform/siding-stripped, no welds, NOT
+clipped to scope) plus hand-routed branches (`src` tag) and graph-routed gap
+fills. **Always build `routes.json` from `routes.osm.json`**, never from
+`routes.json` itself (`build-ribbons` refuses already-processed input).
+
+Full pipeline, in order (steps 1–4 only when the OSM data or line set changes;
+`$D` = `src/app/(game)/london/data`, `$TMP` = any scratch dir):
 
 ```sh
-# 1. (only when OSM / line set changes) re-fetch the pristine source from Overpass
-node scripts/fetch-osm-routes.js \
-  --out "src/app/(game)/london/data/routes.osm.json" \
-  --stations-out "src/app/(game)/london/data/stations-extras.osm.json"
+# 1. stations: features.json from the service tables. Existing (name, line)
+#    pairs keep id/coords; ids come from the append-only ledger station-ids.json
+#    (a retired id is never reused); new stations take coords from a same-name
+#    feature or the OSM station node (Overpass, cached via --osm-cache).
+node scripts/build-stations.js [--osm-cache $TMP/osm-stations.json] [--dry-run] [--list-dropped]
 
-# 2. build parallel-ribbon geometry (offset mode): pristine source -> routes.json
-node scripts/build-ribbons.js \
-  --in "src/app/(game)/london/data/routes.osm.json" \
-  --out "src/app/(game)/london/data/routes.json"
+# 2. re-fetch the OSM route relations of the changed lines only
+node scripts/fetch-osm-routes.js --lines A,B,C \
+  --out $TMP/fresh.osm.json --stations-out $TMP/fresh-stations.json
 
-node scripts/transform-data.js        # build features.json (stations; splits Overground, aliases, TOC merge)
-node scripts/rename-stations.js       # drop redundant "London " name prefixes (keep as aliases)
-node scripts/marker-overrides.js      # hand-curated marker co-location fixes (e.g. Farringdon Elizabeth -> Thameslink level)
+# 3. merge them in (relation features replaced, hand-routed `src` features kept,
+#    old graph-routed fills of those lines dropped), then find stop pairs the
+#    line's own geometry doesn't cover and route them over the OSM rail graph
+node scripts/merge-osm-routes.js --base $D/routes.osm.json --fresh $TMP/fresh.osm.json \
+  --lines A,B,C --out $TMP/merged-nogaps.osm.json
+node scripts/route-over-rail-graph.js --in $TMP/merged-nogaps.osm.json \
+  --features $D/features.json --lines A,B,C --out $TMP/gaps.json --cache $TMP/railtiles
+#    review $TMP/gaps.json; keep the fills of OTHER lines from routes.gap-fills.json
+#    and add these, then commit the result as $D/routes.gap-fills.json
+
+# 4. final merge -> the committed source
+node scripts/merge-osm-routes.js --base $D/routes.osm.json --fresh $TMP/fresh.osm.json \
+  --lines A,B,C --gaps $D/routes.gap-fills.json --out $D/routes.osm.json
+
+# 5. ribbons: clip to scope (clip-to-scope.js, built in) + parallel-ribbon geometry
+node scripts/build-ribbons.js --in $D/routes.osm.json --out $D/routes.json
+
+# 6. hand-curated marker co-location fixes (e.g. Farringdon Elizabeth -> Thameslink level)
+node scripts/marker-overrides.js
+
+# 7. verify
+npm test && node scripts/qa-ribbons.js && node scripts/qa-ribbons-render.js
 ```
+
+Reproducibility: every step after the fetch is deterministic and in the repo.
+`merge-osm-routes.js` on the pre-Task-8 `routes.osm.json` (git `d2b8aa3`), the
+Task-8 Overpass fetch and `routes.gap-fills.json` gives the committed file
+byte-for-byte — but that fetch output was a scratch file and is not committed,
+and Overpass data changes daily, so a fresh refetch gives a slightly different
+source (review it like any refetch).
+Overpass requests send `User-Agent: tube-memory-dev/0.1 (offline build)` and
+reject responses whose `osm3s.timestamp_osm_base` is older than 24 h.
+
+**Scope clip (`clip-to-scope.js`).** Run by `build-ribbons.js` on its input
+(`--no-clip` to skip). For each `END_STATIONS` line it keeps the track along
+the shortest path between every pair of consecutive stops of the line's
+services (plus `DRAWN_TO`, e.g. Eurostar to Ebbsfleet), everything within 60 m
+of that (parallel tracks), and diverging bypasses that rejoin the same stop
+pair's path; tails beyond end stations, branches to out-of-scope places and
+track no scoped service uses are dropped. `FULL_LINES` are untouched.
+`scope.data.test.ts` checks that no line runs on beyond its end stations and
+that everything lies inside `maxBounds`.
+
+**`/newtracks`, `/newtracks2` (experimental).** They read a frozen copy of
+main's stations, `newtracks/data/features.london-main.json` (=
+`git show d2b8aa3:src/app/(game)/london/data/features.json`), not the rebuilt
+London `features.json`, so their stations match their own unscoped
+`routes.json` as before. They use London's matcher and the legacy default `config`
+/ `visibleStationFeatures` / `visibleRouteFeatures` (old camera box and
+render-time clip to `DISPLAY_BOUNDS`). Their routes are NOT clipped to scope:
+when rebuilding them with `build-ribbons.js`, pass **`--no-clip`** to match the
+old output (it would otherwise clip using the features.json next to `--in`).
+
+**Obsolete scripts** (kept on disk, not part of the pipeline):
+`transform-data.js` (superseded by `build-stations.js`), `rename-stations.js`
+(its "London " prefix renames conflict with the service-table names, e.g.
+"London Victoria"), and the one-off `merge-national-rail.js`,
+`build-southern-*.js`, `build-extra-branches.js` (their output lives on in
+`routes.osm.json` as `src`-tagged features).
 
 **Interchange pies** (`interchanges.ts`) group markers by name + co-location
 (`CLUSTER_M = 30 m`); same-platform lines (coincident in the data) share one
@@ -182,10 +279,13 @@ corrupted the Circle loop).
 Headless WebGL was unreliable for verifying map changes, so:
 
 ```sh
+npm test                                 # unit + data tests (vitest)
 node scripts/qa-ribbons.js               # ribbon acceptance scorecard: per-line bbox/length
-                                         # integrity vs the pre-ribbon snapshot, the §4 ordering
+                                         # integrity vs the (scope-clipped) raw source, the §4 ordering
                                          # probes (no crossings, even spacing), Watford DC
-node scripts/qa-ribbons-render.js        # browser-free SVG->PNG of the probe corridors -> qa/out/
+node scripts/qa-ribbons-render.js [routes.json] [--views a,b]
+                                         # browser-free SVG->PNG of the probe corridors and
+                                         # scope ends (network, ebbsfleet, hitchin, ...) -> qa/out/
                                          # (draws lowest order first; eyeball ordering/parallelism)
 node scripts/qa-render.js [london ...]   # Puppeteer screenshots of hotspots -> qa/out/
 node scripts/qa-junctions.js [route]     # drives the in-app search to screenshot named junctions
@@ -197,7 +297,16 @@ node scripts/qa-junctions.js [route]     # drives the in-app search to screensho
 
 - `config.ts` — `LINES` (name, colour, `backgroundColor`, `order`, optional
   `stripe: 'solid' | 'dashed'`), `MAP_CONFIG` (`center`/`zoom` default view and
-  `maxBounds`), `MAP_STYLE`.
+  `maxBounds`, fitted to the scoped network + ~10%), `MAP_STYLE`, `MATCHING`
+  (aliases, decoys).
+- `scope.ts` — `FULL_LINES`, `END_STATIONS`, `DRAWN_TO`; `services/` — the
+  per-line stop lists. Change these, then re-run the pipeline (steps 1 and 5).
+- Saved progress (`london-stations`) is a list of feature ids; ids no longer
+  in the data are ignored on load (`filterKnownIds`), and guesses / reveal-all
+  never drop finds on disabled lines (`addFound`).
+- Guess matching: one matcher over every station; each result is restricted to
+  the enabled lines (`restrictToEnabled`), so grouped names (King's Cross /
+  St Pancras) work in any line selection.
 - `visibility.ts` — `HIDDEN_LINES` (fully removed lines) and `THAMESLINK_TRIM`.
 - Default enabled lines live in `GamePage` (`defaultEnabled`); bump the
   `${CITY_NAME}-enabled-lines-vN` storage key when changing defaults.

@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 /*
+ * OBSOLETE — DO NOT RUN. Not part of the pipeline since the service tables
+ * (src/app/(game)/london/services/) became the source of truth: its "London "
+ * prefix renames (London Victoria -> Victoria, ...) conflict with the
+ * service-table names and would break services.data.test.ts and the matching
+ * goldens. features.json is built by scripts/build-stations.js. Kept on disk
+ * for reference only.
+ *
  * Drop the redundant "London " prefix from National-Rail station names so they
  * match the Tube naming (and group as one interchange), keeping the old name as
  * a search alias. Genuine names (London Bridge, London City Airport, London
