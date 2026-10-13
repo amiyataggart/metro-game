@@ -26,6 +26,7 @@ function offsetPx(p, z, mode) {
   const lf = p.laneOff || 0
   if (mode === 'lane') return lf * widthPx(z)
   if (mode === 'map') return (lf * MAP_W) / mpp(z)
+  if (mode.width) return lf * mode.width(z)
   // blend in GROUND space: (1-t)·bundled + t·true, t linear in zoom
   const coarse = (p.dm || 0) / mpp(z) + (p.lc ?? lf) * widthPx(z)
   const fine = lf * widthPx(z)
@@ -34,7 +35,7 @@ function offsetPx(p, z, mode) {
 }
 
 function scoreAt(fc, z, mode) {
-  const W = mode === 'map' ? MAP_W : widthPx(z) * mpp(z)
+  const W = mode === 'map' ? MAP_W : mode.width ? mode.width(z) * mpp(z) : widthPx(z) * mpp(z)
   const samples = []
   for (const f of fc.features) {
     const line = f.properties.line
@@ -91,4 +92,13 @@ function score(zooms, fcAt, mode) {
   for (const z of zooms) out[z] = scoreAt(fcAt(z), z, mode)
   return out
 }
-module.exports = { score, scoreAt, widthPx, mpp, offsetPx, MAP_W }
+// /lab/staging1 sizing: clamped z11.4–12.4 (half → full z12.4 width), map
+// scale below z11.4 (must match GamePage's clamp + mapBelow sizing)
+const STAGING = {
+  width: (z) => {
+    const hi = widthPx(MAP_REF_Z)
+    if (z < 11.4) return hi * 0.5 * 2 ** (z - 11.4)
+    return hi * (0.5 + 0.5 * Math.min(1, (z - 11.4) / (MAP_REF_Z - 11.4)))
+  },
+}
+module.exports = { score, scoreAt, widthPx, mpp, offsetPx, MAP_W, STAGING }

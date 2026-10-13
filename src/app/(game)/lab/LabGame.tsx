@@ -13,7 +13,10 @@ const SIZINGS: Record<string, { label: string; sizing?: LabSizing }> = {
   // station markers keep shrinking linearly to today's z6 size (minZoom)
   clamp: { label: 'clamped z11.4–12.4', sizing: { kind: 'clamp', min: 11.4, max: 12.4, minScale: 0.5, stationFloor: 6 } },
   map: { label: 'scales with the map', sizing: { kind: 'map', ref: 12.4 } },
+  // staging1 only (forced): clamp above z11.4, map scale for everything below
+  staging: { label: 'clamped z11.4–12.4, scales with the map below z11.4', sizing: { kind: 'clamp', min: 11.4, max: 12.4, minScale: 0.5, mapBelow: true } },
 }
+const SWITCHABLE = ['current', 'clamp', 'map']
 
 export type Scorecard = Record<string, { overlapKm: number; twists: number; widthM: number }>
 
@@ -28,7 +31,7 @@ export default function LabGame({
   cityData,
   score,
   baseline,
-  forceMapScale = false,
+  forceSize,
 }: {
   variant: LabVariant
   fc: DataFeatureCollection
@@ -39,17 +42,16 @@ export default function LabGame({
   cityData?: any
   score: Scorecard
   baseline: Scorecard
-  forceMapScale?: boolean
+  forceSize?: string
 }) {
   const [zoom, setZoom] = useState<number | null>(null)
   // Sizing test from ?size= (current | clamp | map), read before the map mounts
-  // (map init only runs once). `forceMapScale`: variants whose geometry
-  // assumes map-scale sizing.
+  // (map init only runs once). `forceSize`: variants built for one sizing.
   const [size, setSize] = useState<string | null>(null)
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get('size') || 'current'
-    setSize(forceMapScale ? 'map' : SIZINGS[q] ? q : 'current')
-  }, [forceMapScale])
+    setSize(forceSize ?? (SWITCHABLE.includes(q) ? q : 'current'))
+  }, [forceSize])
   const [open, setOpen] = useState(true)
   const onMap = (m: maplibregl.Map) => {
     ;(window as any).__labMap = m // debugging hook for /lab
@@ -84,10 +86,10 @@ export default function LabGame({
         </div>
         <div className="mt-1 flex items-center gap-2">
           <span className="text-zinc-500">Sizing:</span>
-          {forceMapScale ? (
-            <span className="font-bold">scales with the map (built for it)</span>
+          {forceSize ? (
+            <span className="font-bold">{SIZINGS[forceSize].label} (built for it)</span>
           ) : (
-            Object.entries(SIZINGS).map(([k, v], i) => (
+            SWITCHABLE.map((k) => [k, SIZINGS[k]] as const).map(([k, v], i) => (
               <span key={k} className="flex items-center gap-2">
                 {i > 0 && <span className="text-zinc-400">|</span>}
                 <a href={k === 'current' ? '?' : `?size=${k}`} className={size === k ? 'font-bold' : 'text-blue-600 hover:underline dark:text-blue-400'}>{v.label}</a>
@@ -116,7 +118,7 @@ export default function LabGame({
                 ))}
               </tbody>
             </table>
-            <p className="mt-1 text-zinc-400">(in brackets: current /london{forceMapScale ? ", measured at the same map-scale width" : ""})</p>
+            <p className="mt-1 text-zinc-400">(in brackets: current /london{forceSize === 'map' ? ", measured at the same map-scale width" : forceSize ? ", measured at the same sizing" : ""})</p>
           </>
         )}
       </div>

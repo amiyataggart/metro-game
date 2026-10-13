@@ -241,5 +241,59 @@
       "twists": 442,
       "widthM": 42.9
     }
+  },
+  "staging1": {
+    "11": {
+      "overlapKm": 89.1,
+      "twists": 498,
+      "widthM": 42.9
+    },
+    "12": {
+      "overlapKm": 88,
+      "twists": 564,
+      "widthM": 45.3
+    },
+    "13": {
+      "overlapKm": 67.4,
+      "twists": 479,
+      "widthM": 28.3
+    },
+    "14": {
+      "overlapKm": 48.4,
+      "twists": 371,
+      "widthM": 14.2
+    },
+    "15": {
+      "overlapKm": 28.9,
+      "twists": 392,
+      "widthM": 7.1
+    }
+  },
+  "london-staging": {
+    "11": {
+      "overlapKm": 64.2,
+      "twists": 442,
+      "widthM": 42.9
+    },
+    "12": {
+      "overlapKm": 67,
+      "twists": 425,
+      "widthM": 45.3
+    },
+    "13": {
+      "overlapKm": 43.5,
+      "twists": 399,
+      "widthM": 28.3
+    },
+    "14": {
+      "overlapKm": 20,
+      "twists": 424,
+      "widthM": 14.2
+    },
+    "15": {
+      "overlapKm": 11.6,
+      "twists": 469,
+      "widthM": 7.1
+    }
   }
 }

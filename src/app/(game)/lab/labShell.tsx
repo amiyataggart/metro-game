@@ -35,13 +35,13 @@ export function LabShell({
   routes,
   routeLevels,
   morph,
-  forceMapScale,
+  forceSize,
 }: {
   slug: LabVariant['slug']
   routes?: RoutesFeatureCollection
   routeLevels?: RouteLevel[]
   morph?: MorphConfig
-  forceMapScale?: boolean
+  forceSize?: 'map' | 'staging'
 }) {
   const variant = VARIANTS.find((v) => v.slug === slug)!
   const cards = scores as unknown as Record<string, Scorecard>
@@ -57,8 +57,8 @@ export function LabShell({
           maskData={maskData}
           cityData={cityData}
           score={cards[slug]}
-          baseline={forceMapScale ? cards['london-map'] : cards.london}
-          forceMapScale={forceMapScale}
+          baseline={cards[forceSize === 'map' ? 'london-map' : forceSize === 'staging' ? 'london-staging' : 'london']}
+          forceSize={forceSize}
         />
       </Main>
     </Provider>
