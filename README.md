@@ -312,6 +312,7 @@ node scripts/lab/build-lab-v2.js         # /lab/graph2..graph5 (surface lines ro
                                           # order, graph5 baked for map-scale sizing); run after
                                           # build-lab-tracks.js (merges into scores.json)
 node scripts/lab/render.js <variant> <lng,lat> <zoom> [name] [WxH]   # browser-free PNG -> qa/out/lab/
+                                          # env SIZE=map|staging (lab sizing), STATIONS=1 (markers + names)
 ```
 
 `build-ribbons.js` gained lab-only options (`--config` JSON; `ORIENT_SPINES`,

@@ -5,12 +5,15 @@
  * order, white stripes). Output PNG -> qa/out/lab/.
  *
  *   node scripts/lab/render.js <variant> <lng,lat> <zoom> [name] [WxH]
- *   variant: london | graph | levels | morph | l0..l3
+ *   variant: london | graph | levels | morph | l0..l3 | graph2..graph5 | file.json
+ *   env SIZE=map | staging   sizing as /lab ?size=map, or as /lab/staging1
+ *       (clamped z11.4–12.4 above z11.4, map scale below)
+ *   env STATIONS=1   draw station markers + names (for locating artefacts)
  */
 const fs = require('fs')
 const path = require('path')
 const sharp = require('sharp')
-const { widthPx, mpp, offsetPx, MAP_W } = require('./score.js')
+const { widthPx, mpp, offsetPx, MAP_W, STAGING } = require('./score.js')
 const ROOT = path.join(__dirname, '..', '..')
 const LAB = path.join(ROOT, 'src', 'app', '(game)', 'lab', 'data')
 const [variant, center, zs, name, size] = process.argv.slice(2)
@@ -27,6 +30,7 @@ else if (variant.endsWith('.json')) fc = load(variant)
 else fc = load(path.join(LAB, `routes.${variant}.json`))
 // map-scale sizing (as /lab ?size=map): graph5 always, others with SIZE=map
 if (variant === 'graph5' || process.env.SIZE === 'map') mode = 'map'
+if (process.env.SIZE === 'staging') mode = STAGING
 const LINES = require('../line-order.js')
 const cfgSrc = fs.readFileSync(path.join(ROOT, 'src', 'app', '(game)', 'london', 'config.ts'), 'utf8')
 const colour = {}, stripe = {}
@@ -39,7 +43,7 @@ const MG = 69300, ML = 111320
 const [clng, clat] = center.split(',').map(Number)
 const m = mpp(z)
 const px = (c) => [W / 2 + ((c[0] - clng) * MG) / m, H / 2 - ((c[1] - clat) * ML) / m]
-const w = mode === 'map' ? MAP_W / mpp(z) : widthPx(z)
+const w = mode === 'map' ? MAP_W / mpp(z) : mode.width ? mode.width(z) : widthPx(z)
 const feats = fc.features.filter((f) => colour[f.properties.line]).sort((a, b) => band(a.properties.line) - band(b.properties.line) || (LINES[a.properties.line] ?? 99) - (LINES[b.properties.line] ?? 99))
 const pathOf = (f) => {
   const P = f.geometry.coordinates.map(px)
@@ -57,8 +61,22 @@ for (const f of feats) {
   const d = pathOf(f); if (!d) continue
   const l = f.properties.line
   svg += `<polyline points="${d}" fill="none" stroke="${colour[l]}" stroke-opacity="0.95" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`
-  if (stripe[l] === 'solid') svg += `<polyline points="${d}" fill="none" stroke="#fff" stroke-width="${w / 3}" stroke-linejoin="round"/>`
+  // stripe caps as in GamePage (solid: round, dashed: butt)
+  if (stripe[l] === 'solid') svg += `<polyline points="${d}" fill="none" stroke="#fff" stroke-width="${w / 3}" stroke-linecap="round" stroke-linejoin="round"/>`
   if (stripe[l] === 'dashed') svg += `<polyline points="${d}" fill="none" stroke="#fff" stroke-width="${w / 3}" stroke-dasharray="${3 * w / 3},${2.5 * w / 3}" stroke-linejoin="round"/>`
+}
+if (process.env.STATIONS) {
+  const st = load(path.join(ROOT, 'src', 'app', '(game)', 'london', 'data', 'features.json')).features
+  const seen = new Set()
+  for (const f of st) {
+    const [x, y] = px(f.geometry.coordinates)
+    if (x < 0 || y < 0 || x > W || y > H) continue
+    svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="#fff" stroke="#1d2835" stroke-width="1.5"/>`
+    const k = f.properties.name
+    if (seen.has(k)) continue
+    seen.add(k)
+    svg += `<text x="${(x + 7).toFixed(1)}" y="${(y - 6).toFixed(1)}" font-family="sans-serif" font-size="11" fill="#333">${k.replace(/&/g, '&amp;')}</text>`
+  }
 }
 const label = `${variant}  z${z}  ${name || ''}`
 const out = path.join(ROOT, 'qa', 'out', 'lab', `${(name || 'view').replace(/\W+/g, '_')}-${path.basename(variant, ".json")}-z${z}.png`)

@@ -20,8 +20,9 @@
         "EXIT_ORDER": true,
         "STRATA": true
       },
-      "features": 12061,
-      "taperedEnds": 6155
+      "features": 9553,
+      "taperedEnds": 5024,
+      "endHooksTrimmed": 34
     },
     "graph3": {
       "d": 0,
@@ -36,8 +37,9 @@
         "EXIT_ORDER": true,
         "STRATA": true
       },
-      "features": 11682,
-      "taperedEnds": 6064
+      "features": 9650,
+      "taperedEnds": 5119,
+      "endHooksTrimmed": 1
     },
     "graph4": {
       "d": 35,
@@ -55,8 +57,9 @@
         "EXIT_ORDER": true,
         "STRATA": true
       },
-      "features": 11633,
-      "taperedEnds": 6122
+      "features": 10066,
+      "taperedEnds": 5348,
+      "endHooksTrimmed": 33
     },
     "graph5": {
       "d": 42.91122728852295,
@@ -74,8 +77,9 @@
         "EXIT_ORDER": true,
         "STRATA": true
       },
-      "features": 811,
-      "taperedEnds": 5965
+      "features": 469,
+      "taperedEnds": 5040,
+      "endHooksTrimmed": 10
     }
   }
 }
