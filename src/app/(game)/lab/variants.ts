@@ -1,5 +1,5 @@
 // The /lab track-geometry experiments (built by scripts/lab/build-lab-tracks.js).
-export type LabVariant = { slug: 'staging1' | 'graph' | 'graph2' | 'graph3' | 'graph4' | 'graph5' | 'levels' | 'morph'; title: string; blurb: string }
+export type LabVariant = { slug: 'staging1' | 'staging2' | 'graph' | 'graph2' | 'graph3' | 'graph4' | 'graph5' | 'levels' | 'morph'; title: string; blurb: string }
 
 export const VARIANTS: LabVariant[] = [
   {
@@ -7,6 +7,12 @@ export const VARIANTS: LabVariant[] = [
     title: 'Staging 1',
     blurb:
       'Graph 4 from z11.4 in, with clamped sizing (lines and stations half their z12.4 size at z11.4, growing linearly to full size at z12.4, then fixed). Zoom out past z11.4 and it switches to Graph 5: its baked, smooth-split geometry, with everything scaling with the map (halving per zoom level). Sizes match at the switch; the geometry cross-fades over ±0.25 zoom.',
+  },
+  {
+    slug: 'staging2',
+    title: 'Staging 2',
+    blurb:
+      'Staging 1, made lighter: the line data is served as packed files (~22% fewer pieces, ~20% less data) that the map loads and parses off the main thread instead of being embedded in the page; each data source only builds the map tiles it can show; and the lab panel no longer re-renders the whole game on every zoom frame. Same look and scorecard as Staging 1.',
   },
   {
     slug: 'graph',

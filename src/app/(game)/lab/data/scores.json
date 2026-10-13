@@ -295,5 +295,32 @@
       "twists": 469,
       "widthM": 7.1
     }
+  },
+  "staging2": {
+    "11": {
+      "overlapKm": 89.1,
+      "twists": 498,
+      "widthM": 42.9
+    },
+    "12": {
+      "overlapKm": 87.2,
+      "twists": 548,
+      "widthM": 45.3
+    },
+    "13": {
+      "overlapKm": 66.8,
+      "twists": 475,
+      "widthM": 28.3
+    },
+    "14": {
+      "overlapKm": 47.8,
+      "twists": 372,
+      "widthM": 14.2
+    },
+    "15": {
+      "overlapKm": 28.6,
+      "twists": 392,
+      "widthM": 7.1
+    }
   }
 }
