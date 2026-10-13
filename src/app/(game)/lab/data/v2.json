@@ -126,6 +126,7 @@
         "SOLO_LINES": [
           "SoutheasternHighSpeed"
         ],
+        "END_HOLD": 120,
         "NO_SNAP_DROP": [
           {
             "line": "Thameslink",
@@ -149,8 +150,8 @@
         "EXIT_ORDER": true,
         "STRATA": true
       },
-      "features": 7715,
-      "taperedEnds": 3672,
+      "features": 7474,
+      "taperedEnds": 3527,
       "endHooksTrimmed": 41
     },
     "graph7t": {
@@ -179,6 +180,7 @@
         "SOLO_LINES": [
           "SoutheasternHighSpeed"
         ],
+        "END_HOLD": 120,
         "NO_SNAP_DROP": [
           {
             "line": "Thameslink",
@@ -202,8 +204,8 @@
         "EXIT_ORDER": true,
         "STRATA": true
       },
-      "features": 11349,
-      "taperedEnds": 5988,
+      "features": 10536,
+      "taperedEnds": 5406,
       "endHooksTrimmed": 13
     },
     "graph5": {
