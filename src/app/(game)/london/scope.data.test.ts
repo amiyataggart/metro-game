@@ -148,3 +148,18 @@ describe('network trimmed to scope (spec §3)', () => {
     expect(visibility.visibleStationFeatures([farStation as never])).toEqual([])
   })
 })
+
+// A graph-routed gap fill once sent London Northwestern from South Hampstead up
+// the Metropolitan/Chiltern tracks (Finchley Road, Wembley Park) instead of the
+// West Coast Main Line via Wembley Central (dev feedback, 2026-10-13).
+describe('London Northwestern runs on the WCML, not the Met corridor', () => {
+  it('never passes Finchley Road or Wembley Park', () => {
+    const at = (name: string) => stations.find((f) => f.properties.name === name)!.geometry.coordinates
+    const lnwr = lines.filter((f) => f.properties.line === 'LondonNorthwestern').flatMap((f) => f.geometry.coordinates)
+    expect(lnwr.length).toBeGreaterThan(0)
+    for (const name of ['Finchley Road', 'Wembley Park']) {
+      const nearest = Math.min(...lnwr.map((c) => M(at(name), c)))
+      expect(nearest, name).toBeGreaterThan(500)
+    }
+  })
+})
