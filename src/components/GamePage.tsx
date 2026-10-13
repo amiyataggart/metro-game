@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
-import Fuse from 'fuse.js'
 import { useLocalStorageValue } from '@react-hookz/web'
 import maplibregl from 'maplibre-gl'
 import { coordEach } from '@turf/meta'
@@ -22,7 +21,8 @@ import { useConfig } from '@/lib/configContext'
 import { smoothRoutes } from '@/lib/smoothRoutes'
 import useTranslation from '@/hooks/useTranslation'
 import FoundList from '@/components/FoundList'
-import useNormalizeString from '@/hooks/useNormalizeString'
+import { addFound, createMatcher, EMPTY_ALIASES, filterKnownIds, restrictToEnabled } from '@/lib/matching'
+import { defaultEnabledLines } from '@/lib/defaultEnabledLines'
 import { detectCelebrations } from '@/lib/completion'
 import { flashLines } from '@/lib/mapFlash'
 import { useCelebration } from '@/hooks/useCelebration'
@@ -53,10 +53,8 @@ export default function GamePage({
   maskData?: any
   cityData?: any
 }) {
-  const { CITY_NAME, MAP_CONFIG, LINES } = useConfig()
+  const { CITY_NAME, MAP_CONFIG, LINES, MATCHING } = useConfig()
   const { t } = useTranslation()
-
-  const normalizeString = useNormalizeString()
 
   const [map, setMap] = useState<maplibregl.Map | null>(null)
   const [hoveredId, setHoveredId] = useState<number | null>(null)
@@ -75,18 +73,13 @@ export default function GamePage({
 
   // Settings — persisted to localStorage.
   const allLineKeys = useMemo(() => Object.keys(LINES), [LINES])
-  const defaultEnabled = useMemo(() => {
-    // Everything on by default (Underground, Overground, Elizabeth, DLR)
-    // except Thameslink and the National Rail TOCs, which start off and are
-    // toggled on via the picker (config order >= 19 = Thameslink + National Rail).
-    const o: Record<string, boolean> = {}
-    for (const k of allLineKeys) o[k] = (LINES[k]?.order ?? 0) < 19
-    return o
-  }, [allLineKeys, LINES])
+  // All TfL rail + Thameslink + Cable Car on; Trams and the other National
+  // Rail lines off (see defaultEnabledLines). Changing it bumps the key below.
+  const defaultEnabled = useMemo(() => defaultEnabledLines(LINES), [LINES])
 
   const { value: storedEnabled, set: setEnabledLines } = useLocalStorageValue<
     Record<string, boolean>
-  >(`${CITY_NAME}-enabled-lines-v5`, {
+  >(`${CITY_NAME}-enabled-lines-v7`, {
     defaultValue: defaultEnabled,
     initializeWithValue: false,
   })
@@ -169,10 +162,21 @@ export default function GamePage({
       initializeWithValue: false,
     })
 
+  // Stored progress may hold ids of stations that no longer exist (scope or
+  // service-table changes); drop those before any use.
+  const knownIds = useMemo(
+    () => new Set(fc.features.map((f) => f.id as number)),
+    [fc.features],
+  )
+  const knownFound: number[] = useMemo(
+    () => filterKnownIds(localFound || [], knownIds),
+    [localFound, knownIds],
+  )
+
   // Found set restricted to currently-enabled lines (score reflects active selection).
   const found: number[] = useMemo(() => {
-    return (localFound || []).filter((f) => idMap.has(f))
-  }, [localFound, idMap])
+    return knownFound.filter((f) => idMap.has(f))
+  }, [knownFound, idMap])
 
   const onReset = useCallback(() => {
     if (confirm(t('restartWarning'))) {
@@ -193,28 +197,36 @@ export default function GamePage({
     return r
   }, [found, idMap])
 
-  const fuse = useMemo(
+  // Every station name on the map (all lines, enabled or not) is a decoy, so
+  // a station on a disabled line is never typo-matched onto an enabled one.
+  const allStationNames = useMemo(
+    () => Array.from(new Set(fc.features.map((f) => f.properties.name))),
+    [fc],
+  )
+  // One matcher over EVERY station (all lines), so curated groups and aliases
+  // (King's Cross / St Pancras, St Margarets, ...) work whatever the line
+  // selection; each result is then restricted to the enabled stations, and a
+  // match with none enabled is `none` (a guess for a disabled line is wrong).
+  const allStationsMatcher = useMemo(
     () =>
-      new Fuse(enabledFeatures, {
-        includeScore: true,
-        includeMatches: true,
-        keys: [
-          'properties.name',
-          'properties.long_name',
-          'properties.short_name',
-          'properties.alternate_names',
-        ],
-        minMatchCharLength: 2,
-        threshold: 0.15,
-        distance: 10,
-        getFn: (obj, path) => {
-          const value = Fuse.config.getFn(obj, path)
-          if (value === undefined) return ''
-          if (Array.isArray(value)) return value.map((el) => normalizeString(el))
-          return normalizeString(value as string)
-        },
-      }),
-    [enabledFeatures, normalizeString],
+      createMatcher(
+        fc.features.map((f) => ({
+          id: Number(f.properties.id),
+          name: f.properties.name,
+          alternate_names: f.properties.alternate_names,
+        })),
+        MATCHING?.aliases ?? EMPTY_ALIASES,
+        [...(MATCHING?.decoyNames ?? []), ...allStationNames],
+      ),
+    [fc.features, MATCHING, allStationNames],
+  )
+  const enabledNames = useMemo(
+    () => new Map(enabledFeatures.map((f) => [Number(f.properties.id), f.properties.name] as [number, string])),
+    [enabledFeatures],
+  )
+  const matcher = useCallback(
+    (q: string) => restrictToEnabled(allStationsMatcher(q), enabledNames),
+    [allStationsMatcher, enabledNames],
   )
 
   const foundProportion =
@@ -934,9 +946,10 @@ export default function GamePage({
     // Mass completion — don't celebrate. The detection effect sees this flag,
     // advances the baseline, and clears it.
     suppressCelebrationRef.current = true
-    setFound(ids)
+    // keep finds on disabled lines
+    setFound(addFound(ids, knownFound))
     setIsNewPlayer(false)
-  }, [enabledFeatures, setFound, setIsNewPlayer])
+  }, [enabledFeatures, knownFound, setFound, setIsNewPlayer])
 
   const zoomToFeature = useCallback(
     (id: number) => {
@@ -977,8 +990,10 @@ export default function GamePage({
           />
           <div className="flex gap-2 lg:gap-4">
             <Input
-              fuse={fuse}
-              found={found}
+              matcher={matcher}
+              // all stored finds (not just enabled lines): Input writes
+              // [...fresh, ...found] back, which must keep disabled lines' finds
+              found={knownFound}
               setFound={setFound}
               setIsNewPlayer={setIsNewPlayer}
               inputRef={inputRef}

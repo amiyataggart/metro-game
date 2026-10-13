@@ -30,6 +30,9 @@ const DATA_DIR = path.join(__dirname, '..', 'src', 'app', '(game)', 'london', 'd
 const _argOut = (flag) => { const i = process.argv.indexOf(flag); return i >= 0 ? process.argv[i + 1] : null }
 const ROUTES_DST = _argOut('--out') || path.join(DATA_DIR, 'routes.json')
 const STATIONS_DST = _argOut('--stations-out') || path.join(DATA_DIR, 'stations-extras.json')
+// Optional subset: `--lines A,B,C` keeps only relations matching those line keys.
+function parseLines(v) { return v ? new Set(v.split(',').map((x) => x.trim()).filter(Boolean)) : null }
+const LINES_FILTER = parseLines(_argOut('--lines'))
 
 const LINE_COLORS = {
   Bakerloo: '#b36305',
@@ -66,6 +69,9 @@ const LINE_COLORS = {
   GreatWesternRailway: '#2A2D74',
   HeathrowExpress: '#75BAB1',
   Tramlink: '#80B253',
+  LondonNorthwestern: '#00BF6F',
+  Eurostar: '#FFDE2A',
+  CableCar: '#E21836',
 }
 
 // Ascending order roughly groups Underground > Overground/Rail > National Rail
@@ -78,6 +84,7 @@ const LINE_ORDER = {
   Tramlink: 20, C2c: 21, Chiltern: 22, EastMidlandsRailway: 23, GatwickExpress: 24,
   GreatNorthern: 25, GreatWesternRailway: 26, GreaterAnglia: 27, HeathrowExpress: 28,
   SouthWesternRailway: 29, Southeastern: 30, SoutheasternHighSpeed: 31, Southern: 32,
+  LondonNorthwestern: 33, Eurostar: 34, CableCar: 35,
 }
 
 // All matchers run against relation tags. The first match wins.
@@ -115,7 +122,7 @@ const RELATION_MATCHERS = [
   // Southern = union of name-prefix (coastal routes) OR operator (inner-suburban
   // / South London Line routes named without the prefix). Neither alone is
   // complete. The UK bbox in OVERPASS_QUERY keeps Indian "Southern Railway" out.
-  { lineKey: 'Southern', test: (t) => t.route === 'train' && (/^Southern:/.test(t.name || '') || /^Southern( Railway)?$/.test(t.operator || '')) },
+  { lineKey: 'Southern', test: (t) => t.route === 'train' && (/^(Train )?Southern\b/.test(t.name || '') || /^SN\d*:/.test(t.name || '') || /^Southern( Railway)?$/.test(t.operator || '')) },
   { lineKey: 'GreatNorthern', test: (t) => t.route === 'train' && /^Great Northern:/.test(t.name || '') },
   { lineKey: 'GatwickExpress', test: (t) => t.route === 'train' && /^Gatwick Express:/.test(t.name || '') },
   { lineKey: 'GreatWesternRailway', test: (t) => t.route === 'train' && /^GWR:/.test(t.name || '') },
@@ -123,12 +130,17 @@ const RELATION_MATCHERS = [
   { lineKey: 'C2c', test: (t) => t.route === 'train' && /^c2c:/.test(t.name || '') },
   { lineKey: 'HeathrowExpress', test: (t) => t.route === 'train' && /^Heathrow Express:/.test(t.name || '') },
   // Southeastern: split the High Speed (HS1) services into their own line.
-  { lineKey: 'SoutheasternHighSpeed', test: (t) => t.route === 'train' && t.operator === 'Southeastern' && (/High Speed/i.test(t.name || '') || t.ref === 'HS1') },
-  { lineKey: 'Southeastern', test: (t) => t.route === 'train' && t.operator === 'Southeastern' },
+  { lineKey: 'SoutheasternHighSpeed', test: (t) => t.route === 'train' && /^High Speed One:/i.test(t.name || '') },
+  { lineKey: 'SoutheasternHighSpeed', test: (t) => t.route === 'train' && /^South ?eastern( Railways?)?$/i.test(t.operator || '') && (/High Speed/i.test(t.name || '') || t.ref === 'HS1') },
+  { lineKey: 'Southeastern', test: (t) => t.route === 'train' && /^South ?eastern( Railways?)?$/i.test(t.operator || '') },
   // Operator-tag matchers for the remaining TOCs.
-  { lineKey: 'GreaterAnglia', test: (t) => t.route === 'train' && t.operator === 'Greater Anglia' },
+  { lineKey: 'GreaterAnglia', test: (t) => t.route === 'train' && /Greater Anglia/.test(t.operator || '') },
   { lineKey: 'SouthWesternRailway', test: (t) => t.route === 'train' && t.operator === 'South Western Railway' },
   { lineKey: 'EastMidlandsRailway', test: (t) => t.route === 'train' && t.operator === 'East Midlands Railway' },
+  // New lines: London Northwestern (LNWR name prefix or operator), Eurostar, Cable Car.
+  { lineKey: 'LondonNorthwestern', test: (t) => t.route === 'train' && (/^LNWR:/.test(t.name || '') || /^London Northwestern Railway$/.test(t.operator || '')) },
+  { lineKey: 'Eurostar', test: (t) => t.route === 'train' && (/^Eurostar\b/.test(t.name || '') || /^Eurostar/.test(t.operator || '')) },
+  { lineKey: 'CableCar', test: (t) => t.route === 'aerialway' && /London Cable Car|Emirates Air Line/i.test(t.network || t.name || '') },
   // London Trams (Tramlink) — route=tram, operated by Tram Operations Ltd.
   { lineKey: 'Tramlink', test: (t) => t.route === 'tram' && /Tram Operations/i.test(t.operator || '') },
 ]
@@ -166,8 +178,15 @@ const OVERPASS_QUERY = `
   relation["route"="train"]["name"~"^CH:"](49.8,-8.7,61.0,2.0);
   relation["route"="train"]["name"~"^c2c:"](49.8,-8.7,61.0,2.0);
   relation["route"="train"]["name"~"^Heathrow Express:"](49.8,-8.7,61.0,2.0);
-  relation["route"="train"]["operator"="Southeastern"](49.8,-8.7,61.0,2.0);
-  relation["route"="train"]["operator"="Greater Anglia"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["name"~"^(Train )?Southern|^SN[0-9]*:"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["operator"~"^South ?eastern( Railways?)?$",i](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["operator"~"Greater Anglia"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["name"~"^High Speed One:"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["name"~"^LNWR:"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["operator"="London Northwestern Railway"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["operator"~"^Eurostar"](49.8,-8.7,61.0,2.0);
+  relation["route"="train"]["name"~"^Eurostar"](49.8,-8.7,61.0,2.0);
+  relation["route"="aerialway"]["network"="London Cable Car"](49.8,-8.7,61.0,2.0);
   relation["route"="train"]["operator"="South Western Railway"](49.8,-8.7,61.0,2.0);
   relation["route"="train"]["operator"="East Midlands Railway"](49.8,-8.7,61.0,2.0);
   relation["route"="tram"]["operator"~"Tram Operations",i];
@@ -176,6 +195,15 @@ out geom;
 >;
 out;
 `.trim()
+
+// Stale mirrors silently miss recently-created relations, so reject any
+// response whose OSM data base is more than 24 h old.
+const MAX_AGE_MS = 24 * 60 * 60 * 1000
+function isFresh(osm3s, now = new Date()) {
+  const ts = osm3s && Date.parse(osm3s.timestamp_osm_base)
+  if (!ts || Number.isNaN(ts)) return false
+  return now.getTime() - ts <= MAX_AGE_MS
+}
 
 async function fetchOverpass() {
   console.log('Fetching from Overpass API (this may take 60-120s)...')
@@ -196,7 +224,13 @@ async function fetchOverpass() {
         console.warn(`    ${res.status} — trying next mirror`)
         continue
       }
-      return await res.json()
+      const json = await res.json()
+      if (!isFresh(json.osm3s)) {
+        lastErr = new Error(`Overpass data stale (timestamp_osm_base=${json.osm3s && json.osm3s.timestamp_osm_base})`)
+        console.warn('    stale data — trying next mirror')
+        continue
+      }
+      return json
     } catch (e) {
       lastErr = e
       console.warn(`    ${e.message} — trying next mirror`)
@@ -248,6 +282,7 @@ function main() {
       if (rel.type !== 'relation') continue
       const lineKey = tagsToLineKey(rel.tags || {})
       if (!lineKey) continue
+      if (LINES_FILTER && !LINES_FILTER.has(lineKey)) continue
       usedRels++
       for (const m of rel.members || []) {
         if (m.type === 'way' && Array.isArray(m.geometry) && m.geometry.length >= 2) {
@@ -988,7 +1023,11 @@ function main() {
   })
 }
 
-main().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err)
+    process.exit(1)
+  })
+} else {
+  module.exports = { RELATION_MATCHERS, tagsToLineKey, isFresh, parseLines }
+}

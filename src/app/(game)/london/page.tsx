@@ -5,10 +5,10 @@ import cityData from './data/city-of-london.json'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import 'react-circular-progressbar/dist/styles.css'
 import { DataFeatureCollection, RoutesFeatureCollection } from '@/lib/types'
-import config from './config'
+import { londonConfig } from './config'
 import {
-  visibleStationFeatures,
-  visibleRouteFeatures,
+  scopedStationFeatures,
+  scopedRouteFeatures,
   visibleLines,
 } from './visibility'
 import { annotateInterchanges } from './interchanges'
@@ -24,17 +24,17 @@ const font = Cabin({
   display: 'swap',
 })
 
-// Hidden services / trimmed Thameslink tails are filtered out here (server
-// side) so they never reach the client or MapLibre — see ./visibility.ts.
-const visLines = visibleLines(config.LINES)
-const visConfig = { ...config, LINES: visLines }
+// Hidden services are filtered out here (server side) so they never reach the
+// client or MapLibre — see ./visibility.ts. Scope trimming is done at build time.
+const visLines = visibleLines(londonConfig.LINES)
+const visConfig = { ...londonConfig, LINES: visLines }
 
 // annotateInterchanges stamps lineCount / interchange on each station so the
 // map can size multi-line interchanges larger than single-line stops.
 const fc = annotateInterchanges(
   {
     ...data,
-    features: visibleStationFeatures(
+    features: scopedStationFeatures(
       data.features.filter((f) => !!visLines[f.properties.line]) as any,
     ),
   } as unknown as DataFeatureCollection,
@@ -43,10 +43,10 @@ const fc = annotateInterchanges(
 
 const routes = {
   ...(routesData as object),
-  features: visibleRouteFeatures((routesData as any).features),
+  features: scopedRouteFeatures((routesData as any).features),
 } as unknown as RoutesFeatureCollection
 
-export const metadata = config.METADATA
+export const metadata = londonConfig.METADATA
 
 export default function London() {
   return (

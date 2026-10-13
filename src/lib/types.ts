@@ -56,4 +56,8 @@ export interface Config {
   METADATA: Metadata
   LINES: { [key: string]: Line }
   BEG_THRESHOLD?: number
+  MATCHING?: {
+    aliases: import('@/lib/matching').AliasConfig
+    decoyNames: string[]
+  }
 }

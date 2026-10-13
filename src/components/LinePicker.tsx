@@ -23,12 +23,13 @@ const GROUPS: { name: string; lines: string[] }[] = [
   { name: 'Docklands Light Railway (DLR)', lines: ['DLR'] },
   { name: 'Thameslink', lines: ['Thameslink'] },
   { name: 'London Trams', lines: ['Tramlink'] },
+  { name: 'London Cable Car', lines: ['CableCar'] },
   {
     name: 'National Rail',
     // alphabetical by display name (c2c, Chiltern Railways, East Midlands…)
     lines: [
-      'C2c', 'Chiltern', 'EastMidlandsRailway', 'GatwickExpress', 'GreatNorthern',
-      'GreatWesternRailway', 'GreaterAnglia', 'HeathrowExpress', 'SouthWesternRailway',
+      'C2c', 'Chiltern', 'EastMidlandsRailway', 'Eurostar', 'GatwickExpress', 'GreatNorthern',
+      'GreatWesternRailway', 'GreaterAnglia', 'HeathrowExpress', 'LondonNorthwestern', 'SouthWesternRailway',
       'Southeastern', 'SoutheasternHighSpeed', 'Southern',
     ],
   },

@@ -13,7 +13,8 @@
  *  C. Bakerloo/Lioness both present & separated on the Watford DC line.
  *
  * Usage: node scripts/qa-ribbons.js [routesFile] [--baseline FILE]
- *   default routesFile: routes.json ; baseline: routes.osm.json (the build source)
+ *   default routesFile: routes.json ; baseline: routes.osm.json (the build source,
+ *   clipped to scope as build-ribbons does)
  */
 const fs = require('fs')
 const path = require('path')
@@ -123,7 +124,15 @@ function corridorSamples(refPolys, aLL, bLL, step) {
 
 const fcCur = load(file)
 const cur = byLine(fcCur) // raw stored geometry (centreline in offset mode) — for integrity
-const base = byLine(load(baseline))
+// A raw (pre-ribbon) baseline is clipped to scope exactly as build-ribbons
+// clips its input, so integrity measures build fidelity, not the scope trim.
+function scopedBaseline(fc) {
+  if (fc.features.some((f) => f.properties && 'laneOff' in f.properties)) return fc
+  const { clipToScope, loadScope } = require('./clip-to-scope.js')
+  const stationsFC = load(path.join(path.dirname(baseline), 'features.json'))
+  return clipToScope(fc, stationsFC, loadScope()).fc
+}
+const base = byLine(scopedBaseline(load(baseline)))
 const OFFSET_MODE = fcCur.features.some((f) => f.properties && 'laneOff' in f.properties)
 // rendered geometry (offset applied) — for ordering/separation checks
 const curR = OFFSET_MODE ? byLineRendered(fcCur) : cur
