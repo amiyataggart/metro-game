@@ -298,28 +298,28 @@
   },
   "graph7": {
     "11": {
-      "overlapKm": 115.7,
-      "twists": 470,
+      "overlapKm": 99.2,
+      "twists": 443,
       "widthM": 96.4
     },
     "12": {
-      "overlapKm": 77.3,
-      "twists": 315,
+      "overlapKm": 62.3,
+      "twists": 317,
       "widthM": 54.2
     },
     "13": {
-      "overlapKm": 51.3,
-      "twists": 244,
+      "overlapKm": 36.8,
+      "twists": 248,
       "widthM": 30.1
     },
     "14": {
-      "overlapKm": 37.7,
-      "twists": 232,
+      "overlapKm": 27.1,
+      "twists": 230,
       "widthM": 17.1
     },
     "15": {
-      "overlapKm": 27.7,
-      "twists": 223,
+      "overlapKm": 20.1,
+      "twists": 224,
       "widthM": 9.5
     }
   },
@@ -330,50 +330,50 @@
       "widthM": 42.9
     },
     "12": {
-      "overlapKm": 67.9,
-      "twists": 293,
+      "overlapKm": 53,
+      "twists": 294,
       "widthM": 45.3
     },
     "13": {
-      "overlapKm": 49,
-      "twists": 244,
+      "overlapKm": 35,
+      "twists": 247,
       "widthM": 28.3
     },
     "14": {
-      "overlapKm": 35.2,
-      "twists": 231,
+      "overlapKm": 25.2,
+      "twists": 218,
       "widthM": 14.2
     },
     "15": {
-      "overlapKm": 17.3,
-      "twists": 227,
+      "overlapKm": 11.8,
+      "twists": 219,
       "widthM": 7.1
     }
   },
   "graph7t": {
     "11": {
-      "overlapKm": 314.6,
-      "twists": 537,
+      "overlapKm": 297.3,
+      "twists": 524,
       "widthM": 96.4
     },
     "12": {
-      "overlapKm": 257.6,
-      "twists": 382,
+      "overlapKm": 240.5,
+      "twists": 390,
       "widthM": 54.2
     },
     "13": {
-      "overlapKm": 210.4,
-      "twists": 373,
+      "overlapKm": 194.3,
+      "twists": 377,
       "widthM": 30.1
     },
     "14": {
-      "overlapKm": 139.6,
-      "twists": 330,
+      "overlapKm": 130.3,
+      "twists": 331,
       "widthM": 17.1
     },
     "15": {
-      "overlapKm": 39.2,
-      "twists": 298,
+      "overlapKm": 33.5,
+      "twists": 297,
       "widthM": 9.5
     }
   },
@@ -384,23 +384,23 @@
       "widthM": 42.9
     },
     "12": {
-      "overlapKm": 67.9,
-      "twists": 293,
+      "overlapKm": 53,
+      "twists": 294,
       "widthM": 45.3
     },
     "13": {
-      "overlapKm": 49,
-      "twists": 244,
+      "overlapKm": 35,
+      "twists": 247,
       "widthM": 28.3
     },
     "14": {
-      "overlapKm": 95.1,
-      "twists": 318,
+      "overlapKm": 87.7,
+      "twists": 320,
       "widthM": 14.2
     },
     "15": {
-      "overlapKm": 20.6,
-      "twists": 306,
+      "overlapKm": 16.8,
+      "twists": 302,
       "widthM": 7.1
     }
   }
