@@ -1,18 +1,16 @@
 import data from './data/features.json'
-import routesData from './data/routes.json'
 import maskData from './data/london-mask.json'
 import cityData from './data/city-of-london.json'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import 'react-circular-progressbar/dist/styles.css'
-import { DataFeatureCollection, RoutesFeatureCollection } from '@/lib/types'
+import { DataFeatureCollection } from '@/lib/types'
 import { londonConfig } from './config'
 import {
   scopedStationFeatures,
-  scopedRouteFeatures,
   visibleLines,
 } from './visibility'
 import { annotateInterchanges } from './interchanges'
-import GamePage from '@/components/GamePage'
+import GamePage, { LabSizing, RouteLevel } from '@/components/GamePage'
 import { Provider } from '@/lib/configContext'
 import Main from '@/components/Main'
 import { Cabin } from 'next/font/google'
@@ -41,10 +39,20 @@ const fc = annotateInterchanges(
   visLines,
 )
 
-const routes = {
-  ...(routesData as object),
-  features: scopedRouteFeatures((routesData as any).features),
-} as unknown as RoutesFeatureCollection
+// Line geometry (promoted from /lab/staging3, Oct 2026): Graph 7 from z11.4 in
+// (surface lines routed over the real OSM tracks, tube/DLR from their raw OSM
+// centrelines; see CLAUDE.md "Lab"), Graph 5 below z11.4 (baked offsets,
+// sizes scale with the map). Packed static files in public/london-data/,
+// fetched and parsed by MapLibre's worker. To update: rebuild the lab
+// (build-lab-v2.js + pack-staging.js), check /lab/staging3, then copy
+// public/lab-data/staging3/graph{5,7}.json to public/london-data/.
+const routeLevels: RouteLevel[] = [
+  { id: 'graph5', routes: '/london-data/graph5.json', minzoom: 0, maxzoom: 11.4, source: { maxzoom: 12, buffer: 64 } },
+  { id: 'graph7', routes: '/london-data/graph7.json', minzoom: 11.4, maxzoom: 24, source: { maxzoom: 15, buffer: 64 } },
+]
+// Lines / stations: half their z12.4 size at z11.4 growing linearly to full at
+// z12.4 (fixed above); below z11.4 they scale with the map. Labels unchanged.
+const sizing: LabSizing = { kind: 'clamp', min: 11.4, max: 12.4, minScale: 0.5, mapBelow: true }
 
 export const metadata = londonConfig.METADATA
 
@@ -54,7 +62,8 @@ export default function London() {
       <Main className={`${font.className} min-h-screen`}>
         <GamePage
           fc={fc}
-          routes={routes}
+          routeLevels={routeLevels}
+          sizing={sizing}
           maskData={maskData}
           cityData={cityData}
         />
