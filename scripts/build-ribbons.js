@@ -163,6 +163,16 @@ const CONFIG = {
   // direction of travel) as on the previous one; each spine re-ranks its lanes
   // by those hints (+ EXIT_ORDER exit sides), repeated N passes, so lane order
   // agrees from corridor to corridor instead of being chosen per corridor.
+  WIDE_LINES: [], // lab: lines snapped with the /london radii (D_WIDE, D2_WIDE)
+  // instead of D / D2 — raw OSM tube centrelines (duplicates per branch,
+  // branches stopping short of their trunk, wobbles) need /london's loose snap;
+  // routed track geometry keeps the tight one. A pair uses the wide radii when
+  // either side (the feature, or the line that laid the spine) is WIDE.
+  D_WIDE: 34,
+  D2_WIDE: 130,
+  STRATA_TUBE: [], // lab (with STRATA): these lines (the Underground) may
+  // bundle with each other across 'surface' / 'tunnel-subway' (District and
+  // Piccadilly through West Kensington), never with other lines across strata.
   STRATA: false, // lab: features carry a `stratum` property (e.g. 'tunnel' /
   // 'surface'); a line only snaps onto spines laid in the same stratum, so a
   // deep tube tunnel never bundles with the viaduct above it.
@@ -740,7 +750,13 @@ function main() {
   // ---- spines ----
   const spines = [] // {id, xy, tan, cum, members:Map(line->[[s0,s1]]), sign}
   let layingStratum = null // CONFIG.STRATA: stratum of the feature laying spines
-  const grid = new SpineGrid(CONFIG.D)
+  let layingLine = null
+  const TUBE_SET = new Set(CONFIG.STRATA_TUBE)
+  const TUBE_PAIR = new Set(['surface', 'tunnel-subway'])
+  const strataOk = (sa, la, sb, lb) =>
+    sa === sb || (TUBE_SET.has(la) && TUBE_SET.has(lb) && TUBE_PAIR.has(sa) && TUBE_PAIR.has(sb))
+  const WIDE = new Set(CONFIG.WIDE_LINES)
+  const grid = new SpineGrid(WIDE.size ? Math.max(CONFIG.D, CONFIG.D_WIDE) : CONFIG.D)
 
   function addSpine(xy) {
     const tan = smoothTangents(tangents(xy))
@@ -749,7 +765,7 @@ function main() {
     const nseq = projectNodes(xy, cum) // ordered nodes along this spine
     const npos = new Map() // node -> index in nseq
     nseq.forEach((e, k) => npos.set(e.node, k))
-    spines.push({ id, xy, tan, cum, members: new Map(), sign: 1, nseq, npos, stratum: layingStratum })
+    spines.push({ id, xy, tan, cum, members: new Map(), sign: 1, nseq, npos, stratum: layingStratum, layLine: layingLine, wide: WIDE.has(layingLine) })
     for (let i = 0; i < xy.length; i++)
       grid.add(id, i, xy[i][0], xy[i][1], tan[i][0], tan[i][1])
     return id
@@ -829,12 +845,17 @@ function main() {
   for (const { f } of procOrder) {
     const n = f.xy.length
     const fStratum = CONFIG.STRATA ? f.props.stratum ?? null : null
-    const okS = CONFIG.STRATA ? (e) => spines[e.spineId].stratum === fStratum : null
+    const okS = CONFIG.STRATA ? (e) => strataOk(spines[e.spineId].stratum, spines[e.spineId].layLine, fStratum, f.line) : null
     layingStratum = fStratum
+    layingLine = f.line
+    const fWide = WIDE.has(f.line)
     // 1) assign each point to nearest existing spine (or -1)
     const assign = new Array(n).fill(-1)
     for (let i = 0; i < n; i++) {
-      const e = grid.nearest(f.xy[i], f.tan[i], CONFIG.D, CONFIG.ANG_COS, -1, okS)
+      const e = WIDE.size
+        ? grid.nearest(f.xy[i], f.tan[i], CONFIG.D_WIDE, CONFIG.ANG_COS, -1, (c) =>
+            (!okS || okS(c)) && Math.hypot(c.x - f.xy[i][0], c.y - f.xy[i][1]) < (fWide || spines[c.spineId].wide ? CONFIG.D_WIDE : CONFIG.D))
+        : grid.nearest(f.xy[i], f.tan[i], CONFIG.D, CONFIG.ANG_COS, -1, okS)
       if (e) assign[i] = e.spineId
     }
     const clean = hysteresis(assign, f.xy)
@@ -844,14 +865,14 @@ function main() {
     // the geometric radius misses. Only fills -1 (solo) vertices, and only
     // where f stays within D2 of the spine (rules out same-name-far-apart).
     for (const X of spines) {
-      if (CONFIG.STRATA && X.stratum !== fStratum) continue
+      if (CONFIG.STRATA && !strataOk(X.stratum, X.layLine, fStratum, f.line)) continue
       for (const run of sharedNodeRuns(f.nodes, X)) {
         // Within each shared-station span, fill each solo vertex onto X — but
         // only where f actually stays within the D2 corridor of X (per-vertex,
         // so the close "bow" stretches bundle while any genuinely-divergent
         // middle does not). Captures Met's ~50-60m bow off Circle north trunk.
         for (let i = run.vLo; i <= run.vHi; i++)
-          if (clean[i] === -1 && grid.nearest(f.xy[i], null, CONFIG.D2, 0, X.id)) clean[i] = X.id
+          if (clean[i] === -1 && grid.nearest(f.xy[i], null, WIDE.size && (fWide || X.wide) ? CONFIG.D2_WIDE : CONFIG.D2, 0, X.id)) clean[i] = X.id
       }
     }
     // FORCE_SNAP overrides: bind this line onto a corridor near the given points,

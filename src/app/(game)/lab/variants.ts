@@ -1,7 +1,13 @@
 // The /lab track-geometry experiments (built by scripts/lab/build-lab-tracks.js).
-export type LabVariant = { slug: 'staging1' | 'graph' | 'graph2' | 'graph3' | 'graph4' | 'graph5' | 'levels' | 'morph'; title: string; blurb: string }
+export type LabVariant = { slug: 'staging3' | 'staging1' | 'graph' | 'graph2' | 'graph3' | 'graph4' | 'graph5' | 'graph7' | 'levels' | 'morph'; title: string; blurb: string }
 
 export const VARIANTS: LabVariant[] = [
+  {
+    slug: 'staging3',
+    title: 'Staging 3',
+    blurb:
+      'Staging 1 with Graph 7 from z11.4 in: National Rail / Overground routed over the real track (as Graph 4), but tube and DLR drawn from their raw OSM centrelines snapped the way /london does (repeated per-branch stretches removed first), so tube junctions like West Kensington and Camden look as clean as /london or better. Same sizing and z11.4 switch to Graph 5 as Staging 1.',
+  },
   {
     slug: 'staging1',
     title: 'Staging 1',
@@ -37,6 +43,12 @@ export const VARIANTS: LabVariant[] = [
     title: 'Graph 5',
     blurb:
       'Everything, built for map-scale sizing (lines a fixed ~43 m wide, like the streets): tracks share a corridor only where they are within one line width; network-wide lane order; and lane offsets baked into the geometry as continuous curves, so a line holds its lane until its real track moves out past it, then peels off smoothly. Scorecard measured at that fixed width.',
+  },
+  {
+    slug: 'graph7',
+    title: 'Graph 7',
+    blurb:
+      'Graph 4 for surface lines; tube and DLR from their raw OSM centrelines with repeated stretches removed, snapped with /london’s looser radii (34 m, 130 m between shared stations). Tight snapping suits precise routed track, not raw tube data.',
   },
   {
     slug: 'levels',
