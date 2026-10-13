@@ -127,11 +127,28 @@ const levelZoomRange = (lv: RouteLevel) => ({
 })
 const levelPrefix = (lv: RouteLevel) => (lv.id ? `lines-${lv.id}` : 'lines')
 
-// /lab sizing test (`fixedSizeZoom`): every zoom-interpolated SIZE (line width
-// and lane offset, stripes, station radius/stroke, pie size, label size) is
-// replaced by its value at one zoom, so nothing on the map changes size as
-// you zoom. Opacity fades (/lab/levels) and the morph blend stay zoom-based.
-const SIZE_PROPS = ['line-width', 'line-offset', 'circle-radius', 'circle-stroke-width', 'icon-size', 'text-size']
+// /lab sizing tests (`sizing`) for the game's own layers' SIZES (line width and
+// lane offset, stripes, station radius/stroke, pies; not label text):
+//  - map: pinned to the MAP — the value at `ref`, doubled per zoom level up
+//    (halved down), like the streets (hover glow too);
+//  - clamp: today's zoom curve, clamped between its values at `min` and `max`
+//    (smallest below `min`, largest above `max`, linear in between).
+// Opacity fades (/lab/levels) and the morph blend are unchanged.
+export type LabSizing = { kind: 'map'; ref: number } | { kind: 'clamp'; min: number; max: number }
+const SIZE_PROPS = ['line-width', 'line-offset', 'circle-radius', 'circle-stroke-width', 'icon-size']
+const clampScaled = (e: unknown, min: number, max: number): unknown => {
+  if (!Array.isArray(e) || e[0] !== 'interpolate') return e // constants stay
+  return ['interpolate', ['linear'], ['zoom'], min, atZoom(e, min), max, atZoom(e, max)]
+}
+const sizeAt = (sz: LabSizing | undefined) => (z: number) =>
+  !sz ? widthAt(z) : sz.kind === 'map' ? widthAt(sz.ref) * 2 ** (z - sz.ref) : widthAt(Math.max(sz.min, Math.min(sz.max, z)))
+const resize = (e: unknown, sz: LabSizing) => (sz.kind === 'map' ? mapScaled(e, sz.ref) : clampScaled(e, sz.min, sz.max))
+const mapScaled = (e: unknown, ref: number): unknown => {
+  const v = atZoom(e, ref)
+  const k0 = 2 ** -ref, k1 = 2 ** (24 - ref)
+  const mul = (k: number) => (typeof v === 'number' ? v * k : ['*', k, v])
+  return ['interpolate', ['exponential', 2], ['zoom'], 0, mul(k0), 24, mul(k1)]
+}
 const atZoom = (e: unknown, z: number): unknown => {
   if (!Array.isArray(e) || e[0] !== 'interpolate' || !Array.isArray(e[2]) || e[2][0] !== 'zoom') return e
   const st = e.slice(3)
@@ -153,7 +170,7 @@ export default function GamePage({
   routeLevels,
   morph,
   onMap,
-  fixedSizeZoom,
+  sizing,
   maskData,
   cityData,
 }: {
@@ -165,8 +182,8 @@ export default function GamePage({
   morph?: MorphConfig
   /** /lab only: called once the map is ready (e.g. for a zoom readout). */
   onMap?: (m: maplibregl.Map) => void
-  /** /lab only: freeze every zoom-dependent size at this zoom (sizing test). */
-  fixedSizeZoom?: number
+  /** /lab only: sizing test (see LabSizing). */
+  sizing?: LabSizing
   maskData?: any
   cityData?: any
 }) {
@@ -392,20 +409,21 @@ export default function GamePage({
   // -------- Map setup --------
   useEffect(() => {
     const m = new maplibregl.Map({ ...MAP_CONFIG, container: 'map' })
-    if (fixedSizeZoom != null) {
+    if (sizing) {
       const add = m.addLayer.bind(m)
-      const fz = fixedSizeZoom
       m.addLayer = ((layer: any, before?: string) => {
+        // only the game's own layers (lines-*, stations-*), not the basemap
+        // or the boundary outlines
+        if (!/^(lines|stations)/.test(layer.id)) return add(layer, before)
         const L = { ...layer, paint: { ...(layer.paint || {}) }, layout: { ...(layer.layout || {}) } }
         for (const part of [L.paint, L.layout])
           for (const k of SIZE_PROPS)
-            if (k in part && !(morph && k === 'line-offset')) part[k] = atZoom(part[k], fz)
-        if (L.type === 'symbol') delete L.minzoom // labels: no zoom cut-off either
+            if (k in part && !(morph && k === 'line-offset')) part[k] = resize(part[k], sizing)
         return add(L, before)
       }) as typeof m.addLayer
     }
-    // morph keeps its zoom blend; only its lane spacing uses the fixed width
-    const mWidth = fixedSizeZoom != null ? () => widthAt(fixedSizeZoom) : widthAt
+    // morph keeps its zoom blend; its lane spacing follows the resized width
+    const mWidth = sizeAt(sizing)
     // Drop the centre below the top control bar so the configured centre
     // (Charing Cross) sits midway between the entry box and the page bottom,
     // not the page centre. Set before first paint so there's no flash.
@@ -1080,18 +1098,18 @@ export default function GamePage({
     })()
 
     const flashExpr = {
-      lineOffset: (fixedSizeZoom != null ? atZoom(LINE_OFFSET_EXPR, fixedSizeZoom) : LINE_OFFSET_EXPR) as maplibregl.ExpressionSpecification,
-      lineWidth: (fixedSizeZoom != null ? atZoom(LINE_WIDTH_EXPR, fixedSizeZoom) : LINE_WIDTH_EXPR) as maplibregl.ExpressionSpecification,
+      lineOffset: (sizing ? resize(LINE_OFFSET_EXPR, sizing) : LINE_OFFSET_EXPR) as maplibregl.ExpressionSpecification,
+      lineWidth: (sizing ? resize(LINE_WIDTH_EXPR, sizing) : LINE_WIDTH_EXPR) as maplibregl.ExpressionSpecification,
     }
-    const flashFixedWidth = fixedSizeZoom != null ? widthAt(fixedSizeZoom) : undefined
+    const flashWidthAt = sizing ? sizeAt(sizing) : undefined
     if (newlyCompleteLines.length) {
       celebrateLines(newlyCompleteLines.map((k) => LINES[k]), region)
-      if (map) flashLines(map, newlyCompleteLines, flashExpr, { fixedWidth: flashFixedWidth })
+      if (map) flashLines(map, newlyCompleteLines, flashExpr, { widthAt: flashWidthAt })
     }
     if (allJustCompleted) {
       const visible = Object.keys(stationsPerLine).filter((k) => stationsPerLine[k] > 0)
       celebrateFinale(visible.map((k) => LINES[k]), region)
-      if (map) flashLines(map, visible, flashExpr, { finale: true, fixedWidth: flashFixedWidth })
+      if (map) flashLines(map, visible, flashExpr, { finale: true, widthAt: flashWidthAt })
     }
 
     // Always advance, even when nothing fired (e.g. a line toggled off), so the
@@ -1106,7 +1124,7 @@ export default function GamePage({
     LINES,
     celebrateLines,
     celebrateFinale,
-    fixedSizeZoom,
+    sizing,
   ])
 
   const revealAll = useCallback(() => {
