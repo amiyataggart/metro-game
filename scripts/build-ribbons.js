@@ -183,6 +183,11 @@ const CONFIG = {
   // already lie within this many metres (they'd overlap when drawn anyway: the
   // Victoria / Piccadilly tunnels right under Great Northern south of Finsbury
   // Park); never pulled farther, and never rail tunnel vs surface rail (HS1).
+  END_HOLD: 0, // lab: a line keeps its lane this many metres beyond where it
+  // joins / leaves a corridor, so the others shift only after it has gone (or
+  // before it arrives). With the laneOff smoothing (OFFSET_SMOOTH_WIN) the
+  // others otherwise started moving into its lane ~120 m before a terminus:
+  // Mildmay drawn over the Windrush's end at Highbury & Islington.
   SOLO_LINES: [], // lab: lines that are never pulled into another line's
   // corridor (dedicated track: HS1 on the St Pancras approach), except where
   // they already lie within D_XSTRATA of it and would be drawn hidden under it
@@ -1149,7 +1154,8 @@ function main() {
       const present = []
       for (const line of memberLines) {
         const segs = sp.members.get(line)
-        if (segs.some(([a, c]) => mid >= a - CONFIG.BIN && mid <= c + CONFIG.BIN)) present.push(line)
+        const hold = CONFIG.BIN + CONFIG.END_HOLD
+        if (segs.some(([a, c]) => mid >= a - hold && mid <= c + hold)) present.push(line)
       }
       // near an order-override, rank present lines by its top→bottom list
       // (unlisted lines keep config order, after the listed ones)
