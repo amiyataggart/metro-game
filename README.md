@@ -9,8 +9,7 @@ Car**, **Heathrow Express**, **c2c**, and the National Rail operators
 around London — **Thameslink**, **Great Northern**, **Southern**, **Gatwick
 Express**, **South Western Railway**, **GWR**, **Chiltern**, **London
 Northwestern**, **East Midlands Railway**, **Greater Anglia**, **Southeastern**,
-**Southeastern high speed** and **Eurostar** (St Pancras only; line drawn to
-Ebbsfleet). Underground, Overground, Elizabeth line, DLR, Thameslink and the
+and **Southeastern high speed**. Underground, Overground, Elizabeth line, DLR, Thameslink and the
 Cable Car are on by default (`src/lib/defaultEnabledLines.ts`); Trams and the
 other National Rail lines are toggled on from the line picker next to the legend.
 
@@ -19,7 +18,7 @@ other National Rail lines are toggled on from the line picker next to the legend
 Greater London plus selected commuter destinations. Lines in `FULL_LINES` are
 kept whole; every other line runs out to its `END_STATIONS` (e.g. Thameslink to
 Bedford / Cambridge / Brighton / Gravesend, SWR to Reading / Guildford / Woking,
-Greater Anglia to Chelmsford / Southend Victoria / Cambridge North). Medway,
+Greater Anglia to Chelmsford / Southend Victoria / Cambridge). Medway,
 Basingstoke, Milton Keynes, Colchester and Tonbridge / Tunbridge Wells are out.
 Trimming happens at build time — stations come only from the scoped service
 tables and route geometry is clipped at the end stations — so nothing beyond
@@ -175,7 +174,7 @@ reject responses whose `osm3s.timestamp_osm_base` is older than 24 h.
 **Scope clip (`clip-to-scope.js`).** Run by `build-ribbons.js` on its input
 (`--no-clip` to skip). For each `END_STATIONS` line it keeps the track along
 the shortest path between every pair of consecutive stops of the line's
-services (plus `DRAWN_TO`, e.g. Eurostar to Ebbsfleet), everything within 60 m
+services (plus any `DRAWN_TO` stations; currently none), everything within 60 m
 of that (parallel tracks), and diverging bypasses that rejoin the same stop
 pair's path; tails beyond end stations, branches to out-of-scope places and
 track no scoped service uses are dropped. `FULL_LINES` are untouched.

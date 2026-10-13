@@ -28,7 +28,7 @@ const GROUPS: { name: string; lines: string[] }[] = [
     name: 'National Rail',
     // alphabetical by display name (c2c, Chiltern Railways, East Midlands…)
     lines: [
-      'C2c', 'Chiltern', 'EastMidlandsRailway', 'Eurostar', 'GatwickExpress', 'GreatNorthern',
+      'C2c', 'Chiltern', 'EastMidlandsRailway', 'GatwickExpress', 'GreatNorthern',
       'GreatWesternRailway', 'GreaterAnglia', 'HeathrowExpress', 'LondonNorthwestern', 'SouthWesternRailway',
       'Southeastern', 'SoutheasternHighSpeed', 'Southern',
     ],

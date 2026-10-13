@@ -133,7 +133,7 @@ export const services: Service[] = [
   // source: osm relation 9107260
   {
     line: 'GreaterAnglia',
-    name: 'Liverpool Street – Cambridge North (semi-fast Ely service, cut at Cambridge North)',
+    name: 'Liverpool Street – Cambridge (semi-fast Ely service, cut at Cambridge)',
     stops: [
       'London Liverpool Street',
       'Tottenham Hale',
@@ -144,7 +144,6 @@ export const services: Service[] = [
       'Audley End',
       'Whittlesford Parkway',
       'Cambridge',
-      'Cambridge North',
     ],
   },
   // source: osm relation 20158036, 20158039

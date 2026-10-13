@@ -5,7 +5,7 @@
  * use their official National Rail name.
  */
 export interface Service {
-  /** Line key, as in config.ts LINES (plus LondonNorthwestern, Eurostar, CableCar). */
+  /** Line key, as in config.ts LINES (plus LondonNorthwestern, CableCar). */
   line: string
   /** Human-readable service description. */
   name: string

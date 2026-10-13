@@ -41,6 +41,23 @@ const LINE_WIDTH_EXPR = [
   'interpolate', ['linear'], ['zoom'],
   8.763, 2.925, 13, 5.0625, 18, 8.4375, 22, 10.125,
 ] as unknown as maplibregl.ExpressionSpecification
+// 'triple' stripe (London Cable Car): the ribbon is split into fifths —
+// colour / white / colour / white / colour — so it reads as three thin
+// coloured lines with white infill. Each white line is W/5 wide, offset ±W/5
+// from the ribbon centre (on top of the lane offset). Same zoom stops as
+// LINE_WIDTH_EXPR (zoom must stay the top-level interpolate input).
+const WIDTH_STOPS: [number, number][] = [[8.763, 2.925], [13, 5.0625], [18, 8.4375], [22, 10.125]]
+const TRIPLE_STRIPE_WIDTH_EXPR = [
+  'interpolate', ['linear'], ['zoom'],
+  ...WIDTH_STOPS.flatMap(([z, w]) => [z, w / 5]),
+] as unknown as maplibregl.ExpressionSpecification
+const tripleStripeOffsetExpr = (side: -1 | 1) =>
+  [
+    'interpolate', ['linear'], ['zoom'],
+    ...WIDTH_STOPS.flatMap(([z, w]) => [
+      z, ['+', ['*', ['coalesce', ['get', 'laneOff'], 0], w], (side * w) / 5],
+    ]),
+  ] as unknown as maplibregl.ExpressionSpecification
 
 export default function GamePage({
   fc,
@@ -245,7 +262,7 @@ export default function GamePage({
   // Rail (bottom) — so e.g. Thameslink (and its dashes) pass UNDER the tube ribbons.
   const zBands = useMemo(() => {
     const ug = allLineKeys.filter((k) => (LINES[k].order ?? 99) <= 10)
-    return [
+    const bands = [
       {
         id: 'nr',
         keys: [
@@ -253,14 +270,21 @@ export default function GamePage({
           'SouthWesternRailway', 'C2c', 'GreaterAnglia', 'Southeastern',
           'SoutheasternHighSpeed', 'Southern', 'GreatNorthern', 'GatwickExpress',
           'Chiltern', 'EastMidlandsRailway', 'GreatWesternRailway', 'HeathrowExpress',
+          'LondonNorthwestern',
         ],
       },
       { id: 'og', keys: ['Lioness', 'Mildmay', 'Windrush', 'Weaver', 'Suffragette', 'Liberty'] },
       { id: 'dlr', keys: ['DLR'] },
       { id: 'eliz', keys: ['ElizabethLine'] },
       { id: 'tram', keys: ['Tramlink'] },
+      { id: 'cable', keys: ['CableCar'] },
       { id: 'ug', keys: ug },
     ]
+    // Any line not named in a band would never be drawn: drop it into the
+    // National Rail band so a newly added line is always visible.
+    const banded = new Set(bands.flatMap((b) => b.keys))
+    bands[0].keys.push(...allLineKeys.filter((k) => !banded.has(k)))
+    return bands
       .map((b) => ({ ...b, keys: b.keys.filter((k) => allLineKeys.includes(k)) }))
       .filter((b) => b.keys.length)
   }, [allLineKeys, LINES])
@@ -446,6 +470,23 @@ export default function GamePage({
               },
               layout: { 'line-sort-key': bandSortKey, 'line-cap': 'butt', 'line-join': 'round' },
             })
+          }
+          const triples = band.keys.filter((k) => LINES[k].stripe === 'triple')
+          if (triples.length) {
+            for (const [suffix, side] of [['a', -1], ['b', 1]] as const) {
+              m.addLayer({
+                id: `lines-${band.id}-stripe-triple-${suffix}`,
+                type: 'line',
+                source: 'lines',
+                filter: inKeys(triples),
+                paint: {
+                  'line-color': '#ffffff',
+                  'line-width': TRIPLE_STRIPE_WIDTH_EXPR,
+                  'line-offset': tripleStripeOffsetExpr(side),
+                },
+                layout: { 'line-sort-key': bandSortKey, 'line-cap': 'butt', 'line-join': 'round' },
+              })
+            }
           }
         }
       }
@@ -800,6 +841,11 @@ export default function GamePage({
       set(`lines-${band.id}`, band.keys)
       if (solids.length) set(`lines-${band.id}-stripe-solid`, solids)
       if (dashes.length) set(`lines-${band.id}-stripe-dashed`, dashes)
+      const triples = band.keys.filter((k) => LINES[k].stripe === 'triple')
+      if (triples.length) {
+        set(`lines-${band.id}-stripe-triple-a`, triples)
+        set(`lines-${band.id}-stripe-triple-b`, triples)
+      }
     }
   }, [map, lineFilter, allLineKeys, enabledLines, zBands, LINES])
 

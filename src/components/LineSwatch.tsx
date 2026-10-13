@@ -7,6 +7,8 @@ import { Line } from '@/lib/types'
  *     stripe down the middle
  *   - Thameslink: colored bar with a dashed white stripe down the middle
  *     (gaps reveal the line color)
+ *   - London Cable Car: two thin white lines, so the bar reads as three thin
+ *     colored lines with white infill
  */
 export default function LineSwatch({
   line,
@@ -66,6 +68,19 @@ export default function LineSwatch({
           strokeLinecap="butt"
         />
       )}
+      {line.stripe === 'triple' &&
+        [-1, 1].map((s) => (
+          <line
+            key={s}
+            x1="0"
+            y1={cy + (s * h) / 5}
+            x2={w}
+            y2={cy + (s * h) / 5}
+            stroke="#ffffff"
+            strokeWidth={h / 5}
+            strokeLinecap="butt"
+          />
+        ))}
     </svg>
   )
 }
