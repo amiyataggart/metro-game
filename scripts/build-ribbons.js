@@ -183,8 +183,9 @@ const CONFIG = {
   // already lie within this many metres (they'd overlap when drawn anyway: the
   // Victoria / Piccadilly tunnels right under Great Northern south of Finsbury
   // Park); never pulled farther, and never rail tunnel vs surface rail (HS1).
-  SOLO_LINES: [], // lab: lines that only ever share a corridor with themselves
-  // (dedicated track: HS1 on the St Pancras approach)
+  SOLO_LINES: [], // lab: lines that are never pulled into another line's
+  // corridor (dedicated track: HS1 on the St Pancras approach), except where
+  // they already lie within D_XSTRATA of it and would be drawn hidden under it
   WIDE_STATIC_ORDER: false, // lab: corridors laid by a WIDE (tube) line keep
   // /london's static config-order lane ranking (+ ORDER_OVERRIDES) instead of
   // EXIT_ORDER / GLOBAL_ORDER, which flipped lanes along tube corridors
@@ -898,7 +899,10 @@ function main() {
             if (!wide && CONFIG.ANG_COS_TIGHT && Math.abs(f.tan[i][0] * c.tx + f.tan[i][1] * c.ty) < CONFIG.ANG_COS_TIGHT) return false
             // across strata only tube vs non-tube (tube tunnels under National
             // Rail at Finsbury Park), never rail tunnel vs surface rail (HS1)
-            if (!soloOk(c)) return false
+            // a SOLO line may still sit beside another line where they already
+            // coincide within D_XSTRATA (HS1's tunnel right under the North
+            // London Line at Dalston would otherwise be hidden under it)
+            if (!soloOk(c)) return d < CONFIG.D_XSTRATA
             if (okS && !okS(c, i)) {
               if (fWide === spines[c.spineId].wide) return false
               // a main-line TUNNEL (Elizabeth line) with a tube line: both

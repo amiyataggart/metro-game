@@ -702,6 +702,9 @@ function bundle2(polys, d0, noSnap, sameLine = false, dTun = d0) {
 // pieces whose laneOff eases (smoothstep) from the shared value at the joint to
 // the feature's own value. At a fork the trunk keeps its value; branches ease
 // out of it.
+// opts.skip: lines left as build-ribbons made them (tubeRaw variants: tube /
+// DLR behave as on /london; easing their frequent corridor joins at Canning
+// Town etc. drew rows of tiny step pieces).
 // opts.geoW (metres, map-scale sizing only): a branch leaving a corridor onto
 // its own track keeps its lane until its true track has moved out past that
 // lane, then hands over (smooth max of lane offset and true separation), so
@@ -710,7 +713,7 @@ function taper(fc, opts = {}) {
   const byLine = new Map()
   fc.features.forEach((f, fi) => {
     const l = f.properties.line
-    if (PASSTHROUGH.has(l) || f.properties.laneOff == null) return
+    if (PASSTHROUGH.has(l) || f.properties.laneOff == null || (opts.skip && opts.skip.has(l))) return
     if (!byLine.has(l)) byLine.set(l, [])
     byLine.get(l).push(fi)
   })
@@ -1043,7 +1046,7 @@ function main() {
     for (const f of built.features) { delete f.properties.stratum; delete f.properties.st }
     const th = trimFeatureHooks(built)
     built = th.fc
-    const tp = process.argv.includes('--no-taper') ? { fc: built, joints: 0 } : taper(built, V.bake ? { geoW: MAP_W } : {})
+    const tp = process.argv.includes('--no-taper') ? { fc: built, joints: 0 } : taper(built, V.bake ? { geoW: MAP_W } : V.tubeRaw ? { skip: TUBE } : {})
     built = tp.fc
     if (V.bake) built = bake(built, MAP_W)
     if (!process.argv.includes("--dry")) fs.writeFileSync(path.join(OUTDIR, `routes.${V.id}.json`), JSON.stringify(built))
