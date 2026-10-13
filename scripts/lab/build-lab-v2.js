@@ -51,7 +51,7 @@ const { MAP_W } = require('./score.js')
 const VARIANTS = [
   { id: 'graph2', d: 35, ribbon: { D: 35 / 3, D2: 70 / 3 } },
   { id: 'graph3', d: 0, ribbon: {} },
-  { id: 'graph4', d: 35, ribbon: { D: 35 / 3, D2: 70 / 3, GLOBAL_ORDER: 4 } },
+  { id: 'graph4', preSame: 60, d: 35, ribbon: { D: 35 / 3, D2: 70 / 3, GLOBAL_ORDER: 4 } },
   { id: 'graph5', d: MAP_W, sameLine: true, ribbon: { D: MAP_W, D2: 130, GLOBAL_ORDER: 4 }, bake: true },
 ]
 // Thameslink's 5 km NO_SNAP north of King's Cross keeps it off the Piccadilly /
@@ -59,6 +59,30 @@ const VARIANTS = [
 // anyway, and the rule split Thameslink from Great Northern on shared track.
 const NO_SNAP_DROP = [{ line: 'Thameslink', radius: 5000 }]
 const END_K = 3
+const REUSE = 0.6 // routing: a line's services prefer track it already uses
+// Route pieces dropped as noise: a crossover between two of the line's own
+// tracks (both ends at its junctions) shorter than CROSSOVER_M, and a dead-end
+// spur shorter than SPUR_M that doesn't lead to one of its stations.
+const CROSSOVER_M = 80, SPUR_M = 50
+function pruneChains(chains, stations) {
+  const key = (p) => Math.round(p[0] * 10) + ',' + Math.round(p[1] * 10)
+  const len = (xy) => xy.reduce((a, q, i) => (i ? a + dist(xy[i - 1], q) : 0), 0)
+  let cur = chains
+  for (let pass = 0; pass < 3; pass++) {
+    const deg = new Map()
+    for (const xy of cur) for (const p of [xy[0], xy.at(-1)]) deg.set(key(p), (deg.get(key(p)) || 0) + 1)
+    const nearStation = (p) => stations.some((s) => dist(s, p) < 150)
+    const next = cur.filter((xy) => {
+      const L = len(xy), da = deg.get(key(xy[0])), db = deg.get(key(xy.at(-1)))
+      if (L < CROSSOVER_M && da >= 2 && db >= 2 && key(xy[0]) !== key(xy.at(-1))) return false
+      if (L < SPUR_M && (da === 1) !== (db === 1) && !nearStation(da === 1 ? xy[0] : xy.at(-1))) return false
+      return true
+    })
+    if (next.length === cur.length) break
+    cur = next
+  }
+  return cur
+}
 const STRATUM_MIN_RUN = 150 // m: shorter tunnel/surface flips are noise
 const TAPER_M = 160 // m: total length of a laneOff ramp across a feature boundary
 const TAPER_STEP = 10 // m: ramp piece length (laneOff steps of ~1/16 lane)
@@ -93,7 +117,11 @@ function nodeInfo(G) {
 }
 // Stratum per point: the nearest track node (preferring `prefer` type bits)
 // within R decides; runs shorter than STRATUM_MIN_RUN take their neighbours'.
-function strataOf(G, info, xy, R, prefer) {
+// preferOnly: only `prefer` tracks count (raw tube/DLR centrelines can sit
+// 25–80 m from their own OSM tunnel; falling back to the nearest track of any
+// kind then classed the deep Jubilee as 'surface' under the Southwark–London
+// Bridge viaduct and bundled it there).
+function strataOf(G, info, xy, R, prefer, preferOnly = false) {
   const raw = xy.map((p) => {
     let best = -1, bd = Infinity, bestP = -1, bdP = Infinity
     for (const j of G.near(p, R)) {
@@ -101,7 +129,7 @@ function strataOf(G, info, xy, R, prefer) {
       if (d < bd) { bd = d; best = j }
       if (prefer && info.type[j] & prefer && d < bdP) { bdP = d; bestP = j }
     }
-    const j = bestP >= 0 ? bestP : best
+    const j = bestP >= 0 ? bestP : preferOnly ? -1 : best
     // tunnels by kind: a deep tube tunnel and a main-line tunnel (Gasworks /
     // Copenhagen, under King's Cross) are different strata too
     if (j < 0 || !info.tun[j]) return 'surface'
@@ -137,6 +165,176 @@ function splitByStratum(poly, st) {
       s = i
     }
   return out
+}
+
+// ---------------------------------------------------------------- line ends
+// Per line, on the base pieces (metric): an end that no other piece of the
+// line shares is either a loose end near the line itself (raw tube loop arms
+// stopping ~20 m short of the main line at Kennington -> an arrow-shaped
+// stub) or a terminus. A loose end within JOIN_M of another piece of the same
+// line loses its sharply-turning tail and is joined onto that piece; any other
+// end loses a short sharply-turning tail (a crossover onto the next platform
+// at New Cross / Clapham Junction drawn as a hook).
+const JOIN_M = 40, HOOK_M = 40, HOOK_DEG = 50, HOOK_SWING = 25
+const turn = (a, b, c) => {
+  const ux = b[0] - a[0], uy = b[1] - a[1], vx = c[0] - b[0], vy = c[1] - b[1]
+  const d = (ux * vx + uy * vy) / ((Math.hypot(ux, uy) * Math.hypot(vx, vy)) || 1)
+  return (Math.acos(Math.max(-1, Math.min(1, d))) * 180) / Math.PI
+}
+// drop trailing vertices within HOOK_M of the end while the path turns
+// sharply, and cut the last HOOK_M off if, as a whole, it heads more than
+// HOOK_SWING away from the HOOK_M before it (a gentle flick onto the next
+// platform road over a few short segments)
+const back = (xy, from, m) => { let run = 0, i = from; while (i > 0 && run < m) { run += dist(xy[i], xy[i - 1]); i-- } return run >= m ? i : -1 }
+const trimTail = (xy) => {
+  let k = xy.length - 1, run = 0
+  for (let i = xy.length - 1; i >= 2; i--) {
+    run += dist(xy[i], xy[i - 1])
+    if (run > HOOK_M) break
+    if (turn(xy[i - 2], xy[i - 1], xy[i]) > HOOK_DEG) k = i - 1
+  }
+  let out = xy.slice(0, k + 1)
+  // heading swing, measured on the tail resampled every 5 m (vertices can be
+  // 100+ m apart before a short flick)
+  const keep = back(out, out.length - 1, HOOK_M + 60)
+  if (keep < 0) return out
+  const head = out.slice(0, keep), tail = resample(out.slice(keep), 5)
+  const T = tail.length - 1
+  let cut = -1
+  for (const L of [15, 25, HOOK_M]) {
+    const a = T - L / 5, b = a - 40 / 5
+    if (b < 0) continue
+    if (turn(tail[b], tail[a], tail[T]) > HOOK_SWING) cut = a
+  }
+  if (cut < 0) return out
+  return [...head, ...tail.slice(0, cut + 1)]
+}
+function cleanEnds(pieces) {
+  const nearestOn = (p, segs) => {
+    let best = null, bd = JOIN_M
+    for (const [a, b] of segs) {
+      const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy
+      const t = L ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L)) : 0
+      const q = [a[0] + t * dx, a[1] + t * dy], d = dist(p, q)
+      if (d < bd) { bd = d; best = q }
+    }
+    return best
+  }
+  const byLine = new Map()
+  pieces.forEach((p, i) => { if (!byLine.has(p.line)) byLine.set(p.line, []); byLine.get(p.line).push(i) })
+  let joined = 0, trimmed = 0
+  const out = pieces.map((p) => ({ ...p, xy: p.xy.slice() }))
+  for (const ids of byLine.values()) {
+    for (const i of ids) for (const atEnd of [true, false]) {
+      let xy = atEnd ? out[i].xy : out[i].xy.slice().reverse()
+      if (xy.length < 3) continue
+      const e = xy.at(-1)
+      const shared = ids.some((j) => j !== i && (dist(out[j].xy[0], e) < 3 || dist(out[j].xy.at(-1), e) < 3))
+      if (shared) continue
+      const segs = []
+      for (const j of ids) {
+        if (j === i) continue
+        const o = out[j].xy
+        for (let k = 1; k < o.length; k++) segs.push([o[k - 1], o[k]])
+      }
+      const t = trimTail(xy)
+      let q = nearestOn(t.at(-1), segs) || nearestOn(e, segs)
+      // only join onto the line AHEAD (or right here): a parallel platform
+      // road beside a terminus is not a continuation
+      if (q && dist(q, t.at(-1)) > 8) {
+        const k = back(t, t.length - 1, 30)
+        const a = t[k >= 0 ? k : 0]
+        if (turn(a, t.at(-1), q) > 60) q = null
+      }
+      if (q) { xy = [...t, q]; joined++ }
+      else if (t.length < xy.length) { xy = t; trimmed++ }
+      else continue
+      out[i].xy = atEnd ? xy : xy.slice().reverse()
+    }
+  }
+  return { pieces: out, joined, trimmed }
+}
+
+// The ribbon builder's smoothing / snapping can still bend the last metres of
+// a line that ENDS inside a corridor (Windrush at New Cross, Mildmay and
+// Windrush at Clapham Junction): trim the same kind of tail on the output
+// features at every line end no other feature of the line continues from.
+function trimFeatureHooks(fc) {
+  const byLine = new Map()
+  fc.features.forEach((f, i) => {
+    if (PASSTHROUGH.has(f.properties.line) || f.geometry.type !== 'LineString') return
+    if (!byLine.has(f.properties.line)) byLine.set(f.properties.line, [])
+    byLine.get(f.properties.line).push(i)
+  })
+  let n = 0
+  const xys = new Map()
+  fc.features.forEach((f, i) => { if (f.geometry.type === 'LineString') xys.set(i, f.geometry.coordinates.map(toXY)) })
+  const dead = new Set()
+  const len = (xy) => xy.reduce((a, q, i) => (i ? a + dist(xy[i - 1], q) : 0), 0)
+  for (const ids of byLine.values()) {
+    const endsAt = (p, not) => ids.filter((j) => !dead.has(j) && j !== not).flatMap((j) => {
+      const xy = xys.get(j), o = []
+      if (dist(xy[0], p) < 1) o.push({ j, atEnd: false })
+      if (dist(xy.at(-1), p) < 1) o.push({ j, atEnd: true })
+      return o
+    })
+    for (const i of ids) for (const atEnd of [true, false]) {
+      if (dead.has(i)) continue
+      const own = xys.get(i), e = atEnd ? own.at(-1) : own[0]
+      if (ids.some((j) => j !== i && !dead.has(j) && (dist(xys.get(j)[0], e) < 3 || dist(xys.get(j).at(-1), e) < 3))) continue
+      // chain of pieces back from this end (each oriented towards the end),
+      // until ~HOOK_M + 100 m, through one-to-one joints only
+      const chain = [{ j: i, atEnd }]
+      let total = len(own)
+      while (total < HOOK_M + 100) {
+        const c = chain.at(-1), xy = xys.get(c.j)
+        const far = c.atEnd ? xy[0] : xy.at(-1)
+        const nx = endsAt(far, c.j)
+        if (nx.length !== 1 || chain.some((q) => q.j === nx[0].j)) break
+        chain.push({ j: nx[0].j, atEnd: !nx[0].atEnd ? false : true })
+        // orient: the continuation's end AT `far` is the end nearer our tip
+        chain.at(-1).atEnd = nx[0].atEnd
+        total += len(xys.get(nx[0].j))
+      }
+      // combined tail polyline, from far to tip
+      const pts = []
+      for (let k = chain.length - 1; k >= 0; k--) {
+        const xy = xys.get(chain[k].j)
+        const seq = chain[k].atEnd ? xy : xy.slice().reverse()
+        for (const q of seq) if (!pts.length || dist(pts.at(-1), q) > 1e-6) pts.push(q)
+      }
+      if (pts.length < 3) continue
+      const t = trimTail(pts)
+      let remove = len(pts) - len(t)
+      if (remove < 1) continue
+      n++
+      // remove `remove` metres from the tip, piece by piece
+      for (const c of chain) {
+        const xy = xys.get(c.j)
+        const L = len(xy)
+        if (L <= remove + 1e-6) { dead.add(c.j); remove -= L; continue }
+        const seq = c.atEnd ? xy.slice() : xy.slice().reverse() // ends at the tip
+        let r = remove
+        while (seq.length > 1 && r > 0) {
+          const d = dist(seq.at(-2), seq.at(-1))
+          if (d <= r) { seq.pop(); r -= d; continue }
+          const a = seq.at(-2), b = seq.at(-1), f = (d - r) / d
+          seq[seq.length - 1] = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]
+          r = 0
+        }
+        xys.set(c.j, c.atEnd ? seq : seq.reverse())
+        break
+      }
+    }
+  }
+  const feats = []
+  fc.features.forEach((f, i) => {
+    if (dead.has(i)) return
+    if (!xys.has(i) || f.geometry.type !== 'LineString') { feats.push(f); return }
+    if (xys.get(i).length < 2) return
+    feats.push({ ...f, geometry: { type: 'LineString', coordinates: xys.get(i).map(toLL) } })
+  })
+  return { fc: { ...fc, features: feats }, trimmed: n }
 }
 
 // ---------------------------------------------------------------- bundling
@@ -453,17 +651,19 @@ function main() {
   const passthrough = london.features.filter((f) => PASSTHROUGH.has(f.properties.line))
   const noSnap = loadNoSnap()
 
+  const stationXY = new Map()
+  for (const [k, c] of coordOf) { const l = k.slice(k.lastIndexOf('|') + 1); if (!stationXY.has(l)) stationXY.set(l, []); stationXY.get(l).push(toXY(c)) }
   const G = L1.loadGraph()
   const info = nodeInfo(G)
   const surface = new Set(services.map((s) => s.line).filter((l) => !TUBE.has(l) && !PASSTHROUGH.has(l)))
-  const { edgesOf, failures, fallbacks, extraPolys } = L1.routeLines(G, services, coordOf, ownGrid, ownPolys, { endK: END_K, extendEnds: true, lines: surface })
+  const { edgesOf, failures, fallbacks, extraPolys } = L1.routeLines(G, services, coordOf, ownGrid, ownPolys, { endK: END_K, extendEnds: true, reuse: REUSE, lines: surface })
   console.log(`routed ${edgesOf.size} surface lines; ${fallbacks.length} fallback pair(s), ${failures.length} failed`)
   for (const f of fallbacks) console.log('  fallback ' + f)
   for (const f of failures) console.log('  FAILED ' + f)
 
   const base = []
   for (const line of [...edgesOf.keys()].sort()) {
-    for (const xy of L1.chains(G, edgesOf.get(line), true)) {
+    for (const xy of pruneChains(L1.chains(G, edgesOf.get(line), true), stationXY.get(line) || [])) {
       const st = strataOf(G, info, xy, 2, 0)
       base.push(...splitByStratum({ line, xy }, st))
     }
@@ -479,8 +679,23 @@ function main() {
   for (const f of clipped.features) {
     const xy = resample(f.geometry.coordinates.map(toXY), 10)
     const prefer = f.properties.line === 'DLR' ? 4 : 2
-    base.push(...splitByStratum({ line: f.properties.line, xy }, strataOf(G, info, xy, 25, prefer)))
+    base.push(...splitByStratum({ line: f.properties.line, xy }, strataOf(G, info, xy, 80, prefer, true)))
   }
+  // DEBUG_AT=lng,lat: print base pieces passing within 150 m (diagnostics)
+  const dbg = (tag) => {
+    if (!process.env.DEBUG_AT) return
+    const P = toXY(process.env.DEBUG_AT.split(',').map(Number))
+    for (const p of base) {
+      const m = Math.min(...p.xy.map((q) => dist(q, P)))
+      if (m < 150) console.log(tag, p.line, p.st, 'n', p.xy.length, 'min', m.toFixed(0), 'start', dist(p.xy[0], P).toFixed(0), 'end', dist(p.xy.at(-1), P).toFixed(0), 'tail', p.xy.slice(-4).map((q) => dist(q, P).toFixed(0)).join(','))
+    }
+  }
+  dbg('before')
+  const ce = cleanEnds(base)
+  base.length = 0
+  base.push(...ce.pieces)
+  console.log(`line ends: ${ce.joined} loose end(s) joined, ${ce.trimmed} hook(s) trimmed`)
+  dbg('after')
   const km = (st) => (base.filter((p) => p.st === st).reduce((s, p) => s + p.xy.reduce((a, q, i) => (i ? a + dist(p.xy[i - 1], q) : 0), 0), 0) / 1000).toFixed(0)
   console.log(`${base.length} pieces: ${km('surface')} km surface, ${['tunnel-rail', 'tunnel-subway', 'tunnel-light'].map((t) => `${km(t)} km ${t}`).join(', ')}`)
 
@@ -493,17 +708,22 @@ function main() {
   for (const V of VARIANTS) {
     if (only && !only.includes(V.id)) continue
     const t1 = Date.now()
-    const polys = V.d ? bundle2(base, V.d, noSnap, !!V.sameLine) : base
+    // preSame: first merge each line's own parallel copies (twin tube tunnels,
+    // fast/slow tracks) so it is drawn once, then bundle different lines
+    const pre = V.preSame ? bundle2(base, V.preSame, noSnap, true) : base
+    const polys = V.d ? bundle2(pre, V.d, noSnap, !!V.sameLine) : pre
     const cfg = { ...V.ribbon, NO_SNAP_DROP, ORIENT_SPINES: true, EXIT_ORDER: !process.argv.includes("--no-exit"), STRATA: !process.argv.includes('--no-strata') }
     const fcIn = polys.map((p) => ({ ...p, props: { stratum: p.st } }))
     let built = ribbonsWithProps(fcIn, colorOf, orderOf, passthrough, V.id, cfg)
     for (const f of built.features) delete f.properties.stratum
+    const th = trimFeatureHooks(built)
+    built = th.fc
     const tp = process.argv.includes('--no-taper') ? { fc: built, joints: 0 } : taper(built, V.bake ? { geoW: MAP_W } : {})
     built = tp.fc
     if (V.bake) built = bake(built, MAP_W)
     if (!process.argv.includes("--dry")) fs.writeFileSync(path.join(OUTDIR, `routes.${V.id}.json`), JSON.stringify(built))
     cards[V.id] = score([11, 12, 13, 14, 15], () => built, V.bake ? 'map' : 'lane')
-    meta.variants[V.id] = { d: V.d, ribbon: cfg, features: built.features.length, taperedEnds: tp.joints }
+    meta.variants[V.id] = { d: V.d, ribbon: cfg, features: built.features.length, taperedEnds: tp.joints, endHooksTrimmed: th.trimmed }
     console.log(`${V.id}: ${built.features.length} features, ${tp.joints} tapered ends (${((Date.now() - t1) / 1000).toFixed(0)} s)`)
   }
   // /lab/staging1: graph5 below z11.4, graph4 from z11.4, at its own sizing
