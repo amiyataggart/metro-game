@@ -56,7 +56,7 @@ const VARIANTS = [
   // with only repeated stretches removed, snapped with /london's radii (see
   // WIDE_LINES): tight snapping is right for routed track geometry but wrong
   // for raw tube data, which /london's loose snap absorbs
-  { id: 'graph7', tubeRaw: 'dedupe', preSame: 60, dedupe: 20, d: 35, ribbon: { D: 35 / 3, D2: 70 / 3, GLOBAL_ORDER: 4 } },
+  { id: 'graph7', tubeRaw: 'dedupe', preSame: 12, dedupe: 12, d: 35, ribbon: { D: 35 / 3, D2: 70 / 3, GLOBAL_ORDER: 4 } },
   { id: 'graph5', d: MAP_W, sameLine: true, ribbon: { D: MAP_W, D2: 130, GLOBAL_ORDER: 4 }, bake: true },
 ]
 // experiments: VX='{"id":"graph4x","from":"graph4","ribbon":{...},...}' adds a
@@ -212,6 +212,7 @@ function smoothRaw(xy) {
 // (within RAW_DUP_M, near-parallel) by features already kept; keep its
 // uncovered runs (>= RAW_DUP_RUN m) with one point of overlap each side, which
 // cleanEnds() then joins onto the kept trunk.
+const DUP_PAR_COS = 0.97, DUP_MIN_COVER = 150
 const RAW_DUP_M = 40, RAW_DUP_RUN = 60, RAW_MEET_M = 6, RAW_FOLLOW_M = 300
 function dropDuplicateRaw(fc) {
   const items = fc.features.map((f) => ({ f, line: f.properties.line, st: '', xy: resample(f.geometry.coordinates.map(toXY), 10) }))
@@ -249,14 +250,31 @@ function dedupeXY(items, M) {
         let bd = Infinity, proj = null
         for (const [a, b] of grid.get(Math.floor(q[0] / CELL) + ',' + Math.floor(q[1] / CELL)) || []) {
           const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy
-          if (!L2 || Math.abs((dx * t[0] + dy * t[1]) / Math.sqrt(L2)) < 0.8) continue
+          if (!L2 || Math.abs((dx * t[0] + dy * t[1]) / Math.sqrt(L2)) < DUP_PAR_COS) continue
           const u = Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / L2))
           const pr = [a[0] + u * dx, a[1] + u * dy], d = dist(pr, q)
           if (d < bd) { bd = d; proj = pr }
         }
         return { d: bd, proj }
       })
+      // covered = genuinely running alongside: near-parallel and for at least
+      // DUP_MIN_COVER m; a shallow CROSSING of another route of the same line
+      // is not a duplicate (Great Northern's Moorgate branch crossing the main
+      // line at Arsenal lost a stretch and left a hook)
       const covered = near.map((n) => n.d < M)
+      {
+        let s0 = 0
+        for (let i = 1; i <= covered.length; i++) {
+          if (i < covered.length && covered[i] === covered[s0]) continue
+          if (covered[s0]) {
+            let L = 0
+            for (let k = s0 + 1; k < i; k++) L += dist(p.xy[k - 1], p.xy[k])
+            const touchesEnd = s0 === 0 || i === covered.length
+            if (L < DUP_MIN_COVER && !touchesEnd) for (let k = s0; k < i; k++) covered[k] = false
+          }
+          s0 = i
+        }
+      }
       // from a cut, follow the dropped stretch until it really meets the kept
       // line (< RAW_MEET_M; else its closest point within RAW_FOLLOW_M) and
       // end ON it, so the branch merges instead of stopping short
@@ -538,6 +556,53 @@ function bundle2(polys, d, noSnap, sameLine = false) {
     return { ...p, xy, frozen }
   })
   if (d <= STEP) return P
+  // Chains: a line's pieces joined end to end where exactly two of its pieces
+  // meet (stratum splits at portals, chain breaks). The displacement is
+  // smoothed along the whole chain and only the chain's real ends are pinned,
+  // so a joint never becomes a kink (pinning every piece end made a V where
+  // the pull differs across it: HS1's surface piece pulled toward the North
+  // London Line while its tunnel piece is not, at the York Way portal).
+  const chains = (() => {
+    const key = (q) => q[0].toFixed(1) + ',' + q[1].toFixed(1)
+    const ends = new Map()
+    P.forEach((p, pi) => {
+      for (const [q, atStart] of [[p.xy[0], true], [p.xy.at(-1), false]]) {
+        const k = p.line + '|' + key(q)
+        if (!ends.has(k)) ends.set(k, [])
+        ends.get(k).push({ pi, atStart })
+      }
+    })
+    const other = (pi, atStart) => {
+      const p = P[pi], q = atStart ? p.xy[0] : p.xy.at(-1)
+      const list = ends.get(p.line + '|' + key(q))
+      return list.length === 2 ? list.find((e) => e.pi !== pi || e.atStart !== atStart) : null
+    }
+    const used = new Uint8Array(P.length)
+    const out = []
+    const build = (pi) => {
+      // walk back to the chain start, then forward
+      let cur = { pi, rev: false }, guard = 0
+      for (;;) {
+        const o = other(cur.pi, !cur.rev) // the end we came from
+        if (!o || o.pi === pi || guard++ > P.length) break
+        cur = { pi: o.pi, rev: o.atStart } // entering o at its start -> walk it reversed when going back
+      }
+      const start = cur
+      const seq = [start]
+      used[start.pi] = 1
+      let c = start
+      for (;;) {
+        const o = other(c.pi, c.rev) // the far end of c in walking direction
+        if (!o || used[o.pi]) break
+        c = { pi: o.pi, rev: !o.atStart }
+        used[c.pi] = 1
+        seq.push(c)
+      }
+      return seq
+    }
+    P.forEach((_, pi) => { if (!used[pi]) out.push(build(pi)) })
+    return out
+  })()
   const COS = Math.cos((35 * Math.PI) / 180)
   const kernel = (r) => (1 - (r / d) ** 2) ** 2
   for (let it = 0; it < 10; it++) {
@@ -549,8 +614,8 @@ function bundle2(polys, d, noSnap, sameLine = false) {
       if (!grid.has(k)) grid.set(k, [])
       grid.get(k).push([pi, i])
     }))
-    const next = P.map((p, pi) => {
-      const disp = p.xy.map((q, i) => {
+    const raw = P.map((p, pi) => {
+      return p.xy.map((q, i) => {
         if (p.frozen[i]) return [0, 0]
         const t = tans[pi][i], nx = -t[1], ny = t[0]
         const cx = Math.floor(q[0] / d), cy = Math.floor(q[1] / d)
@@ -569,14 +634,28 @@ function bundle2(polys, d, noSnap, sameLine = false) {
         const off = so / sw
         return [off * nx, off * ny]
       })
-      const half = Math.max(1, Math.round(d / (2 * STEP)))
-      return p.xy.map((q, i) => {
-        if (i === 0 || i === p.xy.length - 1) return q // keep pieces joined
-        let sx = 0, sy = 0, c = 0
-        for (let k = Math.max(0, i - half); k <= Math.min(p.xy.length - 1, i + half); k++) { sx += disp[k][0]; sy += disp[k][1]; c++ }
-        return [q[0] + sx / c, q[1] + sy / c]
-      })
     })
+    // smooth along each chain (~d/2 window); pin only the chain's ends
+    const half = Math.max(1, Math.round(d / (2 * STEP)))
+    const next = P.map((p) => p.xy.map((q) => [q[0], q[1]]))
+    for (const seq of chains) {
+      const refs = [] // [[pi, i], ...] per chain point (a joint lists both pieces)
+      seq.forEach(({ pi, rev }, k) => {
+        const n = P[pi].xy.length
+        for (let j = 0; j < n; j++) {
+          const i = rev ? n - 1 - j : j
+          if (k > 0 && j === 0) refs[refs.length - 1].push([pi, i])
+          else refs.push([[pi, i]])
+        }
+      })
+      const D = refs.map((r) => { let x = 0, y = 0; for (const [pi, i] of r) { x += raw[pi][i][0]; y += raw[pi][i][1] } return [x / r.length, y / r.length] })
+      const m = refs.length
+      for (let a = 1; a < m - 1; a++) {
+        let sx = 0, sy = 0, c = 0
+        for (let k = Math.max(0, a - half); k <= Math.min(m - 1, a + half); k++) { sx += D[k][0]; sy += D[k][1]; c++ }
+        for (const [pi, i] of refs[a]) next[pi][i] = [P[pi].xy[i][0] + sx / c, P[pi].xy[i][1] + sy / c]
+      }
+    }
     P.forEach((p, pi) => (p.xy = next[pi]))
   }
   return P
