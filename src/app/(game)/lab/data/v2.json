@@ -1,0 +1,43 @@
+{
+  "fallbacks": [
+    "GreatWesternRailway: Wargrave -> Shiplake (no track near station)",
+    "GreatWesternRailway: Shiplake -> Henley-on-Thames (no track near station)"
+  ],
+  "failures": [],
+  "variants": {
+    "graph2": {
+      "d": 35,
+      "ribbon": {
+        "D": 11.666666666666666,
+        "D2": 23.333333333333332,
+        "NO_SNAP_DROP": [
+          {
+            "line": "Thameslink",
+            "radius": 5000
+          }
+        ],
+        "ORIENT_SPINES": true,
+        "EXIT_ORDER": true,
+        "STRATA": true
+      },
+      "features": 12660,
+      "taperedEnds": 6458
+    },
+    "graph3": {
+      "d": 0,
+      "ribbon": {
+        "NO_SNAP_DROP": [
+          {
+            "line": "Thameslink",
+            "radius": 5000
+          }
+        ],
+        "ORIENT_SPINES": true,
+        "EXIT_ORDER": true,
+        "STRATA": true
+      },
+      "features": 12144,
+      "taperedEnds": 6313
+    }
+  }
+}

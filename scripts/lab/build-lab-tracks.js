@@ -222,6 +222,35 @@ function makeRouter(G) {
   }
 }
 
+// Shortest track path (plain length) from node `u` to the track node nearest
+// station point `p` (within 80 m), if `u` is > 40 m from `p` and the path is
+// <= 800 m. Returns node ids or null.
+function makeExtender(G) {
+  const { X, Y, adj } = G
+  return (u, p) => {
+    if (Math.hypot(X[u] - p[0], Y[u] - p[1]) <= 40) return null
+    const tgt = G.near(p, 80)
+    if (!tgt.length) return null
+    const goal = tgt.reduce((b, j) => (Math.hypot(X[j] - p[0], Y[j] - p[1]) < Math.hypot(X[b] - p[0], Y[b] - p[1]) ? j : b))
+    const D = new Map([[u, 0]]), prev = new Map(), heap = [[0, u]]
+    while (heap.length) {
+      heap.sort((x, y) => y[0] - x[0])
+      const [d, v] = heap.pop()
+      if (v === goal) break
+      if (d > (D.get(v) ?? Infinity) || d > 800) continue
+      for (const w of adj[v]) {
+        const nd = d + Math.hypot(X[w] - X[v], Y[w] - Y[v])
+        if (nd < (D.get(w) ?? Infinity)) { D.set(w, nd); prev.set(w, v); heap.push([nd, w]) }
+      }
+    }
+    if (!prev.has(goal)) return null
+    const ids = [goal]
+    let c = goal
+    while (c !== u) { c = prev.get(c); ids.push(c) }
+    return ids.reverse()
+  }
+}
+
 // Fallback: shortest path along the line's OWN raw polylines (vertices every
 // <=50 m, polylines joined where within 30 m) between the vertices nearest two
 // stations. Returns metric coords or null.
@@ -274,7 +303,17 @@ function ownPathFinder(polys) {
   }
 }
 
-function routeLines(G, services, coordOf, ownGrid, ownPolys) {
+// opts.endK: weight on the station-distance part of the start/end cost (v1: 1).
+// Higher makes a route run on to the track nearest the station instead of
+// stopping early where the remaining track strays off the line's own geometry
+// (Cannon Street stopped mid-bridge, 330 m short). opts.lines: only route these.
+function routeLines(G, services, coordOf, ownGrid, ownPolys, opts = {}) {
+  const endK = opts.endK ?? 1
+  // opts.extendEnds: after routing, extend each service's FIRST/LAST stop
+  // along the shortest track path (<= 800 m) to the track nearest the station,
+  // where the route ends > 40 m short of it (termini whose raw geometry stops
+  // before the platforms: HS1 at St Pancras). Route choice is unchanged.
+  const extend = opts.extendEnds ? makeExtender(G) : null
   const { X, Y } = G
   const route = makeRouter(G)
   const edgesOf = new Map() // line -> Set("a:b")
@@ -288,6 +327,7 @@ function routeLines(G, services, coordOf, ownGrid, ownPolys) {
   for (const s of services) {
     const line = s.line
     if (PASSTHROUGH.has(line)) continue
+    if (opts.lines && !opts.lines.has(line)) continue
     if (!edgesOf.has(line)) edgesOf.set(line, new Set())
     const own = ownGrid.get(line)
     if (!nodeFactorFor.has(line)) {
@@ -309,7 +349,7 @@ function routeLines(G, services, coordOf, ownGrid, ownPolys) {
       if (c) {
         const p = toXY(c)
         for (const R of [300, 700]) {
-          out = G.near(p, R).map((j) => [j, Math.hypot(X[j] - p[0], Y[j] - p[1]) + 2 * (own ? own([X[j], Y[j]]) : 0)])
+          out = G.near(p, R).map((j) => [j, endK * Math.hypot(X[j] - p[0], Y[j] - p[1]) + 2 * (own ? own([X[j], Y[j]]) : 0)])
           if (out.length) break
         }
       }
@@ -357,14 +397,21 @@ function routeLines(G, services, coordOf, ownGrid, ownPolys) {
       }
       at = ids.at(-1)
       const set = edgesOf.get(line)
-      for (let i = 1; i < ids.length; i++) set.add(ids[i - 1] < ids[i] ? ids[i - 1] + ':' + ids[i] : ids[i] + ':' + ids[i - 1])
+      const addPath = (path) => { for (let i = 1; i < path.length; i++) set.add(path[i - 1] < path[i] ? path[i - 1] + ':' + path[i] : path[i] + ':' + path[i - 1]) }
+      addPath(ids)
+      if (extend) {
+        if (k === 1) addPath(extend(ids[0], toXY(coordOf.get(a + '|' + line))) || [])
+        if (k === s.stops.length - 1) addPath(extend(ids.at(-1), toXY(coordOf.get(b + '|' + line))) || [])
+      }
     }
   }
   return { edgesOf, failures, fallbacks, extraPolys }
 }
 
 // Per line: chains of its routed edges between junction/end nodes -> polylines (metric).
-function chains(G, edgeSet) {
+// straight: at a fork, carry on into the straightest continuation instead of
+// stopping, so a line's laneOff ramps smoothly through its own junctions.
+function chains(G, edgeSet, straight = false) {
   const adj = new Map()
   for (const k of edgeSet) {
     const [a, b] = k.split(':').map(Number)
@@ -378,8 +425,19 @@ function chains(G, edgeSet) {
     const ids = [start, next]
     used.add(ek(start, next))
     let prev = start, cur = next
-    while (adj.get(cur).length === 2) {
-      const nx = adj.get(cur).find((v) => v !== prev)
+    for (;;) {
+      let nx
+      if (adj.get(cur).length === 2) nx = adj.get(cur).find((v) => v !== prev)
+      else if (straight && adj.get(cur).length > 2) {
+        const ix = G.X[cur] - G.X[prev], iy = G.Y[cur] - G.Y[prev], il = Math.hypot(ix, iy) || 1
+        let bestCos = Math.cos((30 * Math.PI) / 180)
+        for (const v of adj.get(cur)) {
+          if (v === prev || used.has(ek(cur, v))) continue
+          const ox = G.X[v] - G.X[cur], oy = G.Y[v] - G.Y[cur], c = (ix * ox + iy * oy) / (il * (Math.hypot(ox, oy) || 1))
+          if (c > bestCos) { bestCos = c; nx = v }
+        }
+        if (nx == null) break
+      } else break
       if (used.has(ek(cur, nx))) break
       used.add(ek(cur, nx)); ids.push(nx); prev = cur; cur = nx
     }
@@ -687,7 +745,9 @@ function main() {
     levels: score(zooms, (z) => built[pick(z)], 'lane'),
     morph: score(zooms, () => morph, MORPH),
   }
-  fs.writeFileSync(path.join(OUTDIR, 'scores.json'), JSON.stringify(cards, null, 2))
+  // merge: build-lab-v2.js adds its own variants to the same file
+  const prevCards = fs.existsSync(path.join(OUTDIR, 'scores.json')) ? JSON.parse(fs.readFileSync(path.join(OUTDIR, 'scores.json'), 'utf8')) : {}
+  fs.writeFileSync(path.join(OUTDIR, 'scores.json'), JSON.stringify({ ...prevCards, ...cards }, null, 2))
   console.log('\nscorecard: overlap km / parallel crossings, by zoom')
   console.log('            ' + zooms.map((z) => ('z' + z).padStart(12)).join(''))
   for (const [k, c] of Object.entries(cards)) console.log(k.padEnd(12) + zooms.map((z) => `${c[z].overlapKm.toFixed(1)} / ${c[z].twists}`.padStart(12)).join(''))
@@ -695,4 +755,4 @@ function main() {
 }
 
 if (require.main === module) main()
-module.exports = { bundle, resample, loadGraph, makeRouter, segGrid, factor, loadServices }
+module.exports = { bundle, resample, tangentsOf, simplify, loadGraph, makeRouter, segGrid, factor, loadServices, routeLines, chains, ribbons, readTracks, toXY, toLL, dist, PASSTHROUGH, WORK }
