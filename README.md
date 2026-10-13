@@ -107,6 +107,8 @@ src/
         aliases.ts, gb-station-names.json  # matcher aliases and decoy station names
         london-mask.json          # Greater London grey-out mask (+ city-of-london.json outline)
         stations-extras.json      # (legacy) National-Rail TOC stations from OSM
+    (game)/lab/                    # /lab: experimental line-geometry variants (graph, levels,
+                                   # morph) + lander; data/ built by scripts/lab/ (see "Lab")
   lib/matching/                    # the guess matcher (+ unit tests)
   components/                      # GamePage, LinePicker, Timer, FoundSummary, Input, SettingsModal, ...
 scripts/                           # data pipeline + QA harness (see below)
@@ -291,6 +293,25 @@ node scripts/qa-junctions.js [route]     # drives the in-app search to screensho
 ```
 
 (`qa/` output is gitignored.)
+
+## Lab (experimental line geometry)
+
+`/lab` lists experimental versions of the map; each is the full game (own saved
+progress) with different line geometry, plus an on-map panel (zoom, active level,
+overlap/crossing scorecard vs `/london`). `/london` is unaffected.
+
+```sh
+# track data (committed: scripts/lab/data/tracks.json.gz, OSM rail+subway+light_rail)
+osmium tags-filter ... ; osmium merge ... ; osmium cat -f opl ...   # see fetch-lab-tracks.js header
+node scripts/lab/fetch-lab-tracks.js --opl all-rail.opl --osm-base <timestamp>   # or no args: Overpass (slow)
+node scripts/lab/build-lab-tracks.js      # route every service over the track graph, bundle at
+                                          # 4 radii, build-ribbons per level, align levels, morph
+                                          # data, scorecard -> src/app/(game)/lab/data/
+node scripts/lab/render.js <variant> <lng,lat> <zoom> [name] [WxH]   # browser-free PNG -> qa/out/lab/
+```
+
+`build-ribbons.js` gained lab-only options (`--config` JSON; `ORIENT_SPINES`,
+`EMIT_SPINE`), all off by default, so the `/london` build is byte-identical.
 
 ## Configuration
 

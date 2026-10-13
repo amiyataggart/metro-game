@@ -59,14 +59,91 @@ const tripleStripeOffsetExpr = (side: -1 | 1) =>
     ]),
   ] as unknown as maplibregl.ExpressionSpecification
 
+// ---- /lab track-geometry experiments (unused by /london) ----
+// A route level is one geometry set shown over a zoom range; the finer level
+// (later in the list) fades in over the coarser one across ±LEVEL_FADE zoom.
+export type RouteLevel = {
+  id: string
+  routes: RoutesFeatureCollection
+  minzoom?: number
+  maxzoom?: number
+}
+// Morph: features carry `dm` (m to the same line's bundled corridor, + = right)
+// and `lc` (bundled lane); line-offset blends from bundled (z <= zCoarse) to
+// true track + `laneOff` (z >= zFine). Must match scripts/lab/score.js.
+export type MorphConfig = { zCoarse: number; zFine: number }
+const LEVEL_FADE = 0.25
+const widthAt = (z: number) => {
+  if (z <= WIDTH_STOPS[0][0]) return WIDTH_STOPS[0][1]
+  for (let i = 1; i < WIDTH_STOPS.length; i++)
+    if (z <= WIDTH_STOPS[i][0]) {
+      const [z0, w0] = WIDTH_STOPS[i - 1]
+      const [z1, w1] = WIDTH_STOPS[i]
+      return w0 + ((w1 - w0) * (z - z0)) / (z1 - z0)
+    }
+  return WIDTH_STOPS[WIDTH_STOPS.length - 1][1]
+}
+// metres per CSS pixel (512-px tiles) at London's latitude
+const mppAt = (z: number) => (78271.517 * Math.cos((51.5 * Math.PI) / 180)) / 2 ** z
+// line-offset for morph mode; `widthFrac` adds ±W/5 for the triple stripe
+// The blend is linear in GROUND space between bundled and true positions
+// (t linear in zoom), sampled every half zoom level across the blend.
+const morphOffsetExpr = (cfg: MorphConfig, widthFrac = 0) => {
+  const lf = ['coalesce', ['get', 'laneOff'], 0]
+  const blend: number[] = []
+  for (let z = cfg.zCoarse; z < cfg.zFine; z += 0.5) blend.push(z)
+  const stops = Array.from(new Set([6, 7, 8, 9, 10, 11, ...blend, cfg.zFine, 18, 22])).sort((a, b) => a - b)
+  return [
+    'interpolate', ['linear'], ['zoom'],
+    ...stops.flatMap((z) => {
+      const t = Math.max(0, Math.min(1, (z - cfg.zCoarse) / (cfg.zFine - cfg.zCoarse)))
+      const w = widthAt(z)
+      return [
+        z,
+        ['+',
+          ['*', ['coalesce', ['get', 'dm'], 0], (1 - t) / mppAt(z)],
+          ['*', ['coalesce', ['get', 'lc'], lf], (1 - t) * w],
+          ['*', lf, t * w],
+          widthFrac * w],
+      ]
+    }),
+  ] as unknown as maplibregl.ExpressionSpecification
+}
+// Per-level opacity: fade in at minzoom (over the coarser level), out at maxzoom.
+const levelOpacity = (lv: RouteLevel, op: number) => {
+  const stops: number[] = []
+  if (lv.minzoom != null && lv.minzoom > 0) stops.push(lv.minzoom - LEVEL_FADE, 0, lv.minzoom + LEVEL_FADE, op)
+  if (lv.maxzoom != null && lv.maxzoom < 24) {
+    if (!stops.length) stops.push(lv.maxzoom - LEVEL_FADE, op)
+    stops.push(lv.maxzoom + LEVEL_FADE, op) // stay opaque under the finer level's fade-in
+  }
+  return stops.length
+    ? (['interpolate', ['linear'], ['zoom'], ...stops] as unknown as maplibregl.ExpressionSpecification)
+    : op
+}
+const levelZoomRange = (lv: RouteLevel) => ({
+  ...(lv.minzoom != null && lv.minzoom > 0 ? { minzoom: lv.minzoom - LEVEL_FADE } : {}),
+  ...(lv.maxzoom != null && lv.maxzoom < 24 ? { maxzoom: lv.maxzoom + LEVEL_FADE } : {}),
+})
+const levelPrefix = (lv: RouteLevel) => (lv.id ? `lines-${lv.id}` : 'lines')
+
 export default function GamePage({
   fc,
   routes,
+  routeLevels,
+  morph,
+  onMap,
   maskData,
   cityData,
 }: {
   fc: DataFeatureCollection
   routes?: RoutesFeatureCollection
+  /** /lab only: several geometry sets by zoom (overrides `routes`). */
+  routeLevels?: RouteLevel[]
+  /** /lab only: zoom-blended line-offset (needs `dm`/`lc` on features). */
+  morph?: MorphConfig
+  /** /lab only: called once the map is ready (e.g. for a zoom readout). */
+  onMap?: (m: maplibregl.Map) => void
   maskData?: any
   cityData?: any
 }) {
@@ -371,7 +448,8 @@ export default function GamePage({
         })
       }
 
-      if (routes) {
+      const levels: RouteLevel[] = routeLevels ?? (routes ? [{ id: '', routes }] : [])
+      if (levels.length) {
         // PARALLEL RIBBONS (offset mode). build-ribbons.js --mode offset places
         // every co-running line on a SHARED corridor centreline (so their
         // geometries coincide and their tangents match) and stamps each output
@@ -384,13 +462,13 @@ export default function GamePage({
         // amount at every zoom, so the lower line is never hidden when zoomed
         // out and the geometry stays on the true track.
 
-        m.addSource('lines', { type: 'geojson', data: routes })
+        for (const lv of levels) m.addSource(levelPrefix(lv), { type: 'geojson', data: lv.routes })
         // Render-time parallel-ribbon separation, shared by every base + stripe
         // layer: each feature carries a signed `laneOff` (lane units); we offset by
         // laneOff × the zoom-scaled line width so adjacent ribbons sit one width
         // apart — a CONSTANT screen amount at every zoom (never hide when zoomed
         // out) while geometry stays on the true track. +offset = right of line dir.
-        const lineOffset = LINE_OFFSET_EXPR
+        const lineOffset = morph ? morphOffsetExpr(morph) : LINE_OFFSET_EXPR
         // ~50% thicker than the previous pass; white stripes ~1/3 of that.
         const lineWidth = LINE_WIDTH_EXPR
         const stripeWidth = [
@@ -422,16 +500,21 @@ export default function GamePage({
         // stripe(s) immediately above it. This keeps a line's dashes at the line's
         // own depth, so (e.g.) Thameslink and its dashes pass UNDER the tube ribbons
         // instead of the dashes floating on top of them.
-        for (const band of zBands) {
+        // (/lab/levels: within each band, coarser levels first so the finer one
+        // fades in on top.)
+        for (const band of zBands) for (const lv of levels) {
           const bandSortKey = band.id === 'ug' ? ugSortKey : sortKey
+          const src = levelPrefix(lv)
+          const zr = levelZoomRange(lv)
           m.addLayer({
-            id: `lines-${band.id}`,
+            id: `${src}-${band.id}`,
             type: 'line',
-            source: 'lines',
+            source: src,
+            ...zr,
             filter: inKeys(band.keys),
             paint: {
               'line-color': lineColor,
-              'line-opacity': 0.95,
+              'line-opacity': levelOpacity(lv, 0.95),
               'line-width': lineWidth,
               'line-offset': lineOffset,
             },
@@ -441,11 +524,12 @@ export default function GamePage({
           const dashes = band.keys.filter((k) => LINES[k].stripe === 'dashed')
           if (solids.length) {
             m.addLayer({
-              id: `lines-${band.id}-stripe-solid`,
+              id: `${src}-${band.id}-stripe-solid`,
               type: 'line',
-              source: 'lines',
+              source: src,
+            ...zr,
               filter: inKeys(solids),
-              paint: { 'line-color': '#ffffff', 'line-width': stripeWidth, 'line-offset': lineOffset },
+              paint: { 'line-color': '#ffffff', 'line-width': stripeWidth, 'line-offset': lineOffset, 'line-opacity': levelOpacity(lv, 1) },
               layout: { 'line-sort-key': bandSortKey, 'line-cap': 'round', 'line-join': 'round' },
             })
           }
@@ -458,15 +542,17 @@ export default function GamePage({
               '#ffffff',
             ] as unknown as maplibregl.ExpressionSpecification
             m.addLayer({
-              id: `lines-${band.id}-stripe-dashed`,
+              id: `${src}-${band.id}-stripe-dashed`,
               type: 'line',
-              source: 'lines',
+              source: src,
+            ...zr,
               filter: inKeys(dashes),
               paint: {
                 'line-color': dashColor,
                 'line-width': stripeWidth,
                 'line-dasharray': [3, 2.5],
                 'line-offset': lineOffset,
+                'line-opacity': levelOpacity(lv, 1),
               },
               layout: { 'line-sort-key': bandSortKey, 'line-cap': 'butt', 'line-join': 'round' },
             })
@@ -475,14 +561,16 @@ export default function GamePage({
           if (triples.length) {
             for (const [suffix, side] of [['a', -1], ['b', 1]] as const) {
               m.addLayer({
-                id: `lines-${band.id}-stripe-triple-${suffix}`,
+                id: `${src}-${band.id}-stripe-triple-${suffix}`,
                 type: 'line',
-                source: 'lines',
+                source: src,
+            ...zr,
                 filter: inKeys(triples),
                 paint: {
                   'line-color': '#ffffff',
                   'line-width': TRIPLE_STRIPE_WIDTH_EXPR,
-                  'line-offset': tripleStripeOffsetExpr(side),
+                  'line-offset': morph ? morphOffsetExpr(morph, side / 5) : tripleStripeOffsetExpr(side),
+                  'line-opacity': levelOpacity(lv, 1),
                 },
                 layout: { 'line-sort-key': bandSortKey, 'line-cap': 'butt', 'line-join': 'round' },
               })
@@ -778,6 +866,7 @@ export default function GamePage({
 
       m.once('idle', () => {
         setMap((prev) => (prev === null ? m : prev))
+        onMap?.(m)
         m.on('mousemove', 'stations-circles', (e) => {
           if (e.features && e.features.length > 0) {
             const feature = e.features.find((f) => f.state.found && f.id)
@@ -827,7 +916,8 @@ export default function GamePage({
     // own band-key (and stripe-type) filter, so toggling lines hides them in place.
     const allowed = allLineKeys.filter((k) => enabledLines[k])
     const allowedIn = ['in', ['get', 'line'], ['literal', allowed]]
-    for (const band of zBands) {
+    const prefixes = routeLevels ? routeLevels.map(levelPrefix) : ['lines']
+    for (const band of zBands) for (const src of prefixes) {
       const solids = band.keys.filter((k) => LINES[k].stripe === 'solid')
       const dashes = band.keys.filter((k) => LINES[k].stripe === 'dashed')
       const set = (id: string, keys: string[]) => {
@@ -838,16 +928,16 @@ export default function GamePage({
             ['in', ['get', 'line'], ['literal', keys]],
           ] as unknown as maplibregl.FilterSpecification)
       }
-      set(`lines-${band.id}`, band.keys)
-      if (solids.length) set(`lines-${band.id}-stripe-solid`, solids)
-      if (dashes.length) set(`lines-${band.id}-stripe-dashed`, dashes)
+      set(`${src}-${band.id}`, band.keys)
+      if (solids.length) set(`${src}-${band.id}-stripe-solid`, solids)
+      if (dashes.length) set(`${src}-${band.id}-stripe-dashed`, dashes)
       const triples = band.keys.filter((k) => LINES[k].stripe === 'triple')
       if (triples.length) {
-        set(`lines-${band.id}-stripe-triple-a`, triples)
-        set(`lines-${band.id}-stripe-triple-b`, triples)
+        set(`${src}-${band.id}-stripe-triple-a`, triples)
+        set(`${src}-${band.id}-stripe-triple-b`, triples)
       }
     }
-  }, [map, lineFilter, allLineKeys, enabledLines, zBands, LINES])
+  }, [map, lineFilter, allLineKeys, enabledLines, zBands, LINES, routeLevels])
 
   // Toggle base layer visibility. `undefined` (pre-localStorage hydration)
   // is treated as the default (visible) — otherwise the layer briefly hides

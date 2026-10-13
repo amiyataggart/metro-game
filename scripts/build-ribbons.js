@@ -146,6 +146,13 @@ const CONFIG = {
   MIN_SHARED_NODES: 2, // a line bundles onto a spine only if they share at
   // least this many CONSECUTIVE station nodes (>=2 ⇒ they co-run a segment,
   // not just cross at one station).
+  ORIENT_SPINES: false, // lab: orient neighbouring spines consistently so a
+  // group of lines passing from one spine to the next keeps its side order
+  // (spines laid in opposite directions otherwise mirror the lanes -> the
+  // pair crosses at the hand-over). Off by default: /london is unchanged.
+  ORIENT_GAP: 300, // m: only link spines a line moves between within this gap
+  EMIT_SPINE: false, // lab: tag each offset-mode feature with its spine id
+  // (`spine`, -1 = solo) so lab zoom levels can be aligned corridor by corridor
   OFFSET_SMOOTH_WIN: 24, // offset-mode: window (samples) for smoothing laneOff
   // along a feature. Larger = steadier offset through dense junctions (less
   // "wobble", e.g. Thameslink at Finsbury Park) at the cost of longer ramps.
@@ -565,12 +572,22 @@ function parseArgs() {
     else if (a[i] === '--mode') o.mode = a[++i] // 'offset' (default) | 'baked'
     else if (a[i] === '--force') o.force = true // allow building from processed input
     else if (a[i] === '--no-clip') o.noClip = true // skip the scope clip (diagnostics)
+    // Lab experiments (scripts/lab/): JSON CONFIG overrides, plus an optional
+    // `disable` list of override tables to empty, e.g.
+    // '{"D":12,"D2":12,"disable":["NO_SNAP"]}'. Default builds never pass it.
+    else if (a[i] === '--config') o.config = JSON.parse(a[++i])
   }
   return o
 }
 
 function main() {
   const args = parseArgs()
+  if (args.config) {
+    const { disable = [], ...cfg } = args.config
+    Object.assign(CONFIG, cfg)
+    const tables = { ORDER_OVERRIDES, NO_SNAP, FORCE_SNAP, NUDGE }
+    for (const t of disable) tables[t].length = 0
+  }
   ORDER_OVERRIDES.forEach((o) => (o.atXY = toXY(o.at)))
   NO_SNAP.forEach((o) => (o.atXY = toXY(o.at)))
   FORCE_SNAP.forEach((o) => (o.atXY = toXY(o.at)))
@@ -920,6 +937,62 @@ function main() {
     return { pt, normal: [nx / L, ny / L] }
   }
 
+  // ---- consistent spine orientation (CONFIG.ORIENT_SPINES) ----
+  // For each line moving from spine P (traversed in direction dp) to spine Q
+  // (dq) within ORIENT_GAP, its lane side is preserved iff signP*dp ==
+  // signQ*dq, i.e. signQ = signP * dp * dq. Votes per spine pair (weighted by
+  // run length) are resolved greedily from the longest spines outward.
+  if (CONFIG.ORIENT_SPINES) {
+    const votes = new Map() // spineId -> Map(otherId -> parity weight sum)
+    const vote = (a, b, parity, w) => {
+      if (a === b) return
+      for (const [x, y] of [[a, b], [b, a]]) {
+        if (!votes.has(x)) votes.set(x, new Map())
+        votes.get(x).set(y, (votes.get(x).get(y) || 0) + parity * w)
+      }
+    }
+    for (const f of lineFeats) {
+      const segs = f.segments.filter((g) => g.kind !== 'solo').map((g) => {
+        const sp = spines[g.spineId]
+        const dir = g.kind === 'own' ? 1 : projectArc(sp, f.xy[g.hi]) - projectArc(sp, f.xy[g.lo]) >= 0 ? 1 : -1
+        return { ...g, dir, len: f.cum[g.hi] - f.cum[g.lo] }
+      })
+      for (let k = 1; k < segs.length; k++) {
+        const a = segs[k - 1], b = segs[k]
+        if (f.cum[b.lo] - f.cum[a.hi] > CONFIG.ORIENT_GAP) continue
+        vote(a.spineId, b.spineId, a.dir * b.dir, Math.min(a.len, b.len) + 1)
+      }
+    }
+    const order = spines.map((sp) => sp.id).sort((a, b) => spines[b].cum.at(-1) - spines[a].cum.at(-1) || a - b)
+    const assigned = new Set()
+    // Canonical anchor: a component's seed gets the sign whose lane frame
+    // points north (or east on a north–south seed), so separate builds of
+    // similar geometry (lab zoom levels) agree on which side each lane is.
+    const canonicalSign = (sp) => {
+      const t = sp.tan[Math.floor(sp.tan.length / 2)]
+      const n = [-t[1], t[0]] // left normal = +lane side
+      return n[1] > 0.2 || (n[1] >= -0.2 && n[0] > 0) ? 1 : -1
+    }
+    for (const seed of order) {
+      if (assigned.has(seed)) continue
+      spines[seed].sign = canonicalSign(spines[seed])
+      assigned.add(seed)
+      const queue = [seed]
+      while (queue.length) {
+        const u = queue.shift()
+        const nbrs = [...(votes.get(u) || new Map()).keys()].filter((v) => !assigned.has(v)).sort((a, b) => a - b)
+        for (const v of nbrs) {
+          // sum the votes from every already-assigned neighbour of v
+          let tally = 0
+          for (const [w, par] of votes.get(v)) if (assigned.has(w)) tally += spines[w].sign * par
+          spines[v].sign = tally >= 0 ? 1 : -1
+          assigned.add(v)
+          queue.push(v)
+        }
+      }
+    }
+  }
+
   // ---- lane packing per spine (per BIN, sorted by order) ----
   for (const sp of spines) {
     const total = sp.cum.at(-1)
@@ -1048,8 +1121,10 @@ function main() {
     const snap = []
     for (let i = 0; i < n; i++) snap.push([0, 0])
     const offv = new Float64Array(n)
+    const sid = new Int32Array(n).fill(-1)
     for (const seg of f.segments) {
       if (seg.kind === 'solo') continue
+      for (let i = seg.lo; i <= seg.hi; i++) sid[i] = seg.spineId
       const sp = spines[seg.spineId]
       let dir = 1
       if (seg.kind !== 'own') {
@@ -1087,10 +1162,10 @@ function main() {
     const Q = CONFIG.OFFSET_QUANT
     const out = []
     let start = 0
-    const keyAt = (i) => Math.round(offS[i] / Q)
+    const keyAt = CONFIG.EMIT_SPINE ? (i) => Math.round(offS[i] / Q) + ':' + sid[i] : (i) => Math.round(offS[i] / Q)
     for (let i = 1; i <= n; i++) {
       if (i === n || keyAt(i) !== keyAt(start)) {
-        out.push({ coords: pos.slice(start, Math.min(n, i + 1)), off: keyAt(start) * Q })
+        out.push({ coords: pos.slice(start, Math.min(n, i + 1)), off: Math.round(offS[start] / Q) * Q, spine: sid[start] })
         start = i
       }
     }
@@ -1207,7 +1282,7 @@ function main() {
         if (simp.length < 2) continue
         outFeatures.push({
           type: 'Feature',
-          properties: { ...orig.properties, offset: 0, laneOff: round(seg.off) },
+          properties: { ...orig.properties, offset: 0, laneOff: round(seg.off), ...(CONFIG.EMIT_SPINE ? { spine: seg.spine } : {}) },
           geometry: { type: 'LineString', coordinates: toOut(simp) },
         })
       }

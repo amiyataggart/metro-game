@@ -14,6 +14,12 @@ _Updated 2026-10-13 · branch `feature/coverage-matching` (network-coverage-and-
 
 ## Latest changes (action → result)
 
+- **Track-geometry lab (2026-10-13, branch `lab/track-geometry`).** Audit: today's ribbons guess corridors by distance (34 m snap) while a line is ~17–96 m wide on screen (z14–z11), so neighbouring tracks overlap when zoomed out and braid where they swap sides; lanes re-pack whenever a line joins/leaves (5.6k pieces, ~3.3k under 50 m); lane order is local, patched by hand rules. New `/lab` (lander + `/lab/graph`, `/lab/levels`, `/lab/morph`) built by `scripts/lab/`:
+  - every service routed stop-to-stop over the real OSM track graph (Geofabrik extract → `scripts/lab/data/tracks.json.gz`, 1.6 MB), multi-candidate station snapping, penalised off the line's own geometry; 3 stop pairs fall back to own geometry (Henley branch outside the tiles; Bank–London Bridge);
+  - mean-shift bundling at 12 / 35 / 90 / 220 m, then `build-ribbons` per level with a new consistent spine orientation (`ORIENT_SPINES`, canonical north/east anchor; also cuts `/london` crossings ~20% if enabled there, not enabled yet);
+  - scorecard (overlap km / parallel crossings, z11–z15): Graph beats the current game at every zoom (z13: 24 km / 309 vs 46 km / 410); Levels best when zoomed out (z11–12) but its fine level (z15) overlaps more and its fades can swap lines; Morph's mid-zoom blend still passes lines through each other (z13: 134 km).
+  - Tried and dropped: geographic lane ordering (lane order flickers where true tracks interleave: doubled overlap); flat bundling kernel (more crossings). Next step if pursued: network-wide crossing-minimising lane order (LOOM-style), which also fixes level/morph swaps.
+
 - **Dev feedback (2026-10-13).**
   - London Northwestern and the Cable Car were never drawn: GamePage's category z-bands didn't list them. Both are now banded (Cable Car in its own band), and any line missing from a band now falls into the National Rail band so a new line can't be silently invisible.
   - Cable Car drawn as on the tube map: new `stripe: 'triple'` (two thin white lines inside the red ribbon → three thin red lines with white infill), also in the legend swatch and roundel.
