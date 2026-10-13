@@ -1,0 +1,110 @@
+{
+  "london": {
+    "11": {
+      "overlapKm": 117.4,
+      "twists": 556,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 76.3,
+      "twists": 465,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 46.3,
+      "twists": 410,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 24.9,
+      "twists": 412,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 15,
+      "twists": 428,
+      "widthM": 9.5
+    }
+  },
+  "graph": {
+    "11": {
+      "overlapKm": 81.5,
+      "twists": 517,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 42.2,
+      "twists": 416,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 24.1,
+      "twists": 309,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 18.3,
+      "twists": 234,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 15.3,
+      "twists": 231,
+      "widthM": 9.5
+    }
+  },
+  "levels": {
+    "11": {
+      "overlapKm": 37.6,
+      "twists": 833,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 24.2,
+      "twists": 387,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 25.3,
+      "twists": 442,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 19.6,
+      "twists": 345,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 37.2,
+      "twists": 743,
+      "widthM": 9.5
+    }
+  },
+  "morph": {
+    "11": {
+      "overlapKm": 41.4,
+      "twists": 552,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 25.9,
+      "twists": 406,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 133.6,
+      "twists": 633,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 105.2,
+      "twists": 704,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 38.5,
+      "twists": 733,
+      "widthM": 9.5
+    }
+  }
+}

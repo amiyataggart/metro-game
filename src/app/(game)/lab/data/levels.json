@@ -1,0 +1,42 @@
+{
+  "levels": [
+    {
+      "id": "l0",
+      "d": 12,
+      "minzoom": 14.5,
+      "maxzoom": 24
+    },
+    {
+      "id": "l1",
+      "d": 35,
+      "minzoom": 13,
+      "maxzoom": 14.5
+    },
+    {
+      "id": "l2",
+      "d": 90,
+      "minzoom": 11.75,
+      "maxzoom": 13
+    },
+    {
+      "id": "l3",
+      "d": 220,
+      "minzoom": 0,
+      "maxzoom": 11.75
+    }
+  ],
+  "graphLevel": "l1",
+  "morph": {
+    "fine": "l0",
+    "coarse": "l2",
+    "dmQuant": 3,
+    "zCoarse": 12,
+    "zFine": 14.5
+  },
+  "fallbacks": [
+    "GreatWesternRailway: Wargrave -> Shiplake (no track near station)",
+    "GreatWesternRailway: Shiplake -> Henley-on-Thames (no track near station)",
+    "Northern: Bank -> London Bridge (strays 307 m off own geometry)"
+  ],
+  "failures": []
+}

@@ -55,3 +55,6 @@ public/stats/*
 
 # superpowers SDD workspace (agent scratch)
 /.superpowers/
+
+# lab track-experiment OSM tile cache
+/scripts/lab/.cache/
