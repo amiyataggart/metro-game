@@ -124,12 +124,11 @@ export const services: Service[] = [
   // knowledge-only stops: Cambridge South
   {
     line: 'GreatNorthern',
-    name: 'King\'s Cross – Cambridge North (King\'s Lynn service, cut at Cambridge North)',
+    name: 'King\'s Cross – Cambridge (King\'s Lynn service, cut at Cambridge)',
     stops: [
       'London King\'s Cross',
       'Cambridge South',
       'Cambridge',
-      'Cambridge North',
     ],
   },
 ]

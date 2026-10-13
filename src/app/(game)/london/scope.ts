@@ -3,8 +3,9 @@
  *
  * Rule: Greater London plus selected commuter destinations. Explicitly OUT
  * (user): Basingstoke, Medway towns, Milton Keynes, Colchester, Tunbridge
- * Wells / Tonbridge. Peterborough branch cut at Hitchin; Cambridge, Cambridge
- * South and Cambridge North are IN.
+ * Wells / Tonbridge. Peterborough branch cut at Hitchin; Cambridge and Cambridge
+ * South are IN; lines terminate at Cambridge (Cambridge North dropped
+ * 2026-10-13, user decision).
  *
  * Used at build time: scripts/build-stations.js (stations come only from the
  * scoped service tables) and scripts/clip-to-scope.js (route geometry of the
@@ -36,14 +37,13 @@ export const FULL_LINES = new Set<string>([
  *  - Southeastern "Sevenoaks (both routes)": Southeastern trains on the Otford
  *    route continue to Maidstone East, so they are cut at Otford; the Chatham
  *    main line (Victoria – Gillingham) is cut at Swanley.
- *  - Eurostar keeps St Pancras International only (line drawn to Ebbsfleet).
  */
 export const END_STATIONS: Record<string, string[]> = {
   Thameslink: [
     'Bedford', 'Luton', 'Cambridge', 'Hitchin', 'Brighton', 'Horsham', 'East Grinstead',
     'Sevenoaks', 'Orpington', 'Gravesend', 'Sutton',
   ],
-  GreatNorthern: ['Welwyn Garden City', 'Hitchin', 'Stevenage', 'Cambridge North'],
+  GreatNorthern: ['Welwyn Garden City', 'Hitchin', 'Stevenage', 'Cambridge'],
   Southern: [
     'Brighton', 'Horsham', 'East Grinstead', 'Hurst Green', 'Redhill', 'Reigate',
     'Epsom Downs', 'Tattenham Corner', 'Caterham', 'Watford Junction',
@@ -57,18 +57,15 @@ export const END_STATIONS: Record<string, string[]> = {
   Chiltern: ['High Wycombe', 'Aylesbury'],
   LondonNorthwestern: ['Tring', 'St Albans Abbey'],
   EastMidlandsRailway: ['Bedford'],
-  GreaterAnglia: ['Chelmsford', 'Southend Victoria', 'Hertford East', 'Stansted Airport', 'Cambridge North'],
+  GreaterAnglia: ['Chelmsford', 'Southend Victoria', 'Hertford East', 'Stansted Airport', 'Cambridge'],
   Southeastern: ['Sevenoaks', 'Otford', 'Swanley', 'Gravesend', 'Dartford', 'Hayes', 'Bromley North', 'Orpington'],
   SoutheasternHighSpeed: ['Ebbsfleet International', 'Gravesend'],
-  Eurostar: ['St Pancras International'],
 }
 
 /**
  * Line -> stations (of other lines) its geometry is drawn on to although it is
  * not playable there. The clip keeps the track between the line's own stations
- * and these. Eurostar is playable at St Pancras International only but drawn
- * to Ebbsfleet International (spec §3).
+ * and these. Currently none (Eurostar was removed 2026-10-13: HS1 is already
+ * covered by Southeastern high speed).
  */
-export const DRAWN_TO: Record<string, string[]> = {
-  Eurostar: ['Ebbsfleet International'],
-}
+export const DRAWN_TO: Record<string, string[]> = {}

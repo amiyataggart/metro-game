@@ -11,7 +11,6 @@ import { services as DLR } from './DLR'
 import { services as District } from './District'
 import { services as EastMidlandsRailway } from './EastMidlandsRailway'
 import { services as ElizabethLine } from './ElizabethLine'
-import { services as Eurostar } from './Eurostar'
 import { services as GatwickExpress } from './GatwickExpress'
 import { services as GreatNorthern } from './GreatNorthern'
 import { services as GreatWesternRailway } from './GreatWesternRailway'
@@ -51,7 +50,6 @@ export const SERVICES_BY_LINE: Record<string, Service[]> = {
   District,
   EastMidlandsRailway,
   ElizabethLine,
-  Eurostar,
   GatwickExpress,
   GreatNorthern,
   GreatWesternRailway,

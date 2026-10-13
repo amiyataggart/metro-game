@@ -12,7 +12,7 @@ describe('defaultEnabledLines', () => {
     expect(on).toEqual([...tfl, 'Thameslink', 'CableCar'].sort())
   })
   it('keeps Trams and the other National Rail lines off', () => {
-    for (const k of ['Tramlink', 'GreaterAnglia', 'Southern', 'Southeastern', 'HeathrowExpress', 'C2c', 'Eurostar', 'LondonNorthwestern'])
+    for (const k of ['Tramlink', 'GreaterAnglia', 'Southern', 'Southeastern', 'HeathrowExpress', 'C2c', 'LondonNorthwestern'])
       expect(d[k], k).toBe(false)
   })
   it('covers every line key', () => expect(Object.keys(d).sort()).toEqual(Object.keys(LINES).sort()))

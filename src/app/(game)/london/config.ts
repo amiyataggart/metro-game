@@ -281,20 +281,13 @@ export const LINES: {
     order: 33,
     stripe: 'dashed',
   },
-  Eurostar: {
-    name: 'Eurostar',
-    color: '#FFDE2A',
-    backgroundColor: '#8a7600',
-    textColor: '#222',
-    order: 34,
-    stripe: 'dashed',
-  },
   CableCar: {
     name: 'London Cable Car',
     color: '#E21836',
     backgroundColor: '#7a0d1d',
     textColor: '#fff',
     order: 35,
+    stripe: 'triple',
   },
 }
 

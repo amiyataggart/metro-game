@@ -15556,22 +15556,6 @@
     },
     {
       "type": "Feature",
-      "id": 1864,
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.1593093,
-          52.2252575
-        ]
-      },
-      "properties": {
-        "id": 1864,
-        "name": "Cambridge North",
-        "line": "GreatNorthern"
-      }
-    },
-    {
-      "type": "Feature",
       "id": 1871,
       "geometry": {
         "type": "Point",
@@ -16287,22 +16271,6 @@
       "properties": {
         "id": 1917,
         "name": "Roydon",
-        "line": "GreaterAnglia"
-      }
-    },
-    {
-      "type": "Feature",
-      "id": 1918,
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.1593093,
-          52.2252575
-        ]
-      },
-      "properties": {
-        "id": 1918,
-        "name": "Cambridge North",
         "line": "GreaterAnglia"
       }
     },
@@ -18079,27 +18047,6 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          -0.127105,
-          51.5312861
-        ]
-      },
-      "properties": {
-        "id": 2050,
-        "name": "St Pancras International",
-        "line": "Eurostar",
-        "alternate_names": [
-          "London St Pancras",
-          "St Pancras Int",
-          "St P International"
-        ]
-      },
-      "id": 2050
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
           0.131274,
           52.174033
         ]
@@ -19546,7 +19493,7 @@
     }
   ],
   "properties": {
-    "totalStations": 1211,
+    "totalStations": 1208,
     "stationsPerLine": {
       "Bakerloo": 25,
       "ElizabethLine": 41,
@@ -19576,13 +19523,12 @@
       "Southeastern": 79,
       "HeathrowExpress": 3,
       "EastMidlandsRailway": 4,
-      "GreatNorthern": 43,
+      "GreatNorthern": 42,
       "GatwickExpress": 7,
-      "GreaterAnglia": 45,
+      "GreaterAnglia": 44,
       "C2c": 26,
       "Tramlink": 39,
       "CableCar": 2,
-      "Eurostar": 1,
       "LondonNorthwestern": 15
     }
   }

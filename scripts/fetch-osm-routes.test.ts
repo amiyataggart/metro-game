@@ -13,7 +13,7 @@ describe('tagsToLineKey', () => {
     [{ route: 'train', operator: 'Greater Thameslink Railway', name: 'Southern: London Bridge → Clapham Junction' }, 'Southern'],
     [{ route: 'train', operator: 'South Eastern', name: 'Sheerness Line' }, 'Southeastern'],
     [{ route: 'train', operator: 'West Midlands Trains', name: 'LNWR: London Euston → Tring' }, 'LondonNorthwestern'],
-    [{ route: 'train', operator: 'Eurostar International Ltd', name: 'Eurostar: London → Paris' }, 'Eurostar'],
+    [{ route: 'train', operator: 'Eurostar International Ltd', name: 'Eurostar: London → Paris' }, null],
     [{ route: 'aerialway', network: 'London Cable Car' }, 'CableCar'],
     [{ route: 'train', operator: 'Avanti West Coast' }, null],
     [{ route: 'train', operator: 'London North Eastern Railway' }, null],

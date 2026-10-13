@@ -70,7 +70,6 @@ const LINE_COLORS = {
   HeathrowExpress: '#75BAB1',
   Tramlink: '#80B253',
   LondonNorthwestern: '#00BF6F',
-  Eurostar: '#FFDE2A',
   CableCar: '#E21836',
 }
 
@@ -84,7 +83,7 @@ const LINE_ORDER = {
   Tramlink: 20, C2c: 21, Chiltern: 22, EastMidlandsRailway: 23, GatwickExpress: 24,
   GreatNorthern: 25, GreatWesternRailway: 26, GreaterAnglia: 27, HeathrowExpress: 28,
   SouthWesternRailway: 29, Southeastern: 30, SoutheasternHighSpeed: 31, Southern: 32,
-  LondonNorthwestern: 33, Eurostar: 34, CableCar: 35,
+  LondonNorthwestern: 33, CableCar: 35,
 }
 
 // All matchers run against relation tags. The first match wins.
@@ -137,9 +136,9 @@ const RELATION_MATCHERS = [
   { lineKey: 'GreaterAnglia', test: (t) => t.route === 'train' && /Greater Anglia/.test(t.operator || '') },
   { lineKey: 'SouthWesternRailway', test: (t) => t.route === 'train' && t.operator === 'South Western Railway' },
   { lineKey: 'EastMidlandsRailway', test: (t) => t.route === 'train' && t.operator === 'East Midlands Railway' },
-  // New lines: London Northwestern (LNWR name prefix or operator), Eurostar, Cable Car.
+  // New lines: London Northwestern (LNWR name prefix or operator), Cable Car.
+  // (Eurostar was removed 2026-10-13: HS1 is covered by Southeastern high speed.)
   { lineKey: 'LondonNorthwestern', test: (t) => t.route === 'train' && (/^LNWR:/.test(t.name || '') || /^London Northwestern Railway$/.test(t.operator || '')) },
-  { lineKey: 'Eurostar', test: (t) => t.route === 'train' && (/^Eurostar\b/.test(t.name || '') || /^Eurostar/.test(t.operator || '')) },
   { lineKey: 'CableCar', test: (t) => t.route === 'aerialway' && /London Cable Car|Emirates Air Line/i.test(t.network || t.name || '') },
   // London Trams (Tramlink) — route=tram, operated by Tram Operations Ltd.
   { lineKey: 'Tramlink', test: (t) => t.route === 'tram' && /Tram Operations/i.test(t.operator || '') },
@@ -184,8 +183,6 @@ const OVERPASS_QUERY = `
   relation["route"="train"]["name"~"^High Speed One:"](49.8,-8.7,61.0,2.0);
   relation["route"="train"]["name"~"^LNWR:"](49.8,-8.7,61.0,2.0);
   relation["route"="train"]["operator"="London Northwestern Railway"](49.8,-8.7,61.0,2.0);
-  relation["route"="train"]["operator"~"^Eurostar"](49.8,-8.7,61.0,2.0);
-  relation["route"="train"]["name"~"^Eurostar"](49.8,-8.7,61.0,2.0);
   relation["route"="aerialway"]["network"="London Cable Car"](49.8,-8.7,61.0,2.0);
   relation["route"="train"]["operator"="South Western Railway"](49.8,-8.7,61.0,2.0);
   relation["route"="train"]["operator"="East Midlands Railway"](49.8,-8.7,61.0,2.0);
