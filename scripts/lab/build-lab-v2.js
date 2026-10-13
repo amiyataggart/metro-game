@@ -506,6 +506,12 @@ function main() {
     meta.variants[V.id] = { d: V.d, ribbon: cfg, features: built.features.length, taperedEnds: tp.joints }
     console.log(`${V.id}: ${built.features.length} features, ${tp.joints} tapered ends (${((Date.now() - t1) / 1000).toFixed(0)} s)`)
   }
+  // /lab/staging1: graph5 below z11.4, graph4 from z11.4, at its own sizing
+  const { STAGING } = require('./score.js')
+  const fromDisk = (id) => JSON.parse(fs.readFileSync(path.join(OUTDIR, `routes.${id}.json`), 'utf8'))
+  const g4 = fromDisk('graph4'), g5 = fromDisk('graph5')
+  cards.staging1 = score([11, 12, 13, 14, 15], (z) => (z < 11.4 ? g5 : g4), STAGING)
+  cards['london-staging'] = score([11, 12, 13, 14, 15], () => london, STAGING)
   if (process.argv.includes('--dry')) { for (const V of VARIANTS) if (cards[V.id]) console.log(V.id, JSON.stringify(Object.values(cards[V.id]).map((c) => [+c.overlapKm.toFixed(1), c.twists]))); return }
   fs.writeFileSync(scoresPath, JSON.stringify(cards, null, 2))
   fs.writeFileSync(path.join(OUTDIR, 'v2.json'), JSON.stringify(meta, null, 2))

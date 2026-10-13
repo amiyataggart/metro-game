@@ -323,7 +323,9 @@ stripes and station circles at today's z12.4 size from z12.4 up, half that from
 z11.4 down (= map scale there), linear in between; station markers keep
 shrinking linearly below z11.4 to today's z6 size); `map` (sizes pinned to the map scale as at
 z12.4, doubling per zoom level). Station label text is never resized. `/lab/graph5`
-is built for, and always uses, `map`.
+is built for, and always uses, `map`. `/lab/staging1` = Graph 4 with `clamp` from z11.4
+in, switching (cross-fade ±0.25) to Graph 5 below z11.4 where everything scales with
+the map (sizes are continuous at the switch).
 
 ## Configuration
 
