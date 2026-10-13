@@ -131,18 +131,27 @@ const levelPrefix = (lv: RouteLevel) => (lv.id ? `lines-${lv.id}` : 'lines')
 // lane offset, stripes, station radius/stroke, pies; not label text):
 //  - map: pinned to the MAP — the value at `ref`, doubled per zoom level up
 //    (halved down), like the streets (hover glow too);
-//  - clamp: today's zoom curve, clamped between its values at `min` and `max`
-//    (smallest below `min`, largest above `max`, linear in between).
+//  - clamp: today's size at `max`, scaled by `minScale` at `min` (0.5 = what
+//    map scale gives one zoom out), linear in zoom between, held outside —
+//    except station markers (stations-* layers), which keep shrinking
+//    linearly below `min` to today's size at `stationFloor` (widest zoom).
 // Opacity fades (/lab/levels) and the morph blend are unchanged.
-export type LabSizing = { kind: 'map'; ref: number } | { kind: 'clamp'; min: number; max: number }
+export type LabSizing =
+  | { kind: 'map'; ref: number }
+  | { kind: 'clamp'; min: number; max: number; minScale: number; stationFloor?: number }
 const SIZE_PROPS = ['line-width', 'line-offset', 'circle-radius', 'circle-stroke-width', 'icon-size']
-const clampScaled = (e: unknown, min: number, max: number): unknown => {
+const clampScaled = (e: unknown, min: number, max: number, minScale: number, floorZ?: number): unknown => {
   if (!Array.isArray(e) || e[0] !== 'interpolate') return e // constants stay
-  return ['interpolate', ['linear'], ['zoom'], min, atZoom(e, min), max, atZoom(e, max)]
+  const hi = atZoom(e, max)
+  const lo = typeof hi === 'number' ? hi * minScale : ['*', minScale, hi]
+  const floor = floorZ != null && floorZ < min ? [floorZ, atZoom(e, floorZ)] : []
+  return ['interpolate', ['linear'], ['zoom'], ...floor, min, lo, max, hi]
 }
 const sizeAt = (sz: LabSizing | undefined) => (z: number) =>
-  !sz ? widthAt(z) : sz.kind === 'map' ? widthAt(sz.ref) * 2 ** (z - sz.ref) : widthAt(Math.max(sz.min, Math.min(sz.max, z)))
-const resize = (e: unknown, sz: LabSizing) => (sz.kind === 'map' ? mapScaled(e, sz.ref) : clampScaled(e, sz.min, sz.max))
+  !sz ? widthAt(z) : sz.kind === 'map' ? widthAt(sz.ref) * 2 ** (z - sz.ref)
+    : widthAt(sz.max) * (sz.minScale + (1 - sz.minScale) * Math.max(0, Math.min(1, (z - sz.min) / (sz.max - sz.min))))
+const resize = (e: unknown, sz: LabSizing, station = false) =>
+  sz.kind === 'map' ? mapScaled(e, sz.ref) : clampScaled(e, sz.min, sz.max, sz.minScale, station ? sz.stationFloor : undefined)
 const mapScaled = (e: unknown, ref: number): unknown => {
   const v = atZoom(e, ref)
   const k0 = 2 ** -ref, k1 = 2 ** (24 - ref)
@@ -418,7 +427,7 @@ export default function GamePage({
         const L = { ...layer, paint: { ...(layer.paint || {}) }, layout: { ...(layer.layout || {}) } }
         for (const part of [L.paint, L.layout])
           for (const k of SIZE_PROPS)
-            if (k in part && !(morph && k === 'line-offset')) part[k] = resize(part[k], sizing)
+            if (k in part && !(morph && k === 'line-offset')) part[k] = resize(part[k], sizing, layer.id.startsWith('stations'))
         return add(L, before)
       }) as typeof m.addLayer
     }

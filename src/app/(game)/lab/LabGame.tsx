@@ -9,7 +9,9 @@ import type { LabVariant } from './variants'
 // Sizing tests (?size=…). 12.4 = MAP_CONFIG.zoom, the opening view.
 const SIZINGS: Record<string, { label: string; sizing?: LabSizing }> = {
   current: { label: 'current' },
-  clamp: { label: 'clamped z11.4–12.4', sizing: { kind: 'clamp', min: 11.4, max: 12.4 } },
+  // half the z12.4 size at z11.4 (= map scale there), linear up to z12.4;
+  // station markers keep shrinking linearly to today's z6 size (minZoom)
+  clamp: { label: 'clamped z11.4–12.4', sizing: { kind: 'clamp', min: 11.4, max: 12.4, minScale: 0.5, stationFloor: 6 } },
   map: { label: 'scales with the map', sizing: { kind: 'map', ref: 12.4 } },
 }
 

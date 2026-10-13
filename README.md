@@ -318,9 +318,10 @@ node scripts/lab/render.js <variant> <lng,lat> <zoom> [name] [WxH]   # browser-f
 `EMIT_SPINE`, `STRATA`, `EXIT_ORDER`, `GLOBAL_ORDER`, `NO_SNAP_DROP`), all off by
 default, so the `/london` build is byte-identical.
 
-Every lab page has a **Sizing** switch (`?size=`): `current`; `clamp` (today's
-zoom curve for line widths, lane gaps, stripes and station circles, clamped
-between its z11.4 and z12.4 values); `map` (sizes pinned to the map scale as at
+Every lab page has a **Sizing** switch (`?size=`): `current`; `clamp` (line widths, lane gaps,
+stripes and station circles at today's z12.4 size from z12.4 up, half that from
+z11.4 down (= map scale there), linear in between; station markers keep
+shrinking linearly below z11.4 to today's z6 size); `map` (sizes pinned to the map scale as at
 z12.4, doubling per zoom level). Station label text is never resized. `/lab/graph5`
 is built for, and always uses, `map`.
 
