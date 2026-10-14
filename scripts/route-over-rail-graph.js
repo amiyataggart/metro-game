@@ -22,6 +22,12 @@
  *   node scripts/route-over-rail-graph.js --in routes.osm.json \
  *     --features features.json --lines A,B --out gaps.json \
  *     [--cache DIR] [--report report.json] [--check-only] [--cover-m 40]
+ *     [--force "A>B,C>D"]
+ *
+ * --force: stop pairs routed even though the line's geometry "covers" them,
+ * for a parallel route the 300 m station snap mistakes for this one (the
+ * Southeastern Blackfriars trains run Loughborough Jn -> Herne Hill on the
+ * Thameslink line, not the Chatham main line via Brixton 180 m away).
  *
  * Data © OpenStreetMap contributors, ODbL.
  */
@@ -276,6 +282,7 @@ async function main() {
   const arg = (f) => { const i = process.argv.indexOf(f); return i >= 0 ? process.argv[i + 1] : null }
   const IN = arg('--in'), FEATS = arg('--features'), OUT = arg('--out')
   const LINES = new Set((arg('--lines') || '').split(',').filter(Boolean))
+  const FORCE = new Set((arg('--force') || '').split(',').filter(Boolean).map((p) => p.split('>').map((x) => x.trim()).sort().join('>')))
   const CACHE = arg('--cache') || path.join(os.tmpdir(), 'railtiles-task8')
   const REPORT = arg('--report')
   if (!IN || !FEATS || !OUT || !LINES.size) { console.error('usage: --in routes.osm.json --features features.json --lines A,B --out gaps.json'); process.exit(2) }
@@ -321,7 +328,8 @@ async function main() {
         const D = M(A, B)
         const cap = 1.6 * D + 500
         const L = polys.length ? lg.pathLen(A, B, 300, cap) : null
-        if (L == null || L > cap) { uncovered.push({ line, service: s.name, a, b, A, B, D, why: L == null ? 'no path along line geometry' : `path ${Math.round(L)} m` }); gaps++ }
+        if (FORCE.has(pk)) { uncovered.push({ line, service: s.name, a, b, A, B, D, why: 'forced', forced: true }); gaps++ }
+        else if (L == null || L > cap) { uncovered.push({ line, service: s.name, a, b, A, B, D, why: L == null ? 'no path along line geometry' : `path ${Math.round(L)} m` }); gaps++ }
       }
     }
     pairStats[line] = { pairs: n, uncovered: gaps }
@@ -346,7 +354,7 @@ async function main() {
   for (const u of uncovered) {
     if (!idxOf.has(u.line)) idxOf.set(u.line, segIndex(polysOf.get(u.line) || []))
     const prevAdded = addedOf(u.line)
-    if (prevAdded.length) {
+    if (prevAdded.length && !u.forced) {
       const cap = 1.6 * u.D + 500
       const L0 = lineGraph([...(polysOf.get(u.line) || []), ...prevAdded]).pathLen(u.A, u.B, 300, cap)
       if (L0 != null && L0 <= cap) { coveredLater.push(`${u.line}: ${u.a} -> ${u.b}`); continue }
