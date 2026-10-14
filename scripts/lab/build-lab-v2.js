@@ -80,6 +80,35 @@ const REUSE = 0.6 // routing: a line's services prefer track it already uses
 // tracks (both ends at its junctions) shorter than CROSSOVER_M, and a dead-end
 // spur shorter than SPUR_M that doesn't lead to one of its stations.
 const CROSSOVER_M = 80, SPUR_M = 50
+// A line's routed edges can include both tracks of a short double-track
+// stretch (different services use different tracks), joined by a crossover:
+// a chain then runs out along one track and straight back along the other
+// (Windrush at the New Cross / New Cross Gate junction: a 40 m out-and-back
+// that build-ribbons drops, leaving the trunk short of the junction). Cut
+// such retraces out: points i < j that come back within RETRACE_D m after an
+// excursion of at most RETRACE_M m that went RETRACE_OUT m or more away.
+const RETRACE_D = 6, RETRACE_M = 250, RETRACE_OUT = 15
+function removeRetraces(xy, log) {
+  let out = xy
+  for (let guard = 0; guard < 20; guard++) {
+    let cut = null
+    for (let i = 0; i < out.length - 2 && !cut; i++) {
+      let run = 0, far = 0, best = -1
+      for (let j = i + 1; j < out.length; j++) {
+        run += dist(out[j - 1], out[j])
+        if (run > RETRACE_M) break
+        const d = dist(out[i], out[j])
+        far = Math.max(far, d)
+        if (far >= RETRACE_OUT && d < RETRACE_D) best = j
+      }
+      if (best > 0) cut = [i, best]
+    }
+    if (!cut) break
+    if (log) log(out[cut[0]])
+    out = [...out.slice(0, cut[0] + 1), ...out.slice(cut[1] + 1)]
+  }
+  return out
+}
 function pruneChains(chains, stations) {
   const key = (p) => Math.round(p[0] * 10) + ',' + Math.round(p[1] * 10)
   const len = (xy) => xy.reduce((a, q, i) => (i ? a + dist(xy[i - 1], q) : 0), 0)
@@ -966,7 +995,8 @@ function main() {
 
   const base = []
   for (const line of [...edgesOf.keys()].sort()) {
-    for (const xy of pruneChains(L1.chains(G, edgesOf.get(line), true), stationXY.get(line) || [])) {
+    const retraced = L1.chains(G, edgesOf.get(line), true).map((xy) => removeRetraces(xy, (p) => console.log(`  retrace cut: ${line} at ${toLL(p).map((v) => v.toFixed(5)).join(',')}`)))
+    for (const xy of pruneChains(retraced, stationXY.get(line) || [])) {
       const st = strataOf(G, info, xy, 2, 0)
       base.push({ line, xy, sts: st })
     }
