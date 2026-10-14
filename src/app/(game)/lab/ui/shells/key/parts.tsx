@@ -26,8 +26,8 @@ export function uiLine(line: Line, dark: boolean): Line {
 /* Roundel (lib/roundel: progress ring + line bar), as /london's legend */
 /* ------------------------------------------------------------------ */
 
-// Faint full ring under the progress arc so a part-done roundel still reads as
-// a roundel (same ring geometry as lib/roundel's 32-unit viewBox).
+// The line's roundel exactly as /london's legend draws it: the ring colours in
+// as the line's stations are found.
 export function KeyRoundel({ line, pct, on, size = 26 }: { line: Line; pct: number; on: boolean; size?: number }) {
   const html = useMemo(() => roundelSvg(line, { pct, px: size }), [line, pct, size])
   return (
@@ -36,92 +36,8 @@ export function KeyRoundel({ line, pct, on, size = 26 }: { line: Line; pct: numb
       style={{ width: size, height: size }}
       aria-hidden
     >
-      <svg viewBox="0 0 32 32" width={size} height={size} className="absolute inset-0">
-        <circle cx="16" cy="16" r="10.08" fill="none" stroke={line.color} strokeOpacity={0.22} strokeWidth="5.44" />
-      </svg>
       <span className="absolute inset-0 [&>svg]:block" dangerouslySetInnerHTML={{ __html: html }} />
     </span>
-  )
-}
-
-/* ------------------------------------------------------------------ */
-/* Line stripe = legend sample + progress bar                          */
-/* ------------------------------------------------------------------ */
-
-export function LineStripe({
-  line,
-  frac,
-  on,
-  width = 72,
-  height = 8,
-}: {
-  line: Line
-  frac: number
-  on: boolean
-  width?: number
-  height?: number
-}) {
-  const r = height / 2
-  const fw = frac > 0 ? Math.max(height, frac * width) : 0
-  const cy = r
-  const sw = Math.max(1.4, height / 3.2)
-  const id = `ks-${line.name.replace(/\W/g, '')}-${width}`
-  if (!on) {
-    return (
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="shrink-0 overflow-visible" aria-hidden>
-        <rect
-          x={0.6}
-          y={0.6}
-          width={width - 1.2}
-          height={height - 1.2}
-          rx={r - 0.6}
-          fill="none"
-          stroke="#a1a1aa"
-          strokeWidth={1.2}
-          strokeDasharray="3 2.4"
-        />
-      </svg>
-    )
-  }
-  return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="shrink-0 overflow-visible" aria-hidden>
-      <defs>
-        <clipPath id={id}>
-          <rect x={0} y={0} width={width} height={height} rx={r} />
-        </clipPath>
-      </defs>
-      <g clipPath={`url(#${id})`}>
-        <rect x={0} y={0} width={width} height={height} fill={line.color} opacity={0.2} />
-        <rect
-          x={0}
-          y={0}
-          width={fw}
-          height={height}
-          fill={line.color}
-          style={{ transition: 'width 600ms cubic-bezier(.2,.8,.2,1)' }}
-        />
-        {line.stripe === 'solid' && fw > 0 && (
-          <line x1={0} y1={cy} x2={fw} y2={cy} stroke={line.stripeColor ?? '#fff'} strokeWidth={sw} />
-        )}
-        {line.stripe === 'dashed' && fw > 0 && (
-          <line
-            x1={0}
-            y1={cy}
-            x2={fw}
-            y2={cy}
-            stroke={line.stripeColor ?? '#fff'}
-            strokeWidth={sw}
-            strokeDasharray="3.5 2.5"
-          />
-        )}
-        {line.stripe === 'triple' && fw > 0 && (
-          <>
-            <line x1={0} y1={height * 0.33} x2={fw} y2={height * 0.33} stroke={line.stripeColor ?? '#fff'} strokeWidth={1} />
-            <line x1={0} y1={height * 0.67} x2={fw} y2={height * 0.67} stroke={line.stripeColor ?? '#fff'} strokeWidth={1} />
-          </>
-        )}
-      </g>
-    </svg>
   )
 }
 

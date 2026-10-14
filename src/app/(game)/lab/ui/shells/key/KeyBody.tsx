@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react'
 import type { GameShellProps } from '@/components/GamePage'
 import type { Line } from '@/lib/types'
 import type { KeyGroup, GroupId } from './groups'
-import { GroupPip, KeyRoundel, LineStripe, LineDots, fmtInt, hexA, uiLine } from './parts'
+import { GroupPip, KeyRoundel, LineDots, fmtInt, hexA, uiLine } from './parts'
 import type { Theme } from './useMapTheme'
 
 export type Count = { got: number; total: number }
@@ -190,7 +190,6 @@ function LineRow({
       >
         {mark && <span className="absolute inset-y-1.5 left-0 w-1 rounded-r" style={{ background: line.color }} />}
         <KeyRoundel line={line} pct={frac} on={on} size={touch ? 26 : 24} />
-        <LineStripe line={line} frac={frac} on={on} width={touch ? 56 : 64} />
         <span
           className={classNames(
             'min-w-0 grow truncate text-[14.5px] font-normal leading-tight',
