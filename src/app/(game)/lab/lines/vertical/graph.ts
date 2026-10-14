@@ -378,7 +378,7 @@ function layoutLineWith(
   const pieces: LPiece[] = []
   // Pieces to place: segments (with their own station rows) and links (none).
   // Each spans half-rows [a, b]; anchored ends curve in from the anchor row.
-  type Item = { rs: number[]; a: number; b: number; anchorRow?: number; top?: number; bottom?: number; trunk?: boolean }
+  type Item = { rs: number[]; a: number; b: number; anchorRow?: number; top?: number; bottom?: number; trunk?: boolean; hug?: boolean }
   const items: Item[] = []
   // The trunk is split at its junction stations (rows other pieces join at)
   // into sections that obey the same inside/outside rule as everything else,
@@ -427,7 +427,23 @@ function layoutLineWith(
     if (seg.bottom) b = 2 * rowOf.get(seg.bottom)! - 1
     const top = seg.top !== undefined ? rowOf.get(seg.top) : undefined
     const bottom = seg.bottom !== undefined ? rowOf.get(seg.bottom) : undefined
-    items.push({ rs, a, b, anchorRow: top ?? bottom, top, bottom })
+    // branches are cut at their junctions, so a long branch
+    // can hug the left where lanes are free instead of keeping one lane all
+    // the way (Thameslink's East Croydon - Gatwick piece sat in lane 5 beside
+    // Coulsdon South because lanes 3-4 were taken further down)
+    const parts: number[][] = []
+    for (const r of rs) {
+      const last = parts[parts.length - 1]
+      if (!last || junction.has(r) || junction.has(last[last.length - 1])) parts.push([r])
+      else last.push(r)
+    }
+    parts.forEach((pr, k) => {
+      const t = k === 0 ? top : parts[k - 1][parts[k - 1].length - 1]
+      const btm = k === parts.length - 1 ? bottom : undefined
+      const pa = t !== undefined ? 2 * t + 1 : 2 * pr[0]
+      const pb = btm !== undefined ? 2 * btm - 1 : 2 * pr[pr.length - 1]
+      items.push({ rs: pr, a: pa, b: pb, anchorRow: t ?? btm, top: t, bottom: btm, hug: true })
+    })
   })
   const jumps: Record<number, string[]> = {}
   for (const [u, v] of links) {
@@ -521,6 +537,19 @@ function layoutLineWith(
       if (lane < 0) {
         lane = Math.max(al + 1, min)
         while (!free(lane, it.a, it.b)) lane++
+      }
+      if (it.hug) {
+        // hug the left: the innermost free lane allowed, unless staying
+        // nearer the anchor crosses fewer lanes
+        let low = min
+        while (!free(low, it.a, it.b)) low++
+        const crossings = (to: number) => {
+          if (it.anchorRow === undefined) return 0
+          let n = 0
+          for (let l = Math.min(al, to) + 1; l < Math.max(al, to); l++) if (!free(l, it.a, it.a)) n++
+          return n
+        }
+        if (crossings(low) <= crossings(lane)) lane = low
       }
     }
     laneOf[i] = lane

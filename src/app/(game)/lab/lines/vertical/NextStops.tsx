@@ -365,21 +365,25 @@ export default function NextStops({ data, fontClass }: { data: VerticalData; fon
   // ---- what to draw ----
   let layout: LineLayout
   let views: RowView[]
-  // termini: ends of drawn pieces that no other piece hangs off
+  // termini: stations with only one neighbour in the drawn line (robust to how
+  // the line is cut into pieces: a branch split at a junction still ends there)
   const termini = (L: LineLayout) => {
+    const deg = new Map<number, number>()
+    const link = (u: number, v: number) => {
+      if (u === v) return
+      deg.set(u, (deg.get(u) ?? 0) + 1)
+      deg.set(v, (deg.get(v) ?? 0) + 1)
+    }
+    L.pieces.forEach((p) => {
+      const rs = p.rows
+      for (let k = 1; k < rs.length; k++) link(rs[k - 1], rs[k])
+      if (rs.length) {
+        if (p.top !== undefined) link(p.top, rs[0])
+        if (p.bottom !== undefined) link(rs[rs.length - 1], p.bottom)
+      } else if (p.top !== undefined && p.bottom !== undefined) link(p.top, p.bottom)
+    })
     const ends = new Set<number>()
-    const anchored = new Set<number>()
-    L.pieces.forEach((p) => {
-      if (p.top !== undefined) anchored.add(p.top)
-      if (p.bottom !== undefined) anchored.add(p.bottom)
-    })
-    L.pieces.forEach((p) => {
-      if (!p.rows.length) return
-      const a = p.rows[0]
-      const b = p.rows[p.rows.length - 1]
-      if (p.top === undefined && !anchored.has(a)) ends.add(a)
-      if (p.bottom === undefined && !anchored.has(b)) ends.add(b)
-    })
+    L.rows.forEach((_, i) => { if ((deg.get(i) ?? 0) <= 1) ends.add(i) })
     return ends
   }
 
