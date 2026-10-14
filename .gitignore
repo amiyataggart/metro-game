@@ -52,3 +52,9 @@ public/stats/*
 # build-ribbons dev backups / A-B outputs (routes.preribbons.json IS tracked)
 /src/app/(game)/london/data/*.baked.json
 /src/app/(game)/london/data/features.preribbons.json
+
+# superpowers SDD workspace (agent scratch)
+/.superpowers/
+
+# lab track-experiment OSM tile cache
+/scripts/lab/.cache/

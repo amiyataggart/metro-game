@@ -1,6 +1,8 @@
 import { Metadata } from 'next'
 import type { MapOptions } from 'maplibre-gl'
 import { Config, Line } from '@/lib/types'
+import { LONDON_ALIASES, EXTRA_DECOYS } from './data/aliases'
+import GB_STATION_NAMES from './data/gb-station-names.json'
 
 // Entry order == legend roundel order (ProgressBars uses Object.keys insertion
 // order); the `order` field == found-list sort order and on-map stacking key.
@@ -271,6 +273,22 @@ export const LINES: {
     order: 32,
     stripe: 'dashed',
   },
+  LondonNorthwestern: {
+    name: 'London Northwestern',
+    color: '#00BF6F',
+    backgroundColor: '#006b3c',
+    textColor: '#222',
+    order: 33,
+    stripe: 'dashed',
+  },
+  CableCar: {
+    name: 'London Cable Car',
+    color: '#E21836',
+    backgroundColor: '#7a0d1d',
+    textColor: '#fff',
+    order: 35,
+    stripe: 'triple',
+  },
 }
 
 export const METADATA: Metadata = {
@@ -297,29 +315,40 @@ export const MAP_CONFIG: Omit<MapOptions, 'container'> = {
   // (The user can still zoom/pan out to the full network within maxBounds.)
   center: [-0.1247, 51.5085],
   zoom: 12.4,
-  // Fit the currently-visible network with a slight margin. Thameslink sets the
-  // N–S extent (Peterborough ≈ 52.58°N to Brighton ≈ 50.83°N); the Elizabeth
-  // line (Reading ≈ -0.97°W) sets the western edge.
+  // The scoped network (scope.ts; clipped at build time) plus a ~10% margin:
+  // Reading ≈ -0.97°W to Southend ≈ 0.79°E, Brighton ≈ 50.83°N to Cambridge
+  // North ≈ 52.23°N (scope.data.test.ts checks the fit).
   maxBounds: [
-    [-1.1, 50.75],
-    [0.73, 52.66],
+    [-1.15, 50.69],
+    [0.97, 52.37],
   ],
   minZoom: 6,
   fadeDuration: 50,
 }
 
-// Lines + stations are fetched and stored in full (e.g. National Rail routes
-// run far past London), but only the portion inside this box is displayed and
-// playable — see visibility.ts. Defaults to the camera maxBounds; widen this
-// (no re-fetch needed) to reveal more of the stored network later.
-export const DISPLAY_BOUNDS: [[number, number], [number, number]] =
-  MAP_CONFIG.maxBounds as [[number, number], [number, number]]
+/**
+ * @deprecated Legacy camera / render-clip box for /newtracks pages only.
+ */
+// LEGACY camera box / render-time clip box (pre-scope maxBounds), kept for the
+// experimental /newtracks and /newtracks2 pages, which spread the default
+// `config` below and use the legacy clip in visibility.ts. /london overrides
+// MAP_CONFIG with the scoped one above (see page.tsx).
+export const DISPLAY_BOUNDS: [[number, number], [number, number]] = [
+  [-1.1, 50.75],
+  [0.73, 52.66],
+]
 
 export const CITY_NAME = 'london'
 export const LOCALE = 'en'
 export const GAUGE_COLORS = 'inverted'
 
-const config: Config = {
+export const MATCHING = {
+  aliases: LONDON_ALIASES,
+  decoyNames: [...(GB_STATION_NAMES as string[]), ...EXTRA_DECOYS],
+}
+
+/** The /london game config: scoped camera box (MAP_CONFIG). */
+export const londonConfig: Config = {
   GAUGE_COLORS,
   LOCALE,
   CITY_NAME,
@@ -327,6 +356,14 @@ const config: Config = {
   METADATA,
   LINES,
   MAP_FROM_DATA: true,
+  MATCHING,
 }
+
+/**
+ * @deprecated Legacy config for the experimental /newtracks and /newtracks2
+ * pages only (they spread it): it carries the pre-scope camera box
+ * DISPLAY_BOUNDS. /london uses `londonConfig`.
+ */
+const config: Config = { ...londonConfig, MAP_CONFIG: { ...MAP_CONFIG, maxBounds: DISPLAY_BOUNDS } }
 
 export default config

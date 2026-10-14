@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
-import Fuse from 'fuse.js'
 import { useLocalStorageValue } from '@react-hookz/web'
 import maplibregl from 'maplibre-gl'
 import { coordEach } from '@turf/meta'
@@ -22,7 +21,8 @@ import { useConfig } from '@/lib/configContext'
 import { smoothRoutes } from '@/lib/smoothRoutes'
 import useTranslation from '@/hooks/useTranslation'
 import FoundList from '@/components/FoundList'
-import useNormalizeString from '@/hooks/useNormalizeString'
+import { addFound, createMatcher, EMPTY_ALIASES, filterKnownIds, restrictToEnabled } from '@/lib/matching'
+import { defaultEnabledLines } from '@/lib/defaultEnabledLines'
 import { detectCelebrations } from '@/lib/completion'
 import { flashLines } from '@/lib/mapFlash'
 import { useCelebration } from '@/hooks/useCelebration'
@@ -41,22 +41,177 @@ const LINE_WIDTH_EXPR = [
   'interpolate', ['linear'], ['zoom'],
   8.763, 2.925, 13, 5.0625, 18, 8.4375, 22, 10.125,
 ] as unknown as maplibregl.ExpressionSpecification
+// 'triple' stripe (London Cable Car): the ribbon is split into fifths —
+// colour / white / colour / white / colour — so it reads as three thin
+// coloured lines with white infill. Each white line is W/5 wide, offset ±W/5
+// from the ribbon centre (on top of the lane offset). Same zoom stops as
+// LINE_WIDTH_EXPR (zoom must stay the top-level interpolate input).
+const WIDTH_STOPS: [number, number][] = [[8.763, 2.925], [13, 5.0625], [18, 8.4375], [22, 10.125]]
+const TRIPLE_STRIPE_WIDTH_EXPR = [
+  'interpolate', ['linear'], ['zoom'],
+  ...WIDTH_STOPS.flatMap(([z, w]) => [z, w / 5]),
+] as unknown as maplibregl.ExpressionSpecification
+const tripleStripeOffsetExpr = (side: -1 | 1) =>
+  [
+    'interpolate', ['linear'], ['zoom'],
+    ...WIDTH_STOPS.flatMap(([z, w]) => [
+      z, ['+', ['*', ['coalesce', ['get', 'laneOff'], 0], w], (side * w) / 5],
+    ]),
+  ] as unknown as maplibregl.ExpressionSpecification
+
+// ---- /lab track-geometry experiments (unused by /london) ----
+// A route level is one geometry set shown over a zoom range; the finer level
+// (later in the list) fades in over the coarser one across ±LEVEL_FADE zoom.
+export type RouteLevel = {
+  id: string
+  /** the GeoJSON, or a URL MapLibre fetches and parses in its worker (keeps
+   *  megabytes of line data out of the page HTML, React props and main heap) */
+  routes: RoutesFeatureCollection | string
+  minzoom?: number
+  maxzoom?: number
+  /** GeoJSON source tiling options (MapLibre defaults: maxzoom 18, buffer 128,
+   *  tolerance 0.375). A lower maxzoom stops re-tiling when zooming in (tiles
+   *  are over-zoomed instead); a smaller buffer cuts per-tile geometry. */
+  source?: { maxzoom?: number; buffer?: number; tolerance?: number }
+}
+// Morph: features carry `dm` (m to the same line's bundled corridor, + = right)
+// and `lc` (bundled lane); line-offset blends from bundled (z <= zCoarse) to
+// true track + `laneOff` (z >= zFine). Must match scripts/lab/score.js.
+export type MorphConfig = { zCoarse: number; zFine: number }
+const LEVEL_FADE = 0.25
+const widthAt = (z: number) => {
+  if (z <= WIDTH_STOPS[0][0]) return WIDTH_STOPS[0][1]
+  for (let i = 1; i < WIDTH_STOPS.length; i++)
+    if (z <= WIDTH_STOPS[i][0]) {
+      const [z0, w0] = WIDTH_STOPS[i - 1]
+      const [z1, w1] = WIDTH_STOPS[i]
+      return w0 + ((w1 - w0) * (z - z0)) / (z1 - z0)
+    }
+  return WIDTH_STOPS[WIDTH_STOPS.length - 1][1]
+}
+// metres per CSS pixel (512-px tiles) at London's latitude
+const mppAt = (z: number) => (78271.517 * Math.cos((51.5 * Math.PI) / 180)) / 2 ** z
+// line-offset for morph mode; `widthFrac` adds ±W/5 for the triple stripe
+// The blend is linear in GROUND space between bundled and true positions
+// (t linear in zoom), sampled every half zoom level across the blend.
+const morphOffsetExpr = (cfg: MorphConfig, widthFrac = 0, wAt: (z: number) => number = widthAt) => {
+  const lf = ['coalesce', ['get', 'laneOff'], 0]
+  const blend: number[] = []
+  for (let z = cfg.zCoarse; z < cfg.zFine; z += 0.5) blend.push(z)
+  const stops = Array.from(new Set([6, 7, 8, 9, 10, 11, ...blend, cfg.zFine, 18, 22])).sort((a, b) => a - b)
+  return [
+    'interpolate', ['linear'], ['zoom'],
+    ...stops.flatMap((z) => {
+      const t = Math.max(0, Math.min(1, (z - cfg.zCoarse) / (cfg.zFine - cfg.zCoarse)))
+      const w = wAt(z)
+      return [
+        z,
+        ['+',
+          ['*', ['coalesce', ['get', 'dm'], 0], (1 - t) / mppAt(z)],
+          ['*', ['coalesce', ['get', 'lc'], lf], (1 - t) * w],
+          ['*', lf, t * w],
+          widthFrac * w],
+      ]
+    }),
+  ] as unknown as maplibregl.ExpressionSpecification
+}
+// Per-level opacity: fade in at minzoom (over the coarser level), out at maxzoom.
+const levelOpacity = (lv: RouteLevel, op: number) => {
+  const stops: number[] = []
+  if (lv.minzoom != null && lv.minzoom > 0) stops.push(lv.minzoom - LEVEL_FADE, 0, lv.minzoom + LEVEL_FADE, op)
+  if (lv.maxzoom != null && lv.maxzoom < 24) {
+    if (!stops.length) stops.push(lv.maxzoom - LEVEL_FADE, op)
+    stops.push(lv.maxzoom + LEVEL_FADE, op) // stay opaque under the finer level's fade-in
+  }
+  return stops.length
+    ? (['interpolate', ['linear'], ['zoom'], ...stops] as unknown as maplibregl.ExpressionSpecification)
+    : op
+}
+const levelZoomRange = (lv: RouteLevel) => ({
+  ...(lv.minzoom != null && lv.minzoom > 0 ? { minzoom: lv.minzoom - LEVEL_FADE } : {}),
+  ...(lv.maxzoom != null && lv.maxzoom < 24 ? { maxzoom: lv.maxzoom + LEVEL_FADE } : {}),
+})
+const levelPrefix = (lv: RouteLevel) => (lv.id ? `lines-${lv.id}` : 'lines')
+
+// /lab sizing tests (`sizing`) for the game's own layers' SIZES (line width and
+// lane offset, stripes, station radius/stroke, pies; not label text):
+//  - map: pinned to the MAP — the value at `ref`, doubled per zoom level up
+//    (halved down), like the streets (hover glow too);
+//  - clamp: today's size at `max`, scaled by `minScale` at `min` (0.5 = what
+//    map scale gives one zoom out), linear in zoom between, held outside —
+//    except station markers (stations-* layers), which keep shrinking
+//    linearly below `min` to today's size at `stationFloor` (widest zoom).
+//    `mapBelow`: instead, below `min` EVERYTHING scales with the map (halves
+//    per zoom level out; continuous at `min` when minScale = 0.5), as
+//    /lab/staging1 does under its z11.4 switch to graph5 geometry.
+// Opacity fades (/lab/levels) and the morph blend are unchanged.
+export type LabSizing =
+  | { kind: 'map'; ref: number }
+  | { kind: 'clamp'; min: number; max: number; minScale: number; stationFloor?: number; mapBelow?: boolean }
+const SIZE_PROPS = ['line-width', 'line-offset', 'circle-radius', 'circle-stroke-width', 'icon-size']
+const clampScaled = (e: unknown, min: number, max: number, minScale: number, floorZ?: number, mapBelow = false): unknown => {
+  if (!mapBelow && (!Array.isArray(e) || e[0] !== 'interpolate')) return e // constants stay
+  const hi = atZoom(e, max)
+  const mul = (k: number) => (typeof hi === 'number' ? hi * k : ['*', k, hi])
+  // map scale below `min`: exponential, sampled every 1/4 zoom (linear
+  // between samples is within 0.2%) so one linear interpolate covers it all
+  const below: unknown[] = []
+  if (mapBelow) for (let z = 5; z < min - 1e-9; z += 0.25) below.push(z, mul(minScale * 2 ** (z - min)))
+  const floor = !mapBelow && floorZ != null && floorZ < min ? [floorZ, atZoom(e, floorZ)] : []
+  return ['interpolate', ['linear'], ['zoom'], ...below, ...floor, min, mul(minScale), max, hi]
+}
+const sizeAt = (sz: LabSizing | undefined) => (z: number) =>
+  !sz ? widthAt(z) : sz.kind === 'map' ? widthAt(sz.ref) * 2 ** (z - sz.ref)
+    : sz.mapBelow && z < sz.min ? widthAt(sz.max) * sz.minScale * 2 ** (z - sz.min)
+    : widthAt(sz.max) * (sz.minScale + (1 - sz.minScale) * Math.max(0, Math.min(1, (z - sz.min) / (sz.max - sz.min))))
+const resize = (e: unknown, sz: LabSizing, station = false) =>
+  sz.kind === 'map' ? mapScaled(e, sz.ref) : clampScaled(e, sz.min, sz.max, sz.minScale, station ? sz.stationFloor : undefined, sz.mapBelow)
+const mapScaled = (e: unknown, ref: number): unknown => {
+  const v = atZoom(e, ref)
+  const k0 = 2 ** -ref, k1 = 2 ** (24 - ref)
+  const mul = (k: number) => (typeof v === 'number' ? v * k : ['*', k, v])
+  return ['interpolate', ['exponential', 2], ['zoom'], 0, mul(k0), 24, mul(k1)]
+}
+const atZoom = (e: unknown, z: number): unknown => {
+  if (!Array.isArray(e) || e[0] !== 'interpolate' || !Array.isArray(e[2]) || e[2][0] !== 'zoom') return e
+  const st = e.slice(3)
+  const n = st.length / 2
+  if (z <= st[0]) return st[1]
+  for (let i = 1; i < n; i++)
+    if (z <= st[2 * i]) {
+      const z0 = st[2 * i - 2], z1 = st[2 * i], a = st[2 * i - 1], b = st[2 * i + 1]
+      const t = (z - z0) / (z1 - z0)
+      if (typeof a === 'number' && typeof b === 'number') return a + (b - a) * t
+      return ['+', ['*', 1 - t, a], ['*', t, b]]
+    }
+  return st[2 * n - 1]
+}
 
 export default function GamePage({
   fc,
   routes,
+  routeLevels,
+  morph,
+  onMap,
+  sizing,
   maskData,
   cityData,
 }: {
   fc: DataFeatureCollection
   routes?: RoutesFeatureCollection
+  /** /lab only: several geometry sets by zoom (overrides `routes`). */
+  routeLevels?: RouteLevel[]
+  /** /lab only: zoom-blended line-offset (needs `dm`/`lc` on features). */
+  morph?: MorphConfig
+  /** /lab only: called once the map is ready (e.g. for a zoom readout). */
+  onMap?: (m: maplibregl.Map) => void
+  /** /lab only: sizing test (see LabSizing). */
+  sizing?: LabSizing
   maskData?: any
   cityData?: any
 }) {
-  const { CITY_NAME, MAP_CONFIG, LINES } = useConfig()
+  const { CITY_NAME, MAP_CONFIG, LINES, MATCHING } = useConfig()
   const { t } = useTranslation()
-
-  const normalizeString = useNormalizeString()
 
   const [map, setMap] = useState<maplibregl.Map | null>(null)
   const [hoveredId, setHoveredId] = useState<number | null>(null)
@@ -75,18 +230,13 @@ export default function GamePage({
 
   // Settings — persisted to localStorage.
   const allLineKeys = useMemo(() => Object.keys(LINES), [LINES])
-  const defaultEnabled = useMemo(() => {
-    // Everything on by default (Underground, Overground, Elizabeth, DLR)
-    // except Thameslink and the National Rail TOCs, which start off and are
-    // toggled on via the picker (config order >= 19 = Thameslink + National Rail).
-    const o: Record<string, boolean> = {}
-    for (const k of allLineKeys) o[k] = (LINES[k]?.order ?? 0) < 19
-    return o
-  }, [allLineKeys, LINES])
+  // All TfL rail + Thameslink + Cable Car on; Trams and the other National
+  // Rail lines off (see defaultEnabledLines). Changing it bumps the key below.
+  const defaultEnabled = useMemo(() => defaultEnabledLines(LINES), [LINES])
 
   const { value: storedEnabled, set: setEnabledLines } = useLocalStorageValue<
     Record<string, boolean>
-  >(`${CITY_NAME}-enabled-lines-v5`, {
+  >(`${CITY_NAME}-enabled-lines-v7`, {
     defaultValue: defaultEnabled,
     initializeWithValue: false,
   })
@@ -169,10 +319,21 @@ export default function GamePage({
       initializeWithValue: false,
     })
 
+  // Stored progress may hold ids of stations that no longer exist (scope or
+  // service-table changes); drop those before any use.
+  const knownIds = useMemo(
+    () => new Set(fc.features.map((f) => f.id as number)),
+    [fc.features],
+  )
+  const knownFound: number[] = useMemo(
+    () => filterKnownIds(localFound || [], knownIds),
+    [localFound, knownIds],
+  )
+
   // Found set restricted to currently-enabled lines (score reflects active selection).
   const found: number[] = useMemo(() => {
-    return (localFound || []).filter((f) => idMap.has(f))
-  }, [localFound, idMap])
+    return knownFound.filter((f) => idMap.has(f))
+  }, [knownFound, idMap])
 
   const onReset = useCallback(() => {
     if (confirm(t('restartWarning'))) {
@@ -193,28 +354,36 @@ export default function GamePage({
     return r
   }, [found, idMap])
 
-  const fuse = useMemo(
+  // Every station name on the map (all lines, enabled or not) is a decoy, so
+  // a station on a disabled line is never typo-matched onto an enabled one.
+  const allStationNames = useMemo(
+    () => Array.from(new Set(fc.features.map((f) => f.properties.name))),
+    [fc],
+  )
+  // One matcher over EVERY station (all lines), so curated groups and aliases
+  // (King's Cross / St Pancras, St Margarets, ...) work whatever the line
+  // selection; each result is then restricted to the enabled stations, and a
+  // match with none enabled is `none` (a guess for a disabled line is wrong).
+  const allStationsMatcher = useMemo(
     () =>
-      new Fuse(enabledFeatures, {
-        includeScore: true,
-        includeMatches: true,
-        keys: [
-          'properties.name',
-          'properties.long_name',
-          'properties.short_name',
-          'properties.alternate_names',
-        ],
-        minMatchCharLength: 2,
-        threshold: 0.15,
-        distance: 10,
-        getFn: (obj, path) => {
-          const value = Fuse.config.getFn(obj, path)
-          if (value === undefined) return ''
-          if (Array.isArray(value)) return value.map((el) => normalizeString(el))
-          return normalizeString(value as string)
-        },
-      }),
-    [enabledFeatures, normalizeString],
+      createMatcher(
+        fc.features.map((f) => ({
+          id: Number(f.properties.id),
+          name: f.properties.name,
+          alternate_names: f.properties.alternate_names,
+        })),
+        MATCHING?.aliases ?? EMPTY_ALIASES,
+        [...(MATCHING?.decoyNames ?? []), ...allStationNames],
+      ),
+    [fc.features, MATCHING, allStationNames],
+  )
+  const enabledNames = useMemo(
+    () => new Map(enabledFeatures.map((f) => [Number(f.properties.id), f.properties.name] as [number, string])),
+    [enabledFeatures],
+  )
+  const matcher = useCallback(
+    (q: string) => restrictToEnabled(allStationsMatcher(q), enabledNames),
+    [allStationsMatcher, enabledNames],
   )
 
   const foundProportion =
@@ -233,7 +402,7 @@ export default function GamePage({
   // Rail (bottom) — so e.g. Thameslink (and its dashes) pass UNDER the tube ribbons.
   const zBands = useMemo(() => {
     const ug = allLineKeys.filter((k) => (LINES[k].order ?? 99) <= 10)
-    return [
+    const bands = [
       {
         id: 'nr',
         keys: [
@@ -241,14 +410,21 @@ export default function GamePage({
           'SouthWesternRailway', 'C2c', 'GreaterAnglia', 'Southeastern',
           'SoutheasternHighSpeed', 'Southern', 'GreatNorthern', 'GatwickExpress',
           'Chiltern', 'EastMidlandsRailway', 'GreatWesternRailway', 'HeathrowExpress',
+          'LondonNorthwestern',
         ],
       },
       { id: 'og', keys: ['Lioness', 'Mildmay', 'Windrush', 'Weaver', 'Suffragette', 'Liberty'] },
       { id: 'dlr', keys: ['DLR'] },
       { id: 'eliz', keys: ['ElizabethLine'] },
       { id: 'tram', keys: ['Tramlink'] },
+      { id: 'cable', keys: ['CableCar'] },
       { id: 'ug', keys: ug },
     ]
+    // Any line not named in a band would never be drawn: drop it into the
+    // National Rail band so a newly added line is always visible.
+    const banded = new Set(bands.flatMap((b) => b.keys))
+    bands[0].keys.push(...allLineKeys.filter((k) => !banded.has(k)))
+    return bands
       .map((b) => ({ ...b, keys: b.keys.filter((k) => allLineKeys.includes(k)) }))
       .filter((b) => b.keys.length)
   }, [allLineKeys, LINES])
@@ -256,6 +432,21 @@ export default function GamePage({
   // -------- Map setup --------
   useEffect(() => {
     const m = new maplibregl.Map({ ...MAP_CONFIG, container: 'map' })
+    if (sizing) {
+      const add = m.addLayer.bind(m)
+      m.addLayer = ((layer: any, before?: string) => {
+        // only the game's own layers (lines-*, stations-*), not the basemap
+        // or the boundary outlines
+        if (!/^(lines|stations)/.test(layer.id)) return add(layer, before)
+        const L = { ...layer, paint: { ...(layer.paint || {}) }, layout: { ...(layer.layout || {}) } }
+        for (const part of [L.paint, L.layout])
+          for (const k of SIZE_PROPS)
+            if (k in part && !(morph && k === 'line-offset')) part[k] = resize(part[k], sizing, layer.id.startsWith('stations'))
+        return add(L, before)
+      }) as typeof m.addLayer
+    }
+    // morph keeps its zoom blend; its lane spacing follows the resized width
+    const mWidth = sizeAt(sizing)
     // Drop the centre below the top control bar so the configured centre
     // (Charing Cross) sits midway between the entry box and the page bottom,
     // not the page centre. Set before first paint so there's no flash.
@@ -335,7 +526,8 @@ export default function GamePage({
         })
       }
 
-      if (routes) {
+      const levels: RouteLevel[] = routeLevels ?? (routes ? [{ id: '', routes }] : [])
+      if (levels.length) {
         // PARALLEL RIBBONS (offset mode). build-ribbons.js --mode offset places
         // every co-running line on a SHARED corridor centreline (so their
         // geometries coincide and their tangents match) and stamps each output
@@ -348,13 +540,13 @@ export default function GamePage({
         // amount at every zoom, so the lower line is never hidden when zoomed
         // out and the geometry stays on the true track.
 
-        m.addSource('lines', { type: 'geojson', data: routes })
+        for (const lv of levels) m.addSource(levelPrefix(lv), { type: 'geojson', data: lv.routes as any, ...(lv.source || {}) })
         // Render-time parallel-ribbon separation, shared by every base + stripe
         // layer: each feature carries a signed `laneOff` (lane units); we offset by
         // laneOff × the zoom-scaled line width so adjacent ribbons sit one width
         // apart — a CONSTANT screen amount at every zoom (never hide when zoomed
         // out) while geometry stays on the true track. +offset = right of line dir.
-        const lineOffset = LINE_OFFSET_EXPR
+        const lineOffset = morph ? morphOffsetExpr(morph, 0, mWidth) : LINE_OFFSET_EXPR
         // ~50% thicker than the previous pass; white stripes ~1/3 of that.
         const lineWidth = LINE_WIDTH_EXPR
         const stripeWidth = [
@@ -386,16 +578,21 @@ export default function GamePage({
         // stripe(s) immediately above it. This keeps a line's dashes at the line's
         // own depth, so (e.g.) Thameslink and its dashes pass UNDER the tube ribbons
         // instead of the dashes floating on top of them.
-        for (const band of zBands) {
+        // (/lab/levels: within each band, coarser levels first so the finer one
+        // fades in on top.)
+        for (const band of zBands) for (const lv of levels) {
           const bandSortKey = band.id === 'ug' ? ugSortKey : sortKey
+          const src = levelPrefix(lv)
+          const zr = levelZoomRange(lv)
           m.addLayer({
-            id: `lines-${band.id}`,
+            id: `${src}-${band.id}`,
             type: 'line',
-            source: 'lines',
+            source: src,
+            ...zr,
             filter: inKeys(band.keys),
             paint: {
               'line-color': lineColor,
-              'line-opacity': 0.95,
+              'line-opacity': levelOpacity(lv, 0.95),
               'line-width': lineWidth,
               'line-offset': lineOffset,
             },
@@ -405,11 +602,12 @@ export default function GamePage({
           const dashes = band.keys.filter((k) => LINES[k].stripe === 'dashed')
           if (solids.length) {
             m.addLayer({
-              id: `lines-${band.id}-stripe-solid`,
+              id: `${src}-${band.id}-stripe-solid`,
               type: 'line',
-              source: 'lines',
+              source: src,
+            ...zr,
               filter: inKeys(solids),
-              paint: { 'line-color': '#ffffff', 'line-width': stripeWidth, 'line-offset': lineOffset },
+              paint: { 'line-color': '#ffffff', 'line-width': stripeWidth, 'line-offset': lineOffset, 'line-opacity': levelOpacity(lv, 1) },
               layout: { 'line-sort-key': bandSortKey, 'line-cap': 'round', 'line-join': 'round' },
             })
           }
@@ -422,18 +620,39 @@ export default function GamePage({
               '#ffffff',
             ] as unknown as maplibregl.ExpressionSpecification
             m.addLayer({
-              id: `lines-${band.id}-stripe-dashed`,
+              id: `${src}-${band.id}-stripe-dashed`,
               type: 'line',
-              source: 'lines',
+              source: src,
+            ...zr,
               filter: inKeys(dashes),
               paint: {
                 'line-color': dashColor,
                 'line-width': stripeWidth,
                 'line-dasharray': [3, 2.5],
                 'line-offset': lineOffset,
+                'line-opacity': levelOpacity(lv, 1),
               },
               layout: { 'line-sort-key': bandSortKey, 'line-cap': 'butt', 'line-join': 'round' },
             })
+          }
+          const triples = band.keys.filter((k) => LINES[k].stripe === 'triple')
+          if (triples.length) {
+            for (const [suffix, side] of [['a', -1], ['b', 1]] as const) {
+              m.addLayer({
+                id: `${src}-${band.id}-stripe-triple-${suffix}`,
+                type: 'line',
+                source: src,
+            ...zr,
+                filter: inKeys(triples),
+                paint: {
+                  'line-color': '#ffffff',
+                  'line-width': TRIPLE_STRIPE_WIDTH_EXPR,
+                  'line-offset': morph ? morphOffsetExpr(morph, side / 5, mWidth) : tripleStripeOffsetExpr(side),
+                  'line-opacity': levelOpacity(lv, 1),
+                },
+                layout: { 'line-sort-key': bandSortKey, 'line-cap': 'butt', 'line-join': 'round' },
+              })
+            }
           }
         }
       }
@@ -725,6 +944,7 @@ export default function GamePage({
 
       m.once('idle', () => {
         setMap((prev) => (prev === null ? m : prev))
+        onMap?.(m)
         m.on('mousemove', 'stations-circles', (e) => {
           if (e.features && e.features.length > 0) {
             const feature = e.features.find((f) => f.state.found && f.id)
@@ -774,7 +994,8 @@ export default function GamePage({
     // own band-key (and stripe-type) filter, so toggling lines hides them in place.
     const allowed = allLineKeys.filter((k) => enabledLines[k])
     const allowedIn = ['in', ['get', 'line'], ['literal', allowed]]
-    for (const band of zBands) {
+    const prefixes = routeLevels ? routeLevels.map(levelPrefix) : ['lines']
+    for (const band of zBands) for (const src of prefixes) {
       const solids = band.keys.filter((k) => LINES[k].stripe === 'solid')
       const dashes = band.keys.filter((k) => LINES[k].stripe === 'dashed')
       const set = (id: string, keys: string[]) => {
@@ -785,11 +1006,16 @@ export default function GamePage({
             ['in', ['get', 'line'], ['literal', keys]],
           ] as unknown as maplibregl.FilterSpecification)
       }
-      set(`lines-${band.id}`, band.keys)
-      if (solids.length) set(`lines-${band.id}-stripe-solid`, solids)
-      if (dashes.length) set(`lines-${band.id}-stripe-dashed`, dashes)
+      set(`${src}-${band.id}`, band.keys)
+      if (solids.length) set(`${src}-${band.id}-stripe-solid`, solids)
+      if (dashes.length) set(`${src}-${band.id}-stripe-dashed`, dashes)
+      const triples = band.keys.filter((k) => LINES[k].stripe === 'triple')
+      if (triples.length) {
+        set(`${src}-${band.id}-stripe-triple-a`, triples)
+        set(`${src}-${band.id}-stripe-triple-b`, triples)
+      }
     }
-  }, [map, lineFilter, allLineKeys, enabledLines, zBands, LINES])
+  }, [map, lineFilter, allLineKeys, enabledLines, zBands, LINES, routeLevels])
 
   // Toggle base layer visibility. `undefined` (pre-localStorage hydration)
   // is treated as the default (visible) — otherwise the layer briefly hides
@@ -894,20 +1120,26 @@ export default function GamePage({
       }
     })()
 
+    const flashExpr = {
+      lineOffset: (sizing ? resize(LINE_OFFSET_EXPR, sizing) : LINE_OFFSET_EXPR) as maplibregl.ExpressionSpecification,
+      lineWidth: (sizing ? resize(LINE_WIDTH_EXPR, sizing) : LINE_WIDTH_EXPR) as maplibregl.ExpressionSpecification,
+    }
+    const flashWidthAt = sizing ? sizeAt(sizing) : undefined
+    // multi-level pages: flash the geometry level shown at the current zoom
+    const flashSource = (() => {
+      if (!routeLevels || !map) return undefined
+      const z = map.getZoom()
+      const lv = routeLevels.find((l) => z >= (l.minzoom ?? 0) && z < (l.maxzoom ?? 99)) ?? routeLevels[routeLevels.length - 1]
+      return levelPrefix(lv)
+    })()
     if (newlyCompleteLines.length) {
       celebrateLines(newlyCompleteLines.map((k) => LINES[k]), region)
-      if (map) flashLines(map, newlyCompleteLines, {
-        lineOffset: LINE_OFFSET_EXPR,
-        lineWidth: LINE_WIDTH_EXPR,
-      })
+      if (map) flashLines(map, newlyCompleteLines, flashExpr, { widthAt: flashWidthAt, source: flashSource })
     }
     if (allJustCompleted) {
       const visible = Object.keys(stationsPerLine).filter((k) => stationsPerLine[k] > 0)
       celebrateFinale(visible.map((k) => LINES[k]), region)
-      if (map) flashLines(map, visible, {
-        lineOffset: LINE_OFFSET_EXPR,
-        lineWidth: LINE_WIDTH_EXPR,
-      }, { finale: true })
+      if (map) flashLines(map, visible, flashExpr, { finale: true, widthAt: flashWidthAt, source: flashSource })
     }
 
     // Always advance, even when nothing fired (e.g. a line toggled off), so the
@@ -922,6 +1154,8 @@ export default function GamePage({
     LINES,
     celebrateLines,
     celebrateFinale,
+    sizing,
+    routeLevels,
   ])
 
   const revealAll = useCallback(() => {
@@ -934,9 +1168,10 @@ export default function GamePage({
     // Mass completion — don't celebrate. The detection effect sees this flag,
     // advances the baseline, and clears it.
     suppressCelebrationRef.current = true
-    setFound(ids)
+    // keep finds on disabled lines
+    setFound(addFound(ids, knownFound))
     setIsNewPlayer(false)
-  }, [enabledFeatures, setFound, setIsNewPlayer])
+  }, [enabledFeatures, knownFound, setFound, setIsNewPlayer])
 
   const zoomToFeature = useCallback(
     (id: number) => {
@@ -977,8 +1212,10 @@ export default function GamePage({
           />
           <div className="flex gap-2 lg:gap-4">
             <Input
-              fuse={fuse}
-              found={found}
+              matcher={matcher}
+              // all stored finds (not just enabled lines): Input writes
+              // [...fresh, ...found] back, which must keep disabled lines' finds
+              found={knownFound}
               setFound={setFound}
               setIsNewPlayer={setIsNewPlayer}
               inputRef={inputRef}

@@ -35,9 +35,10 @@ export function flashLines(
   map: maplibregl.Map,
   lineKeys: string[],
   expr: { lineOffset: Expr; lineWidth: Expr },
-  opts?: { finale?: boolean },
+  opts?: { finale?: boolean; widthAt?: (z: number) => number; source?: string },
 ): void {
-  if (!map || !lineKeys.length || !map.getSource('lines')) return
+  const source = opts?.source ?? 'lines'
+  if (!map || !lineKeys.length || !map.getSource(source)) return
 
   const id = `lines-flash-${counter++}`
   const filter = ['in', ['get', 'line'], ['literal', lineKeys]] as unknown as maplibregl.FilterSpecification
@@ -51,7 +52,7 @@ export function flashLines(
       {
         id,
         type: 'line',
-        source: 'lines',
+        source,
         filter,
         paint: {
           'line-color': '#ffffff',
@@ -86,7 +87,7 @@ export function flashLines(
       map.setPaintProperty(id, 'line-opacity', peakOpacity * env)
       map.setPaintProperty(id, 'line-blur', peakBlur * env)
       // Plain number (not an expression) — evaluate the zoom-based width in JS.
-      map.setPaintProperty(id, 'line-width', widthAtZoom(map.getZoom()) * mult)
+      map.setPaintProperty(id, 'line-width', (opts?.widthAt ?? widthAtZoom)(map.getZoom()) * mult)
     } catch {
       /* layer/style torn down mid-animation */
     }

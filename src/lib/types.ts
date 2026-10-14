@@ -40,8 +40,10 @@ export interface Line {
   // Lines that use a "white core" stripe treatment on the map and a
   // white-center ring in the legend. 'solid' draws a continuous white core
   // (Overground, Elizabeth, DLR); 'dashed' draws an interrupted white core so
-  // the line's own color shows through the gaps (Thameslink).
-  stripe?: 'solid' | 'dashed'
+  // the line's own color shows through the gaps (Thameslink). 'triple' draws
+  // two thin white lines inside the ribbon so it reads as three thin coloured
+  // lines with white infill (London Cable Car, as on the tube map).
+  stripe?: 'solid' | 'dashed' | 'triple'
   // Override the stripe colour (defaults to white). Used by Southeastern high
   // speed, drawn as a blue line with yellow dashes on the rail map.
   stripeColor?: string
@@ -56,4 +58,8 @@ export interface Config {
   METADATA: Metadata
   LINES: { [key: string]: Line }
   BEG_THRESHOLD?: number
+  MATCHING?: {
+    aliases: import('@/lib/matching').AliasConfig
+    decoyNames: string[]
+  }
 }

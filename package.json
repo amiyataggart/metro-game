@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/strip-lab.mjs",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
@@ -26,7 +28,6 @@
     "classnames": "^2.3.2",
     "clsx": "^1.2.1",
     "color": "^4.2.3",
-    "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
     "maplibre-gl": "^5.24.0",
     "next": "14.2.35",
@@ -45,6 +46,7 @@
     "prettier": "^3.0.1",
     "prettier-plugin-tailwindcss": "^0.5.2",
     "puppeteer": "^25.1.0",
-    "sharp": "^0.32.0"
+    "sharp": "^0.32.0",
+    "vitest": "^2.1.9"
   }
 }

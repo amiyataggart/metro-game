@@ -62,8 +62,14 @@
  *   node scripts/build-ribbons.js \
  *     --in src/app/(game)/london/data/routes.osm.json \
  *     --out src/app/(game)/london/data/routes.json
- * `routes.osm.json` is produced by scripts/fetch-osm-routes.js. build-ribbons
- * refuses an already-processed input (one carrying `laneOff`).
+ * `routes.osm.json` is produced by scripts/fetch-osm-routes.js (+
+ * merge-osm-routes.js). build-ribbons refuses an already-processed input (one
+ * carrying `laneOff`).
+ *
+ * Scope clip: before anything else the input is clipped to the network scope
+ * (scripts/clip-to-scope.js — trimmed lines end at their end stations,
+ * scope.ts), using the services and features.json next to --in. `--no-clip`
+ * skips it (diagnostics only).
  */
 
 const fs = require('fs')
@@ -140,6 +146,62 @@ const CONFIG = {
   MIN_SHARED_NODES: 2, // a line bundles onto a spine only if they share at
   // least this many CONSECUTIVE station nodes (>=2 ⇒ they co-run a segment,
   // not just cross at one station).
+  ORIENT_SPINES: false, // lab: orient neighbouring spines consistently so a
+  // group of lines passing from one spine to the next keeps its side order
+  // (spines laid in opposite directions otherwise mirror the lanes -> the
+  // pair crosses at the hand-over). Off by default: /london is unchanged.
+  ORIENT_GAP: 300, // m: only link spines a line moves between within this gap
+  NO_SNAP_DROP: [], // lab: [{line, radius}] NO_SNAP entries to skip (matched on
+  // line + radius), for rules a lab variant makes redundant.
+  EXIT_ORDER: false, // lab: rank a corridor's lanes by the side each line
+  // leaves/joins it on (left exits take left lanes), so a line peels off the
+  // outside of a stack instead of cutting across its neighbours. Config order
+  // breaks ties; spines under an ORDER_OVERRIDE keep the override ranking.
+  GLOBAL_ORDER: 0, // lab: passes of network-wide lane ordering (needs
+  // ORIENT_SPINES). After a first packing, every place a line moves from one
+  // spine to the next asks the next spine to put it on the SAME side (in its
+  // direction of travel) as on the previous one; each spine re-ranks its lanes
+  // by those hints (+ EXIT_ORDER exit sides), repeated N passes, so lane order
+  // agrees from corridor to corridor instead of being chosen per corridor.
+  WIDE_LINES: [], // lab: lines snapped with the /london radii (D_WIDE, D2_WIDE)
+  // instead of D / D2 — raw OSM tube centrelines (duplicates per branch,
+  // branches stopping short of their trunk, wobbles) need /london's loose snap;
+  // routed track geometry keeps the tight one. A pair uses the wide radii when
+  // either side (the feature, or the line that laid the spine) is WIDE.
+  D_WIDE: 34,
+  ANG_COS_TIGHT: 0, // lab (with WIDE_LINES): tangent gate for pairs where
+  // neither side is WIDE (precise routed track): real co-running track is
+  // within ~10°, so a stricter gate stops lines that merely CROSS at a shallow
+  // angle being snapped into each other's corridor (HS1 over the North London
+  // Line at York Way). 0 = use ANG_COS for every pair.
+  D2_WIDE: 130,
+  STRATA_TUBE: [], // lab (with STRATA): these lines (the Underground) may
+  // bundle with each other across 'surface' / 'tunnel-subway' (District and
+  // Piccadilly through West Kensington), never with other lines across strata.
+  D_XSTRATA: 0, // lab (with STRATA + WIDE_LINES): a WIDE (tube) line and a
+  // non-WIDE line in incompatible strata may still share a corridor where they
+  // already lie within this many metres (they'd overlap when drawn anyway: the
+  // Victoria / Piccadilly tunnels right under Great Northern south of Finsbury
+  // Park); never pulled farther, and never rail tunnel vs surface rail (HS1).
+  END_HOLD: 0, // lab: a line keeps its lane this many metres beyond where it
+  // joins / leaves a corridor, so the others shift only after it has gone (or
+  // before it arrives). With the laneOff smoothing (OFFSET_SMOOTH_WIN) the
+  // others otherwise started moving into its lane ~120 m before a terminus:
+  // Mildmay drawn over the Windrush's end at Highbury & Islington.
+  SOLO_LINES: [], // lab: lines that are never pulled into another line's
+  // corridor (dedicated track: HS1 on the St Pancras approach), except where
+  // they already lie within D_XSTRATA of it and would be drawn hidden under it
+  WIDE_STATIC_ORDER: false, // lab: corridors laid by a WIDE (tube) line keep
+  // /london's static config-order lane ranking (+ ORDER_OVERRIDES) instead of
+  // EXIT_ORDER / GLOBAL_ORDER, which flipped lanes along tube corridors
+  // (Barbican: Elizabeth and Circle swapping sides).
+  RAIL_TUNNEL_TUBE: false, // lab (with D_XSTRATA): a WIDE (tube) line and a
+  // main-line tunnel ('tunnel-rail', e.g. the Elizabeth line) are compatible.
+  STRATA: false, // lab: features carry a `stratum` property (e.g. 'tunnel' /
+  // 'surface'); a line only snaps onto spines laid in the same stratum, so a
+  // deep tube tunnel never bundles with the viaduct above it.
+  EMIT_SPINE: false, // lab: tag each offset-mode feature with its spine id
+  // (`spine`, -1 = solo) so lab zoom levels can be aligned corridor by corridor
   OFFSET_SMOOTH_WIN: 24, // offset-mode: window (samples) for smoothing laneOff
   // along a feature. Larger = steadier offset through dense junctions (less
   // "wobble", e.g. Thameslink at Finsbury Park) at the cost of longer ramps.
@@ -474,7 +536,7 @@ class SpineGrid {
   }
   // nearest spine vertex within D of p that is tangent-parallel to `tan`.
   // If onlySpine >= 0, restrict to that spine.
-  nearest(p, tan, D, angCos, onlySpine = -1) {
+  nearest(p, tan, D, angCos, onlySpine = -1, ok = null) {
     const cx = Math.floor(p[0] / this.cell)
     const cy = Math.floor(p[1] / this.cell)
     let best = null
@@ -485,6 +547,7 @@ class SpineGrid {
         if (!arr) continue
         for (const e of arr) {
           if (onlySpine >= 0 && e.spineId !== onlySpine) continue
+          if (ok && !ok(e)) continue
           const d = Math.hypot(e.x - p[0], e.y - p[1])
           if (d >= bestD) continue
           if (tan) {
@@ -558,17 +621,32 @@ function parseArgs() {
     else if (a[i] === '--debug-line') o.debugLine = a[++i]
     else if (a[i] === '--mode') o.mode = a[++i] // 'offset' (default) | 'baked'
     else if (a[i] === '--force') o.force = true // allow building from processed input
+    else if (a[i] === '--no-clip') o.noClip = true // skip the scope clip (diagnostics)
+    // Lab experiments (scripts/lab/): JSON CONFIG overrides, plus an optional
+    // `disable` list of override tables to empty, e.g.
+    // '{"D":12,"D2":12,"disable":["NO_SNAP"]}'. Default builds never pass it.
+    else if (a[i] === '--config') o.config = JSON.parse(a[++i])
   }
   return o
 }
 
 function main() {
   const args = parseArgs()
+  if (args.config) {
+    const { disable = [], ...cfg } = args.config
+    Object.assign(CONFIG, cfg)
+    const tables = { ORDER_OVERRIDES, NO_SNAP, FORCE_SNAP, NUDGE }
+    for (const t of disable) tables[t].length = 0
+  }
   ORDER_OVERRIDES.forEach((o) => (o.atXY = toXY(o.at)))
+  for (const d of CONFIG.NO_SNAP_DROP) {
+    const k = NO_SNAP.findIndex((o) => o.line === d.line && o.radius === d.radius)
+    if (k >= 0) NO_SNAP.splice(k, 1)
+  }
   NO_SNAP.forEach((o) => (o.atXY = toXY(o.at)))
   FORCE_SNAP.forEach((o) => (o.atXY = toXY(o.at)))
   NUDGE.forEach((o) => (o.atXY = toXY(o.at)))
-  const raw = JSON.parse(fs.readFileSync(args.in, 'utf8'))
+  let raw = JSON.parse(fs.readFileSync(args.in, 'utf8'))
   // Footgun guard: always build from the pristine pre-offset source, never from
   // an already-processed routes.json (that double-snaps / double-offsets).
   const alreadyProcessed = raw.features.some((f) => f.properties && 'laneOff' in f.properties)
@@ -580,6 +658,15 @@ function main() {
         `(use --force to override).`,
     )
     process.exit(1)
+  }
+  if (!args.noClip) {
+    // Clip the trimmed lines to scope (end stations) before building ribbons.
+    const { clipToScope, loadScope, logStats } = require('./clip-to-scope.js')
+    const stationsFC = JSON.parse(fs.readFileSync(path.join(path.dirname(args.in), 'features.json'), 'utf8'))
+    const clipped = clipToScope(raw, stationsFC, loadScope())
+    console.log(`scope clip: ${raw.features.length} -> ${clipped.fc.features.length} raw features`)
+    logStats(clipped.stats)
+    raw = clipped.fc
   }
   const ORDER = require('./line-order.js') // {lineKey: order}
 
@@ -597,10 +684,28 @@ function main() {
       closeArc: CONFIG.DEDUP_CLOSE, minRun: CONFIG.DEDUP_MIN_RUN,
     })
     const xy = resample(deSpike(collapsed, CONFIG.SPIKE_ANGLE), CONFIG.S)
+    // CONFIG.STRATA: per-vertex stratum. `props.st` (one per input coordinate)
+    // is carried onto the resampled vertices by nearest input vertex (walking
+    // forward), so a line is ONE feature through tunnel portals; a single
+    // `props.stratum` still works.
+    let st = null
+    if (CONFIG.STRATA) {
+      if (Array.isArray(f.properties.st)) {
+        const src = f.geometry.coordinates.map(toXY), sst = f.properties.st
+        let k = 0
+        st = xy.map((q) => {
+          let best = k, bd = dist(src[k], q)
+          for (let j = k + 1; j < Math.min(src.length, k + 40); j++) { const d = dist(src[j], q); if (d < bd) { bd = d; best = j } }
+          k = best
+          return sst[best]
+        })
+      } else st = xy.map(() => f.properties.stratum ?? null)
+    }
     feats.push({
       line,
       order: ORDER[line] != null ? ORDER[line] : 999,
       props: f.properties,
+      st,
       xy,
       tan: smoothTangents(tangents(xy)),
       cum: cumlen(xy),
@@ -686,16 +791,22 @@ function main() {
 
   // ---- spines ----
   const spines = [] // {id, xy, tan, cum, members:Map(line->[[s0,s1]]), sign}
-  const grid = new SpineGrid(CONFIG.D)
+  let layingLine = null
+  const TUBE_SET = new Set(CONFIG.STRATA_TUBE)
+  const TUBE_PAIR = new Set(['surface', 'tunnel-subway'])
+  const strataOk = (sa, la, sb, lb) =>
+    sa === sb || (TUBE_SET.has(la) && TUBE_SET.has(lb) && TUBE_PAIR.has(sa) && TUBE_PAIR.has(sb))
+  const WIDE = new Set(CONFIG.WIDE_LINES)
+  const grid = new SpineGrid(WIDE.size ? Math.max(CONFIG.D, CONFIG.D_WIDE) : CONFIG.D)
 
-  function addSpine(xy) {
+  function addSpine(xy, st = null) {
     const tan = smoothTangents(tangents(xy))
     const cum = cumlen(xy)
     const id = spines.length
     const nseq = projectNodes(xy, cum) // ordered nodes along this spine
     const npos = new Map() // node -> index in nseq
     nseq.forEach((e, k) => npos.set(e.node, k))
-    spines.push({ id, xy, tan, cum, members: new Map(), sign: 1, nseq, npos })
+    spines.push({ id, xy, tan, cum, members: new Map(), sign: 1, nseq, npos, st, layLine: layingLine, wide: WIDE.has(layingLine) })
     for (let i = 0; i < xy.length; i++)
       grid.add(id, i, xy[i][0], xy[i][1], tan[i][0], tan[i][1])
     return id
@@ -774,10 +885,40 @@ function main() {
 
   for (const { f } of procOrder) {
     const n = f.xy.length
+    // per-vertex strata: a spine vertex's stratum vs this feature's at vertex i
+    const spSt = (e) => (spines[e.spineId].st ? spines[e.spineId].st[e.idx] : null)
+    const SOLO = new Set(CONFIG.SOLO_LINES)
+    const soloOk = (e) => { const l = spines[e.spineId].layLine; return l === f.line || (!SOLO.has(l) && !SOLO.has(f.line)) }
+    const okS = CONFIG.STRATA || SOLO.size
+      ? (e, i) => soloOk(e) && (!CONFIG.STRATA || strataOk(spSt(e), spines[e.spineId].layLine, f.st[i], f.line))
+      : null
+    layingLine = f.line
+    const fWide = WIDE.has(f.line)
     // 1) assign each point to nearest existing spine (or -1)
     const assign = new Array(n).fill(-1)
     for (let i = 0; i < n; i++) {
-      const e = grid.nearest(f.xy[i], f.tan[i], CONFIG.D, CONFIG.ANG_COS)
+      const e = WIDE.size
+        ? grid.nearest(f.xy[i], f.tan[i], CONFIG.D_WIDE, CONFIG.ANG_COS, -1, (c) => {
+            const d = Math.hypot(c.x - f.xy[i][0], c.y - f.xy[i][1])
+            const wide = fWide || spines[c.spineId].wide
+            if (!wide && CONFIG.ANG_COS_TIGHT && Math.abs(f.tan[i][0] * c.tx + f.tan[i][1] * c.ty) < CONFIG.ANG_COS_TIGHT) return false
+            // across strata only tube vs non-tube (tube tunnels under National
+            // Rail at Finsbury Park), never rail tunnel vs surface rail (HS1)
+            // a SOLO line may still sit beside another line where they already
+            // coincide within D_XSTRATA (HS1's tunnel right under the North
+            // London Line at Dalston would otherwise be hidden under it)
+            if (!soloOk(c)) return d < CONFIG.D_XSTRATA
+            if (okS && !okS(c, i)) {
+              if (fWide === spines[c.spineId].wide) return false
+              // a main-line TUNNEL (Elizabeth line) with a tube line: both
+              // underground, bundle as /london does (Barbican, Bond Street)
+              const railSt = fWide ? spSt(c) : f.st[i]
+              if (CONFIG.RAIL_TUNNEL_TUBE && railSt === 'tunnel-rail') return d < CONFIG.D_WIDE
+              return d < CONFIG.D_XSTRATA
+            }
+            return d < (wide ? CONFIG.D_WIDE : CONFIG.D)
+          })
+        : grid.nearest(f.xy[i], f.tan[i], CONFIG.D, CONFIG.ANG_COS, -1, okS ? (c) => okS(c, i) : null)
       if (e) assign[i] = e.spineId
     }
     const clean = hysteresis(assign, f.xy)
@@ -793,7 +934,7 @@ function main() {
         // so the close "bow" stretches bundle while any genuinely-divergent
         // middle does not). Captures Met's ~50-60m bow off Circle north trunk.
         for (let i = run.vLo; i <= run.vHi; i++)
-          if (clean[i] === -1 && grid.nearest(f.xy[i], null, CONFIG.D2, 0, X.id)) clean[i] = X.id
+          if (clean[i] === -1 && grid.nearest(f.xy[i], null, WIDE.size && (fWide || X.wide) ? CONFIG.D2_WIDE : CONFIG.D2, 0, X.id, okS ? (c) => okS(c, i) : null)) clean[i] = X.id
       }
     }
     // FORCE_SNAP overrides: bind this line onto a corridor near the given points,
@@ -849,7 +990,7 @@ function main() {
         // lay a new spine from this feature's own run
         const runXY = f.xy.slice(lo, hi + 1)
         if (runXY.length >= 2) {
-          const id = addSpine(runXY)
+          const id = addSpine(runXY, f.st ? f.st.slice(lo, hi + 1) : null)
           addMember(id, f.line, 0, spines[id].cum.at(-1))
           // own run maps to spine vertices 1:1 (offset lo)
           f.segments.push({ kind: 'own', spineId: id, lo, hi, base: lo })
@@ -904,8 +1045,101 @@ function main() {
     return { pt, normal: [nx / L, ny / L] }
   }
 
+  // ---- consistent spine orientation (CONFIG.ORIENT_SPINES) ----
+  // For each line moving from spine P (traversed in direction dp) to spine Q
+  // (dq) within ORIENT_GAP, its lane side is preserved iff signP*dp ==
+  // signQ*dq, i.e. signQ = signP * dp * dq. Votes per spine pair (weighted by
+  // run length) are resolved greedily from the longest spines outward.
+  if (CONFIG.ORIENT_SPINES) {
+    const votes = new Map() // spineId -> Map(otherId -> parity weight sum)
+    const vote = (a, b, parity, w) => {
+      if (a === b) return
+      for (const [x, y] of [[a, b], [b, a]]) {
+        if (!votes.has(x)) votes.set(x, new Map())
+        votes.get(x).set(y, (votes.get(x).get(y) || 0) + parity * w)
+      }
+    }
+    for (const f of lineFeats) {
+      const segs = f.segments.filter((g) => g.kind !== 'solo').map((g) => {
+        const sp = spines[g.spineId]
+        const dir = g.kind === 'own' ? 1 : projectArc(sp, f.xy[g.hi]) - projectArc(sp, f.xy[g.lo]) >= 0 ? 1 : -1
+        return { ...g, dir, len: f.cum[g.hi] - f.cum[g.lo] }
+      })
+      for (let k = 1; k < segs.length; k++) {
+        const a = segs[k - 1], b = segs[k]
+        if (f.cum[b.lo] - f.cum[a.hi] > CONFIG.ORIENT_GAP) continue
+        vote(a.spineId, b.spineId, a.dir * b.dir, Math.min(a.len, b.len) + 1)
+      }
+    }
+    const order = spines.map((sp) => sp.id).sort((a, b) => spines[b].cum.at(-1) - spines[a].cum.at(-1) || a - b)
+    const assigned = new Set()
+    // Canonical anchor: a component's seed gets the sign whose lane frame
+    // points north (or east on a north–south seed), so separate builds of
+    // similar geometry (lab zoom levels) agree on which side each lane is.
+    const canonicalSign = (sp) => {
+      const t = sp.tan[Math.floor(sp.tan.length / 2)]
+      const n = [-t[1], t[0]] // left normal = +lane side
+      return n[1] > 0.2 || (n[1] >= -0.2 && n[0] > 0) ? 1 : -1
+    }
+    for (const seed of order) {
+      if (assigned.has(seed)) continue
+      spines[seed].sign = canonicalSign(spines[seed])
+      assigned.add(seed)
+      const queue = [seed]
+      while (queue.length) {
+        const u = queue.shift()
+        const nbrs = [...(votes.get(u) || new Map()).keys()].filter((v) => !assigned.has(v)).sort((a, b) => a - b)
+        for (const v of nbrs) {
+          // sum the votes from every already-assigned neighbour of v
+          let tally = 0
+          for (const [w, par] of votes.get(v)) if (assigned.has(w)) tally += spines[w].sign * par
+          spines[v].sign = tally >= 0 ? 1 : -1
+          assigned.add(v)
+          queue.push(v)
+        }
+      }
+    }
+  }
+
+  // ---- exit sides (CONFIG.EXIT_ORDER) ----
+  // For every member run of a line on a spine: where is the line ~120 m before
+  // the run starts and after it ends, measured along the spine's LEFT normal?
+  // +1 = fully left, -1 = fully right, 0 = continues straight / unknown.
+  if (CONFIG.EXIT_ORDER) {
+    const K = 12
+    for (const sp of spines) sp.exits = new Map()
+    for (const f of lineFeats) {
+      const n = f.xy.length
+      for (const g of f.segments) {
+        if (g.kind === 'solo') continue
+        const sp = spines[g.spineId]
+        let side = 0
+        for (const [edge, beyond] of [[g.lo, g.lo - K], [g.hi, g.hi + K]]) {
+          if (beyond < 0 || beyond >= n) continue
+          const s0 = projectArc(sp, f.xy[edge])
+          const { pt, normal } = spineAt(sp, s0)
+          const p = f.xy[beyond]
+          const d = (p[0] - pt[0]) * normal[0] + (p[1] - pt[1]) * normal[1]
+          side += Math.max(-1, Math.min(1, d / 40))
+        }
+        const a = projectArc(sp, f.xy[g.lo]), b = projectArc(sp, f.xy[g.hi])
+        if (!sp.exits.has(f.line)) sp.exits.set(f.line, [])
+        sp.exits.get(f.line).push([Math.min(a, b), Math.max(a, b), side])
+      }
+    }
+  }
+  const exitSideAt = (sp, line, s) => {
+    let best = 0, bd = Infinity
+    for (const [a, b, side] of sp.exits.get(line) || []) {
+      const d = s < a ? a - s : s > b ? s - b : 0
+      if (d < bd) { bd = d; best = side }
+    }
+    return best
+  }
+
   // ---- lane packing per spine (per BIN, sorted by order) ----
-  for (const sp of spines) {
+  // hintAt(sp, line, s): GLOBAL_ORDER desired lane index (or null).
+  const packLanes = (hintAt) => { for (const sp of spines) {
     const total = sp.cum.at(-1)
     const nb = Math.max(1, Math.ceil(total / CONFIG.BIN))
     sp.nb = nb
@@ -920,7 +1154,8 @@ function main() {
       const present = []
       for (const line of memberLines) {
         const segs = sp.members.get(line)
-        if (segs.some(([a, c]) => mid >= a - CONFIG.BIN && mid <= c + CONFIG.BIN)) present.push(line)
+        const hold = CONFIG.BIN + CONFIG.END_HOLD
+        if (segs.some(([a, c]) => mid >= a - hold && mid <= c + hold)) present.push(line)
       }
       // near an order-override, rank present lines by its top→bottom list
       // (unlisted lines keep config order, after the listed ones)
@@ -930,15 +1165,60 @@ function main() {
         const ov = spOv.find((o) => dist(pt, o.atXY) < o.radius)
         if (ov) top = ov.top
       }
+      // EXIT_ORDER: lane index r maps to a LEFT-normal offset of r * sign, so
+      // sorting by exitSide * sign puts left-leaving lines in left lanes.
       const keyOf = top
         ? (l) => { const i = top.indexOf(l); return i >= 0 ? i : top.length + (ORDER[l] ?? 999) }
-        : (l) => ORDER[l] ?? 999
+        : hintAt && !spOv.length && !(CONFIG.WIDE_STATIC_ORDER && sp.wide)
+          ? (l) => (CONFIG.EXIT_ORDER ? 2 * exitSideAt(sp, l, mid) * sp.sign : 0) + (hintAt(sp, l, mid) ?? 0) + (ORDER[l] ?? 999) * 1e-4
+          : CONFIG.EXIT_ORDER && !spOv.length && !(CONFIG.WIDE_STATIC_ORDER && sp.wide)
+            ? (l) => Math.round(exitSideAt(sp, l, mid) * sp.sign * 4) * 1000 + (ORDER[l] ?? 999)
+            : (l) => ORDER[l] ?? 999
       present.sort((a, c) => keyOf(a) - keyOf(c) || (a < c ? -1 : 1))
       const m = present.length
       sp.mcount[b] = m
       for (let r = 0; r < m; r++) {
         sp.lanes.get(present[r])[b] = r - (m - 1) / 2 // signed lane INDEX
       }
+    }
+  } }
+  packLanes(null)
+  if (CONFIG.GLOBAL_ORDER) {
+    // transitions: consecutive non-solo segments of a feature within ORIENT_GAP
+    const trans = []
+    for (const f of lineFeats) {
+      const segs = f.segments.filter((g) => g.kind !== 'solo').map((g) => {
+        const sp = spines[g.spineId]
+        const dir = g.kind === 'own' ? 1 : projectArc(sp, f.xy[g.hi]) - projectArc(sp, f.xy[g.lo]) >= 0 ? 1 : -1
+        return { sp, dir, s0: projectArc(sp, f.xy[g.lo]), s1: projectArc(sp, f.xy[g.hi]), lo: g.lo, hi: g.hi }
+      })
+      for (let k = 1; k < segs.length; k++) {
+        const a = segs[k - 1], b = segs[k]
+        if (a.sp === b.sp || f.cum[b.lo] - f.cum[a.hi] > CONFIG.ORIENT_GAP) continue
+        trans.push({ line: f.line, a, b })
+      }
+    }
+    for (let pass = 0; pass < CONFIG.GLOBAL_ORDER; pass++) {
+      const hints = new Map() // spine id -> Map(line -> [[arc, lane]])
+      const put = (sp, line, arc, v) => {
+        if (!hints.has(sp.id)) hints.set(sp.id, new Map())
+        const m = hints.get(sp.id)
+        if (!m.has(line)) m.set(line, [])
+        m.get(line).push([arc, v])
+      }
+      for (const { line, a, b } of trans) {
+        // left-of-travel position = lane * sign * dir; carry it across
+        const la = laneAt(a.sp, line, a.s1), lb = laneAt(b.sp, line, b.s0)
+        put(b.sp, line, b.s0, la * a.sp.sign * a.dir * b.sp.sign * b.dir)
+        put(a.sp, line, a.s1, lb * b.sp.sign * b.dir * a.sp.sign * a.dir)
+      }
+      packLanes((sp, line, s) => {
+        const hs = hints.get(sp.id)?.get(line)
+        if (!hs) return null
+        let w = 0, v = 0
+        for (const [arc, val] of hs) { const k = 1 / (1 + Math.abs(arc - s) / 500); w += k; v += k * val }
+        return v / w
+      })
     }
   }
   const spacingFor = (m) => CONFIG.LANE_SPACING[m] ?? CONFIG.LANE_SPACING_DEFAULT
@@ -1032,8 +1312,10 @@ function main() {
     const snap = []
     for (let i = 0; i < n; i++) snap.push([0, 0])
     const offv = new Float64Array(n)
+    const sid = new Int32Array(n).fill(-1)
     for (const seg of f.segments) {
       if (seg.kind === 'solo') continue
+      for (let i = seg.lo; i <= seg.hi; i++) sid[i] = seg.spineId
       const sp = spines[seg.spineId]
       let dir = 1
       if (seg.kind !== 'own') {
@@ -1071,10 +1353,10 @@ function main() {
     const Q = CONFIG.OFFSET_QUANT
     const out = []
     let start = 0
-    const keyAt = (i) => Math.round(offS[i] / Q)
+    const keyAt = CONFIG.EMIT_SPINE ? (i) => Math.round(offS[i] / Q) + ':' + sid[i] : (i) => Math.round(offS[i] / Q)
     for (let i = 1; i <= n; i++) {
       if (i === n || keyAt(i) !== keyAt(start)) {
-        out.push({ coords: pos.slice(start, Math.min(n, i + 1)), off: keyAt(start) * Q })
+        out.push({ coords: pos.slice(start, Math.min(n, i + 1)), off: Math.round(offS[start] / Q) * Q, spine: sid[start] })
         start = i
       }
     }
@@ -1191,7 +1473,7 @@ function main() {
         if (simp.length < 2) continue
         outFeatures.push({
           type: 'Feature',
-          properties: { ...orig.properties, offset: 0, laneOff: round(seg.off) },
+          properties: { ...orig.properties, offset: 0, laneOff: round(seg.off), ...(CONFIG.EMIT_SPINE ? { spine: seg.spine } : {}) },
           geometry: { type: 'LineString', coordinates: toOut(simp) },
         })
       }

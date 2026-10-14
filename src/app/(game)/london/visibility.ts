@@ -1,14 +1,23 @@
 /*
- * Visibility filters — HIDE (do not delete) certain services/stops from the
- * rendered map. Applied in page.tsx when building the GeoJSON passed to the
- * client, so hidden features never reach MapLibre (they don't render and don't
- * consume runtime memory). Fully reversible: empty HIDDEN_LINES and/or set
- * THAMESLINK_TRIM = false to bring everything back. The underlying
- * routes.json / features.json data is left intact.
+ * Visibility filters — HIDE (do not delete) whole services from the rendered
+ * map. Applied in page.tsx when building the GeoJSON passed to the client, so
+ * hidden features never reach MapLibre. Fully reversible: empty HIDDEN_LINES
+ * to bring everything back.
+ *
+ * /london uses scopedStationFeatures / scopedRouteFeatures: HIDDEN_LINES only.
+ * Network scope (which stations, how far each line is drawn) is applied at
+ * build time: stations come from the scoped service tables
+ * (scripts/build-stations.js) and route geometry is clipped at the end
+ * stations (scripts/clip-to-scope.js, run by build-ribbons.js).
+ *
+ * LEGACY — visibleStationFeatures / visibleRouteFeatures below keep the
+ * pre-scope render-time behaviour (clip to DISPLAY_BOUNDS, optional
+ * THAMESLINK_TRIM) for the experimental /newtracks and /newtracks2 pages,
+ * whose own routes.json is not clipped to scope. Don't use them for /london.
  */
 import type { LineString, MultiLineString, Point, Position } from 'geojson'
 import type { Line } from '@/lib/types'
-import { DISPLAY_BOUNDS } from './config'
+import { DISPLAY_BOUNDS } from './config' // legacy box, /newtracks only
 
 // 0. Display-bounds clip. Lines + stations are stored in full (National Rail
 //    routes run far past London); only the portion inside DISPLAY_BOUNDS is
@@ -45,6 +54,7 @@ export const HIDDEN_LINES = new Set<string>([])
 // 2. Thameslink: keep only the core network, trimming each branch at the named
 //    boundary station. "Beyond" = farther from central London, along that
 //    branch's bearing, than the boundary station.
+/** @deprecated Legacy, /newtracks pages only. */
 export const THAMESLINK_TRIM = false
 const THAMESLINK = 'Thameslink'
 
@@ -81,6 +91,10 @@ function thameslinkInExtent(coord: Position): boolean {
 }
 
 // ---- station (Point) features ----
+/**
+ * @deprecated Legacy render-time clip to DISPLAY_BOUNDS, for the /newtracks
+ * pages only. /london uses scopedStationFeatures.
+ */
 export function visibleStationFeatures<
   T extends { properties: { line?: string }; geometry: Point },
 >(features: T[]): T[] {
@@ -96,6 +110,10 @@ export function visibleStationFeatures<
 }
 
 // ---- route (LineString) features: drop hidden lines, clip Thameslink tails ----
+/**
+ * @deprecated Legacy render-time clip to DISPLAY_BOUNDS, for the /newtracks
+ * pages only. /london uses scopedRouteFeatures.
+ */
 export function visibleRouteFeatures<
   T extends { properties: { line?: string }; geometry: LineString | MultiLineString },
 >(features: T[]): T[] {
@@ -153,4 +171,23 @@ export function visibleLines(lines: { [k: string]: Line }): { [k: string]: Line 
   const out: { [k: string]: Line } = {}
   for (const k of Object.keys(lines)) if (!HIDDEN_LINES.has(k)) out[k] = lines[k]
   return out
+}
+
+// ---- /london: hidden lines only (scope is trimmed at build time) ----
+export function scopedStationFeatures<
+  T extends { properties: { line?: string }; geometry: Point },
+>(features: T[]): T[] {
+  return features.filter((f) => {
+    const line = f.properties.line
+    return !!line && !HIDDEN_LINES.has(line)
+  })
+}
+
+export function scopedRouteFeatures<
+  T extends { properties: { line?: string }; geometry: LineString | MultiLineString },
+>(features: T[]): T[] {
+  return features.filter((f) => {
+    const line = f.properties.line
+    return !(line && HIDDEN_LINES.has(line))
+  })
 }

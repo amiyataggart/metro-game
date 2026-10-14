@@ -1,0 +1,407 @@
+{
+  "london": {
+    "11": {
+      "overlapKm": 117.4,
+      "twists": 556,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 76.3,
+      "twists": 465,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 46.3,
+      "twists": 410,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 24.9,
+      "twists": 412,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 15,
+      "twists": 428,
+      "widthM": 9.5
+    }
+  },
+  "graph": {
+    "11": {
+      "overlapKm": 81.5,
+      "twists": 517,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 42.2,
+      "twists": 416,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 24.1,
+      "twists": 309,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 18.3,
+      "twists": 234,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 15.3,
+      "twists": 231,
+      "widthM": 9.5
+    }
+  },
+  "levels": {
+    "11": {
+      "overlapKm": 37.6,
+      "twists": 833,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 24.2,
+      "twists": 387,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 25.3,
+      "twists": 442,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 19.6,
+      "twists": 345,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 37.2,
+      "twists": 743,
+      "widthM": 9.5
+    }
+  },
+  "morph": {
+    "11": {
+      "overlapKm": 41.4,
+      "twists": 552,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 25.9,
+      "twists": 406,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 133.6,
+      "twists": 633,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 105.2,
+      "twists": 704,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 38.5,
+      "twists": 733,
+      "widthM": 9.5
+    }
+  },
+  "graph2": {
+    "11": {
+      "overlapKm": 123.7,
+      "twists": 473,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 81,
+      "twists": 380,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 52.3,
+      "twists": 303,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 36.9,
+      "twists": 271,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 24.5,
+      "twists": 257,
+      "widthM": 9.5
+    }
+  },
+  "graph3": {
+    "11": {
+      "overlapKm": 118.4,
+      "twists": 438,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 76.6,
+      "twists": 311,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 49.5,
+      "twists": 266,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 34.2,
+      "twists": 253,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 23.4,
+      "twists": 257,
+      "widthM": 9.5
+    }
+  },
+  "graph4": {
+    "11": {
+      "overlapKm": 119.7,
+      "twists": 410,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 83.3,
+      "twists": 314,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 57,
+      "twists": 269,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 43.9,
+      "twists": 248,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 31.2,
+      "twists": 218,
+      "widthM": 9.5
+    }
+  },
+  "graph5": {
+    "11": {
+      "overlapKm": 55.8,
+      "twists": 212,
+      "widthM": 42.9
+    },
+    "12": {
+      "overlapKm": 55.8,
+      "twists": 212,
+      "widthM": 42.9
+    },
+    "13": {
+      "overlapKm": 55.8,
+      "twists": 212,
+      "widthM": 42.9
+    },
+    "14": {
+      "overlapKm": 55.8,
+      "twists": 212,
+      "widthM": 42.9
+    },
+    "15": {
+      "overlapKm": 55.8,
+      "twists": 212,
+      "widthM": 42.9
+    }
+  },
+  "london-map": {
+    "11": {
+      "overlapKm": 64.2,
+      "twists": 442,
+      "widthM": 42.9
+    },
+    "12": {
+      "overlapKm": 64.2,
+      "twists": 442,
+      "widthM": 42.9
+    },
+    "13": {
+      "overlapKm": 64.2,
+      "twists": 442,
+      "widthM": 42.9
+    },
+    "14": {
+      "overlapKm": 64.2,
+      "twists": 442,
+      "widthM": 42.9
+    },
+    "15": {
+      "overlapKm": 64.2,
+      "twists": 442,
+      "widthM": 42.9
+    }
+  },
+  "staging1": {
+    "11": {
+      "overlapKm": 55.8,
+      "twists": 212,
+      "widthM": 42.9
+    },
+    "12": {
+      "overlapKm": 73.9,
+      "twists": 284,
+      "widthM": 45.3
+    },
+    "13": {
+      "overlapKm": 55,
+      "twists": 284,
+      "widthM": 28.3
+    },
+    "14": {
+      "overlapKm": 40.4,
+      "twists": 219,
+      "widthM": 14.2
+    },
+    "15": {
+      "overlapKm": 21.9,
+      "twists": 227,
+      "widthM": 7.1
+    }
+  },
+  "london-staging": {
+    "11": {
+      "overlapKm": 64.2,
+      "twists": 442,
+      "widthM": 42.9
+    },
+    "12": {
+      "overlapKm": 67,
+      "twists": 425,
+      "widthM": 45.3
+    },
+    "13": {
+      "overlapKm": 43.5,
+      "twists": 399,
+      "widthM": 28.3
+    },
+    "14": {
+      "overlapKm": 20,
+      "twists": 424,
+      "widthM": 14.2
+    },
+    "15": {
+      "overlapKm": 11.6,
+      "twists": 469,
+      "widthM": 7.1
+    }
+  },
+  "graph7": {
+    "11": {
+      "overlapKm": 87,
+      "twists": 425,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 54.3,
+      "twists": 295,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 31.9,
+      "twists": 228,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 23.3,
+      "twists": 201,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 17.2,
+      "twists": 205,
+      "widthM": 9.5
+    }
+  },
+  "staging3": {
+    "11": {
+      "overlapKm": 55.8,
+      "twists": 212,
+      "widthM": 42.9
+    },
+    "12": {
+      "overlapKm": 46.3,
+      "twists": 253,
+      "widthM": 45.3
+    },
+    "13": {
+      "overlapKm": 30.4,
+      "twists": 228,
+      "widthM": 28.3
+    },
+    "14": {
+      "overlapKm": 21.8,
+      "twists": 196,
+      "widthM": 14.2
+    },
+    "15": {
+      "overlapKm": 9.8,
+      "twists": 207,
+      "widthM": 7.1
+    }
+  },
+  "graph7t": {
+    "11": {
+      "overlapKm": 269.1,
+      "twists": 474,
+      "widthM": 96.4
+    },
+    "12": {
+      "overlapKm": 217.9,
+      "twists": 370,
+      "widthM": 54.2
+    },
+    "13": {
+      "overlapKm": 177.3,
+      "twists": 349,
+      "widthM": 30.1
+    },
+    "14": {
+      "overlapKm": 121.3,
+      "twists": 307,
+      "widthM": 17.1
+    },
+    "15": {
+      "overlapKm": 29.3,
+      "twists": 283,
+      "widthM": 9.5
+    }
+  },
+  "staging3t": {
+    "11": {
+      "overlapKm": 55.8,
+      "twists": 212,
+      "widthM": 42.9
+    },
+    "12": {
+      "overlapKm": 46.3,
+      "twists": 253,
+      "widthM": 45.3
+    },
+    "13": {
+      "overlapKm": 30.4,
+      "twists": 228,
+      "widthM": 28.3
+    },
+    "14": {
+      "overlapKm": 80.6,
+      "twists": 306,
+      "widthM": 14.2
+    },
+    "15": {
+      "overlapKm": 14.5,
+      "twists": 268,
+      "widthM": 7.1
+    }
+  }
+}

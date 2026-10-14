@@ -34,7 +34,11 @@ export function roundelSvg(line: Line, opts?: { pct?: number; px?: number }): st
       ? `<line x1="0" x2="${S}" y1="${cy}" y2="${cy}" stroke="${stripeColor}" stroke-width="${stripeW}" stroke-linecap="butt" />`
       : line.stripe === 'dashed'
         ? `<line x1="0" x2="${S}" y1="${cy}" y2="${cy}" stroke="${stripeColor}" stroke-width="${stripeW}" stroke-dasharray="${stripeW * 2.4} ${stripeW * 1.8}" stroke-linecap="butt" />`
-        : ''
+        : line.stripe === 'triple'
+          ? [-1, 1]
+              .map((s) => `<line x1="0" x2="${S}" y1="${cy + (s * barH) / 5}" y2="${cy + (s * barH) / 5}" stroke="${stripeColor}" stroke-width="${barH / 5}" stroke-linecap="butt" />`)
+              .join('')
+          : ''
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}" width="${px}" height="${px}">` +
     `<circle cx="${cx}" cy="${cy}" r="${ringR}" fill="none" stroke="${line.color}" stroke-width="${ringStroke}" stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}" stroke-linecap="butt" transform="rotate(-90 ${cx} ${cy})" />` +
