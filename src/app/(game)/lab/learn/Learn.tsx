@@ -957,6 +957,7 @@ export default function Learn({ data, fontClass, fontFamily }: { data: LearnData
                     answered={run ? (run.done ? run.stops.length : run.answered) : autoFill(practiceStops, 0)}
                     shown={run ? run.revealed : new Set()}
                     current={currentRow}
+                    popAt={run ? run.popAt : undefined}
                     touch={touch}
                     fontFamily={fontFamily}
                   />
