@@ -1,13 +1,45 @@
 'use client'
 
 import classNames from 'classnames'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Line } from '@/lib/types'
+import { roundelSvg } from '@/lib/roundel'
 import type { KeyGroup } from './groups'
 import { shortName } from './groups'
 
 export const ACCENT = '#0019a8'
 export const fmtInt = (n: number) => n.toLocaleString('en-GB')
+
+/** Near-black lines (Northern, Gatwick Express) vanish on the dark panel: draw them light grey there. */
+export function uiLine(line: Line, dark: boolean): Line {
+  if (!dark) return line
+  const h = line.color.replace('#', '')
+  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16)
+  const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255
+  return lum < 0.12 ? { ...line, color: '#e4e4e7' } : line
+}
+
+/* ------------------------------------------------------------------ */
+/* Roundel (lib/roundel: progress ring + line bar), as /london's legend */
+/* ------------------------------------------------------------------ */
+
+// Faint full ring under the progress arc so a part-done roundel still reads as
+// a roundel (same ring geometry as lib/roundel's 32-unit viewBox).
+export function KeyRoundel({ line, pct, on, size = 26 }: { line: Line; pct: number; on: boolean; size?: number }) {
+  const html = useMemo(() => roundelSvg(line, { pct, px: size }), [line, pct, size])
+  return (
+    <span
+      className={classNames('relative block shrink-0 transition-[filter,opacity]', !on && 'opacity-30 grayscale')}
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      <svg viewBox="0 0 32 32" width={size} height={size} className="absolute inset-0">
+        <circle cx="16" cy="16" r="10.08" fill="none" stroke={line.color} strokeOpacity={0.22} strokeWidth="5.44" />
+      </svg>
+      <span className="absolute inset-0 [&>svg]:block" dangerouslySetInnerHTML={{ __html: html }} />
+    </span>
+  )
+}
 
 /* ------------------------------------------------------------------ */
 /* Line stripe = legend sample + progress bar                          */
@@ -94,38 +126,23 @@ export function LineStripe({
 /* Pips (in-play toggles)                                              */
 /* ------------------------------------------------------------------ */
 
-export function LinePip({ color, on }: { color: string; on: boolean }) {
-  return (
-    <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0" aria-hidden>
-      {on ? (
-        <>
-          <circle cx="8" cy="8" r="7.25" fill={color} />
-          <path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-        </>
-      ) : (
-        <circle cx="8" cy="8" r="6.6" fill="#fff" stroke="#a1a1aa" strokeWidth="1.3" strokeDasharray="2.6 2" />
-      )}
-    </svg>
-  )
-}
-
 export function GroupPip({ state }: { state: 'all' | 'some' | 'none' }) {
   return (
-    <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0" aria-hidden>
+    <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 text-zinc-900 dark:text-zinc-100" aria-hidden>
       {state === 'all' && (
         <>
-          <circle cx="8" cy="8" r="7.25" fill="#18181b" />
-          <path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="8" cy="8" r="7.25" fill="currentColor" />
+          <path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" className="stroke-white dark:stroke-zinc-900" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
         </>
       )}
       {state === 'some' && (
         <>
-          <circle cx="8" cy="8" r="6.6" fill="#fff" stroke="#18181b" strokeWidth="1.3" />
-          <path d="M4.6 8h6.8" stroke="#18181b" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" strokeWidth="1.3" />
+          <path d="M4.6 8h6.8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </>
       )}
       {state === 'none' && (
-        <circle cx="8" cy="8" r="6.6" fill="#fff" stroke="#a1a1aa" strokeWidth="1.3" strokeDasharray="2.6 2" />
+        <circle cx="8" cy="8" r="6.6" fill="none" stroke="#a1a1aa" strokeWidth="1.3" strokeDasharray="2.6 2" />
       )}
     </svg>
   )
@@ -141,41 +158,41 @@ export function Barcode({
   enabled,
   frac,
   height = 28,
-  onHoverLine,
   pulse,
+  dark = false,
 }: {
   groups: KeyGroup[]
   LINES: Record<string, Line>
   enabled: Record<string, boolean>
   frac: (k: string) => number
   height?: number
-  onHoverLine?: (k: string | null) => void
   pulse?: Set<string>
+  dark?: boolean
 }) {
   return (
-    <div className="flex w-full items-end gap-[5px]" style={{ height }} onMouseLeave={() => onHoverLine?.(null)}>
+    <div className="flex w-full items-end gap-[5px]" style={{ height }}>
       {groups.map((g) => (
         <div key={g.id} className="flex h-full items-end gap-[2px]" style={{ flexGrow: g.keys.length, flexBasis: 0 }}>
           {g.keys.map((k) => {
             const on = enabled[k]
             const f = frac(k)
+            const color = uiLine(LINES[k], dark).color
             return (
               <div
                 key={k}
                 title={`${LINES[k].name}${on ? ` · ${Math.round(f * 100)}%` : ' · off'}`}
-                onMouseEnter={() => on && onHoverLine?.(k)}
                 className={classNames(
                   'relative h-full min-w-[2px] flex-1 overflow-hidden rounded-[2px]',
-                  !on && 'border border-dashed border-zinc-300',
+                  !on && 'border border-dashed border-zinc-300 dark:border-zinc-600',
                 )}
-                style={on ? { background: hexA(LINES[k].color, 0.18) } : undefined}
+                style={on ? { background: hexA(color, 0.18) } : undefined}
               >
                 {on && (
                   <div
                     className={classNames('absolute inset-x-0 bottom-0', pulse?.has(k) && 'animate-pulse')}
                     style={{
                       height: `${f > 0 ? Math.max(8, f * 100) : 0}%`,
-                      background: LINES[k].color,
+                      background: color,
                       transition: 'height 600ms cubic-bezier(.2,.8,.2,1)',
                     }}
                   />
@@ -218,7 +235,7 @@ export function LineDots({ lines, LINES }: { lines: string[]; LINES: Record<stri
         <span
           key={k}
           title={LINES[k]?.name}
-          className="h-2 w-2 shrink-0 rounded-full"
+          className="h-2 w-2 shrink-0 rounded-full dark:ring-1 dark:ring-white/25"
           style={{ background: LINES[k]?.color }}
         />
       ))}
@@ -254,7 +271,9 @@ export function KeyTimer({ hidden }: { hidden: boolean }) {
       onClick={() => setRunning((r) => !r)}
       className={classNames(
         'inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-[13px] font-bold tabular-nums transition-colors',
-        running ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-300 bg-white text-zinc-700 hover:border-zinc-900',
+        running
+          ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
+          : 'border-zinc-300 bg-white text-zinc-700 hover:border-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:border-zinc-300',
       )}
       aria-label={running ? 'Pause timer' : 'Start timer'}
     >

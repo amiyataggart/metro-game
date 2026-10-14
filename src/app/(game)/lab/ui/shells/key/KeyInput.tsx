@@ -106,7 +106,7 @@ export default function KeyInput({
         viewBox="0 0 20 20"
         className={classNames(
           'pointer-events-none absolute top-1/2 -translate-y-1/2 text-zinc-400',
-          size === 'lg' ? 'left-4 h-5 w-5' : 'left-3.5 h-[18px] w-[18px]',
+          size === 'lg' ? 'left-5 h-5 w-5' : 'left-[18px] h-[18px] w-[18px]',
         )}
         fill="none"
         stroke="currentColor"
@@ -132,13 +132,14 @@ export default function KeyInput({
         onFocus={onFocus}
         className={classNames(
           shake && 'animate-shake',
-          'w-full rounded-xl border-2 border-zinc-900 bg-white font-bold text-zinc-900 caret-[#0019a8] outline-none transition-shadow placeholder:font-normal placeholder:text-zinc-400 focus:shadow-[0_0_0_4px_rgba(0,25,168,0.15)]',
-          size === 'lg' ? 'h-14 pl-12 pr-16 text-xl' : 'h-12 pl-11 pr-14 text-[17px]',
+          'w-full rounded-full border-2 border-zinc-900 bg-white font-bold text-zinc-900 caret-[#0019a8] outline-none transition-shadow placeholder:font-normal placeholder:text-zinc-400 focus:shadow-[0_0_0_4px_rgba(0,25,168,0.15)]',
+          'dark:border-zinc-500 dark:bg-zinc-900 dark:text-zinc-50 dark:caret-sky-400 dark:placeholder:text-zinc-500 dark:focus:border-zinc-300 dark:focus:shadow-[0_0_0_4px_rgba(255,255,255,0.08)]',
+          size === 'lg' ? 'h-14 pl-[52px] pr-20 text-xl' : 'h-12 pl-12 pr-16 text-[17px]',
         )}
       />
       <kbd
         className={classNames(
-          'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-zinc-200 bg-zinc-50 px-1.5 font-sans text-xs text-zinc-400',
+          'pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded-full border border-zinc-200 bg-zinc-50 px-2 font-sans text-xs text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400',
           !search && 'opacity-0',
         )}
       >

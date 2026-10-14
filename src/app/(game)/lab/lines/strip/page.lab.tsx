@@ -2,6 +2,7 @@ import { Cabin } from 'next/font/google'
 import features from '../../../london/data/features.json'
 import { LINES, SERVICES, LINES_AT, FEATURE_ID } from '../lineData'
 import StripDemo, { type StripLine, type StripService } from './StripDemo'
+import { compareLines, groupNameOf } from '../../ui/shells/key/groups'
 
 const font = Cabin({ weight: ['400', '500', '700'], style: ['normal'], subsets: ['latin'], display: 'swap' })
 
@@ -35,24 +36,16 @@ function endKm(stops: string[], fromEnd: boolean): number {
   return 0
 }
 
-const GROUPS = ['Underground', 'Overground', 'Elizabeth, DLR & more', 'National Rail']
-function group(key: string, order: number): string {
-  if (order <= 10) return GROUPS[0]
-  if (order <= 16) return GROUPS[1]
-  if (key === 'ElizabethLine' || key === 'DLR' || key === 'Tramlink' || key === 'CableCar') return GROUPS[2]
-  return GROUPS[3]
-}
-
 const lines: StripLine[] = Object.entries(LINES)
   .filter(([key]) => SERVICES[key]?.length)
-  .sort((a, b) => GROUPS.indexOf(group(a[0], a[1].order)) - GROUPS.indexOf(group(b[0], b[1].order)) || a[1].order - b[1].order)
+  .sort((a, b) => compareLines({ key: a[0], order: a[1].order }, { key: b[0], order: b[1].order }))
   .map(([key, l]) => ({
     key,
     name: l.name,
     color: l.color,
     stripe: l.stripe,
     stripeColor: l.stripeColor,
-    group: group(key, l.order),
+    group: groupNameOf(key, l.order),
   }))
 
 const services: Record<string, StripService[]> = {}

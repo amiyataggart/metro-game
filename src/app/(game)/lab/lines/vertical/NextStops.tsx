@@ -6,6 +6,7 @@ import { LONDON_ALIASES } from '../../../london/data/aliases'
 import Diagram, { RowView } from './Diagram'
 import { flipLayout, layoutLine, LineLayout } from './graph'
 import type { LineInfo, VerticalData } from './data'
+import { compareLines, groupNameOf } from '../../ui/shells/key/groups'
 
 const FOUND_KEY = 'london-stations' // the real game's save: READ ONLY here
 const PRACTICE_KEY = 'lab-lines-vertical-practice-v1' // this page's own results
@@ -22,10 +23,7 @@ const SHORT: Record<string, string> = {
 }
 
 function groupOf(l: LineInfo) {
-  if (!l.stripe) return 'Underground'
-  if (l.stripe === 'solid') return 'Overground, Elizabeth, DLR, trams'
-  if (l.stripe === 'dashed') return 'National Rail'
-  return 'Other'
+  return groupNameOf(l.key, l.order)
 }
 
 type Mode = 'browse' | 'practice'
@@ -506,7 +504,7 @@ export default function NextStops({ data, fontClass }: { data: VerticalData; fon
   const bestHere = store[practiceKey]?.best
   const groups = useMemo(() => {
     const g: [string, LineInfo[]][] = []
-    for (const l of lines) {
+    for (const l of lines.slice().sort(compareLines)) {
       const name = groupOf(l)
       const hit = g.find((x) => x[0] === name)
       if (hit) hit[1].push(l)
