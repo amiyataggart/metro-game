@@ -82,6 +82,58 @@ export function layoutLine(
   coords: Record<string, Coord | undefined>,
   radial = false,
 ): LineLayout {
+  // Splitting the trunk lets a trunk stretch step outward round a loop
+  // (Tramlink's Croydon loop) but can zig-zag lines with two parallel routes
+  // (c2c via Upminster / via Tilbury): lay out both ways, keep the better one.
+  const whole = layoutLineWith(services, coords, radial, false)
+  const split = layoutLineWith(services, coords, radial, true)
+  return layoutScore(split) < layoutScore(whole) ? split : whole
+}
+
+/** Lower is better: stations with a lane wrongly passing outside them (it runs
+ *  past more of their piece's stations than that piece runs past of its own),
+ *  plus lanes crossed where pieces curve in from their anchors. */
+export function layoutScore(l: LineLayout): number {
+  const span = (p: LPiece): [number, number] => [
+    p.top !== undefined ? 2 * p.top + 1 : 2 * Math.min(...p.rows),
+    p.bottom !== undefined ? 2 * p.bottom - 1 : 2 * Math.max(...p.rows),
+  ]
+  const passN = (q: LPiece, o: LPiece) => {
+    const [a, b] = span(q)
+    return o.rows.filter((r) => !q.rows.includes(r) && a <= 2 * r && 2 * r <= b).length
+  }
+  const owner = new Map<number, LPiece>()
+  l.pieces.forEach((p) => p.rows.forEach((r) => owner.set(r, p)))
+  let bad = 0
+  l.rows.forEach((_, i) => {
+    const own = owner.get(i)
+    if (!own) return
+    if (l.pieces.some((q) => {
+      if (q === own || q.lane <= own.lane) return false
+      const [a, b] = span(q)
+      return a <= 2 * i && 2 * i <= b && passN(q, own) > passN(own, q)
+    })) bad++
+  })
+  // a lane is crossed only by pieces running straight through that half-row
+  // (not ones fanning out from, or into, the same junction)
+  const occupied = (lane: number, h: number) => l.pieces.some((p) => { const [a, b] = span(p); return p.lane === lane && a < h && h < b })
+  let cross = 0
+  for (const p of l.pieces) {
+    for (const [anchor, h] of [[p.top, span(p)[0]], [p.bottom, span(p)[1]]] as [number | undefined, number][]) {
+      if (anchor === undefined) continue
+      const al = l.rows[anchor].lane
+      for (let x = Math.min(al, p.lane) + 1; x < Math.max(al, p.lane); x++) if (occupied(x, h)) cross++
+    }
+  }
+  return bad + 2 * cross
+}
+
+function layoutLineWith(
+  services: string[][],
+  coords: Record<string, Coord | undefined>,
+  radial: boolean,
+  splitTrunk: boolean,
+): LineLayout {
   const svcs = services.map(cleanStops).filter((s) => s.length > 0)
   if (!svcs.length) return { rows: [], pieces: [], lanes: 1, busy: [], jumps: {} }
 
@@ -258,7 +310,40 @@ export function layoutLine(
   // Each spans half-rows [a, b]; anchored ends curve in from the anchor row.
   type Item = { rs: number[]; a: number; b: number; anchorRow?: number; top?: number; bottom?: number; trunk?: boolean }
   const items: Item[] = []
+  // The trunk is split at its junction stations (rows other pieces join at)
+  // into sections that obey the same inside/outside rule as everything else,
+  // so a trunk stretch can step outward round a loop that would otherwise
+  // pass its stations on the outside (Tramlink's Croydon loop past Reeves
+  // Corner, Centrale, West Croydon, Wellesley Road) and step back after it.
+  const junction = new Set<number>()
   segs.forEach((seg, si) => {
+    if (si === 0) return
+    if (seg.top !== undefined) junction.add(rowOf.get(seg.top)!)
+    if (seg.bottom !== undefined) junction.add(rowOf.get(seg.bottom)!)
+  })
+  for (const [u, v] of links) {
+    const ru = rowOf.get(u)!, rv = rowOf.get(v)!
+    if (rv - ru <= MAX_LINK_SPAN) { junction.add(ru); junction.add(rv) }
+  }
+  {
+    const tr = segs[0].stations.map((n) => rowOf.get(n)!)
+    const parts: number[][] = []
+    for (const r of tr) {
+      const last = parts[parts.length - 1]
+      if (splitTrunk && (junction.has(r) || !last || junction.has(last[last.length - 1]))) parts.push([r])
+      else if (!last) parts.push([r])
+      else last.push(r)
+    }
+    parts.forEach((rs, k) => {
+      const top = k > 0 ? parts[k - 1][parts[k - 1].length - 1] : undefined
+      const bottom = k < parts.length - 1 ? parts[k + 1][0] : undefined
+      const a = top !== undefined ? 2 * top + 1 : 2 * rs[0]
+      const b = bottom !== undefined ? 2 * bottom - 1 : 2 * rs[rs.length - 1]
+      items.push({ rs, a, b, anchorRow: top, top, bottom, trunk: true })
+    })
+  }
+  segs.forEach((seg, si) => {
+    if (si === 0) return
     const rs = seg.stations.map((n) => rowOf.get(n)!)
     let a = 2 * Math.min(...rs)
     let b = 2 * Math.max(...rs)
@@ -266,7 +351,7 @@ export function layoutLine(
     if (seg.bottom) b = 2 * rowOf.get(seg.bottom)! - 1
     const top = seg.top !== undefined ? rowOf.get(seg.top) : undefined
     const bottom = seg.bottom !== undefined ? rowOf.get(seg.bottom) : undefined
-    items.push({ rs, a, b, anchorRow: top ?? bottom, top, bottom, trunk: si === 0 })
+    items.push({ rs, a, b, anchorRow: top ?? bottom, top, bottom })
   })
   const jumps: Record<number, string[]> = {}
   for (const [u, v] of links) {
@@ -288,14 +373,25 @@ export function layoutLine(
   // lane right of everything it must be inside of.
   const owner = new Map<number, number>() // row -> item with its station
   items.forEach((it, i) => it.rs.forEach((r) => owner.set(r, i)))
-  const inside: Set<number>[] = items.map(() => new Set()) // i -> items that must be left of i
+  // passes[o][i] = how many of o's station rows piece i runs past
+  const passes: Map<number, number>[] = items.map(() => new Map())
   items.forEach((it, i) => {
     const own = new Set(it.rs)
     for (let r = Math.ceil(it.a / 2); 2 * r <= it.b; r++) {
       const o = owner.get(r)
-      if (o !== undefined && o !== i && !own.has(r)) inside[o].add(i)
+      if (o !== undefined && o !== i && !own.has(r)) passes[o].set(i, (passes[o].get(i) ?? 0) + 1)
     }
   })
+  // two pieces that each run past the other's stations: the side passing more
+  // stations goes inside (Thameslink's West Hampstead -> Kentish Town lane runs
+  // past the 8 Cambridge-branch stations, which pass only Kentish Town)
+  const inside: Set<number>[] = items.map(() => new Set()) // i -> items that must be left of i
+  passes.forEach((m, o) =>
+    m.forEach((n, i) => {
+      const back = passes[i].get(o) ?? 0
+      if (n > back || (n === back && i < o)) inside[o].add(i)
+    }),
+  )
   const laneOf: number[] = items.map(() => -1)
   const isLink = (i: number) => items[i].rs.length === 0
   // segments first, ordered by the inside-of relation among segments
@@ -304,8 +400,19 @@ export function layoutLine(
   const orderIdx: number[] = []
   const nSeg = items.filter((_, i) => !isLink(i)).length
   for (let guard = 0; orderIdx.length < nSeg && guard < items.length * 4; guard++) {
+    // the first trunk section first, then any piece whose inner neighbours are placed
     let next = !done.has(0) ? 0 : items.findIndex((_, i) => !isLink(i) && !done.has(i) && ready(i))
-    if (next < 0) next = items.findIndex((_, i) => !isLink(i) && !done.has(i)) // cycle: build order
+    if (next < 0) {
+      // a cycle: place the piece that the unplaced pieces least need to be
+      // inside of (fewest of its stations run past by them), build order on ties
+      let best = Infinity
+      items.forEach((_, i) => {
+        if (isLink(i) || done.has(i)) return
+        let w = 0
+        passes[i].forEach((n, j) => { if (!done.has(j) && !isLink(j)) w += n })
+        if (w < best) { best = w; next = i }
+      })
+    }
     done.add(next)
     orderIdx.push(next)
   }
@@ -314,8 +421,22 @@ export function layoutLine(
     let min = 0
     inside[i].forEach((j) => { if (laneOf[j] >= 0) min = Math.max(min, laneOf[j] + 1) })
     let lane: number
-    if (it.trunk) lane = 0
-    else {
+    if (it.trunk) {
+      // trunk sections: straight on (the previous section's lane) or the
+      // innermost free lane allowed (back towards lane 0 after a loop),
+      // whichever crosses fewer lanes where it steps across; ties go inside
+      let low = min
+      while (!free(low, it.a, it.b)) low++
+      const al = it.anchorRow !== undefined ? rows[it.anchorRow].lane : low
+      const straight = al >= min && free(al, it.a, it.b)
+      const crossings = (to: number) => {
+        if (it.anchorRow === undefined) return 0
+        let n = 0
+        for (let l = Math.min(al, to) + 1; l < Math.max(al, to); l++) if (!free(l, it.a, it.a)) n++
+        return n
+      }
+      lane = straight && crossings(al) < crossings(low) ? al : low
+    } else {
       // the anchor's lane (straight on), else the nearest free lane inside it
       // (down to `min`), else the next free lane outside it
       const al = it.anchorRow !== undefined ? rows[it.anchorRow].lane : 0
