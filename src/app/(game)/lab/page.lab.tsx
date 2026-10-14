@@ -43,6 +43,14 @@ export default function Lab() {
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Different ways of laying out the site around the same map.</p>
         </Link>
 
+        <Link
+          href="/lab/lines"
+          className="mt-4 block rounded-xl bg-white p-4 shadow-sm ring-1 ring-zinc-200 transition hover:shadow-md hover:ring-blue-400 dark:bg-zinc-900 dark:ring-zinc-800"
+        >
+          <div className="text-lg font-bold">Line diagrams →</div>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Simplified train-style line maps for learning the network.</p>
+        </Link>
+
         <h2 className="mt-10 text-lg font-bold">Line geometry</h2>
         <div className="mt-3 grid gap-4 sm:grid-cols-3">
           {VARIANTS.map((v) => (
