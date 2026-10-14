@@ -187,6 +187,42 @@ const atZoom = (e: unknown, z: number): unknown => {
   return st[2 * n - 1]
 }
 
+/** /lab/ui-*: everything a page layout needs to draw the game around the map.
+ *  GamePage keeps all state and map logic; a Shell only arranges the UI. */
+export type GameShellProps = {
+  /** the map container (must be rendered exactly once, sized by the shell) */
+  mapSlot: React.ReactNode
+  map: maplibregl.Map | null
+  inputRef: React.MutableRefObject<HTMLInputElement | null>
+  matcher: (q: string) => ReturnType<ReturnType<typeof createMatcher>>
+  idMap: Map<number, DataFeature>
+  /** finds on enabled lines (newest first) */
+  found: number[]
+  /** all stored finds, including disabled lines (pass to Input) */
+  knownFound: number[]
+  setFound: (ids: number[]) => void
+  foundProportion: number
+  foundStationsPerLine: Record<string, number>
+  stationsPerLine: Record<string, number>
+  enabledLines: Record<string, boolean>
+  setEnabledLines: (v: Record<string, boolean>) => void
+  showTimer: boolean
+  setShowTimer: (v: boolean) => void
+  showAllStations: boolean
+  setShowAllStations: (v: boolean) => void
+  showFoundLabels: boolean
+  setShowFoundLabels: (v: boolean) => void
+  smoothLines: boolean
+  setSmoothLines: (v: boolean) => void
+  isNewPlayer: boolean
+  setIsNewPlayer: (v: boolean) => void
+  hoveredId: number | null
+  setHoveredId: (id: number | null) => void
+  zoomToFeature: (id: number) => void
+  onReset: () => void
+  revealAll: () => void
+}
+
 export default function GamePage({
   fc,
   routes,
@@ -196,6 +232,7 @@ export default function GamePage({
   sizing,
   maskData,
   cityData,
+  Shell,
 }: {
   fc: DataFeatureCollection
   routes?: RoutesFeatureCollection
@@ -209,6 +246,8 @@ export default function GamePage({
   sizing?: LabSizing
   maskData?: any
   cityData?: any
+  /** /lab/ui-* only: alternative page layout (see GameShellProps). */
+  Shell?: React.ComponentType<GameShellProps>
 }) {
   const { CITY_NAME, MAP_CONFIG, LINES, MATCHING } = useConfig()
   const { t } = useTranslation()
@@ -1191,6 +1230,40 @@ export default function GamePage({
     },
     [map, idMap],
   )
+
+  if (Shell)
+    return (
+      <Shell
+        mapSlot={<div className="absolute left-0 top-0 h-full w-full" id="map" />}
+        map={map}
+        inputRef={inputRef}
+        matcher={matcher}
+        idMap={idMap}
+        found={found}
+        knownFound={knownFound}
+        setFound={setFound}
+        foundProportion={foundProportion}
+        foundStationsPerLine={foundStationsPerLine}
+        stationsPerLine={stationsPerLine}
+        enabledLines={enabledLines}
+        setEnabledLines={setEnabledLines}
+        showTimer={showTimer ?? false}
+        setShowTimer={setShowTimer}
+        showAllStations={showAllStations ?? true}
+        setShowAllStations={setShowAllStations}
+        showFoundLabels={showFoundLabels ?? true}
+        setShowFoundLabels={setShowFoundLabels}
+        smoothLines={smoothLines ?? false}
+        setSmoothLines={setSmoothLines}
+        isNewPlayer={isNewPlayer ?? false}
+        setIsNewPlayer={setIsNewPlayer}
+        hoveredId={hoveredId}
+        setHoveredId={setHoveredId}
+        zoomToFeature={zoomToFeature}
+        onReset={onReset}
+        revealAll={revealAll}
+      />
+    )
 
   return (
     <div className="flex h-screen flex-row items-top justify-between">
