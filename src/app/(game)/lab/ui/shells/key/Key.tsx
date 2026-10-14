@@ -242,12 +242,32 @@ export default function Key(p: GameShellProps) {
           <Spine p={p} groups={groups} LINES={LINES} frac={frac} pctTxt={pctTxt} dark={dark} onOpen={() => setSpine(false)} />
         ) : (
           <aside className={classNames('z-10 flex h-full w-[360px] shrink-0 flex-col border-r-2', RULE, PAPER)}>
-            <header className="px-5 pb-3 pt-4">
+            {/* the whole header collapses the key (the arrow too); other
+                buttons inside it (the timer) keep their own clicks */}
+            <header
+              role="button"
+              tabIndex={0}
+              aria-label="Collapse key"
+              title="Collapse key"
+              onClick={(e) => {
+                const b = (e.target as HTMLElement).closest('button')
+                if (b && !b.hasAttribute('data-collapse')) return
+                setSpine(true)
+              }}
+              onKeyDown={(e) => {
+                if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault()
+                  setSpine(true)
+                }
+              }}
+              className="cursor-pointer select-none px-5 pb-3 pt-4 transition-colors hover:bg-zinc-100/70 focus-visible:outline-none dark:hover:bg-white/[0.04]"
+            >
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">London Rail Memory · Key</span>
                 <button
                   type="button"
-                  onClick={() => setSpine(true)}
+                  data-collapse
+                  tabIndex={-1}
                   className="-mr-1.5 rounded-md p-1.5 text-zinc-400 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                   aria-label="Collapse key"
                   title="Collapse key"
