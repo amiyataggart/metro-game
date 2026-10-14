@@ -299,6 +299,9 @@ node scripts/qa-junctions.js [route]     # drives the in-app search to screensho
 `/lab` lists experimental versions of the map; each is the full game (own saved
 progress) with different line geometry, plus an on-map panel (zoom, active level,
 overlap/crossing scorecard vs `/london`). `/london` is unaffected.
+The lab ships on `dev` (and locally) but not on `main`: its routes are
+`page.lab.tsx` files, enabled by `scripts/lab-enabled.mjs` in `next.config.mjs`
+(`LAB=1`/`LAB=0` to override), and `npm run build` drops `out/lab-data` on main.
 
 ```sh
 # track data (committed: scripts/lab/data/tracks.json.gz, OSM rail+subway+light_rail)
