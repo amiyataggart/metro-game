@@ -107,25 +107,6 @@ function Group({
           </span>
         </button>
       </div>
-      {/* summary bar: one segment per in-play line, width ∝ its stations */}
-      <button type="button" onClick={() => setOpen(!open)} className="block w-full px-5 pb-2.5" tabIndex={-1} aria-hidden>
-        {state === 'none' ? (
-          <div className="h-[5px] rounded-full border border-dashed border-zinc-300 dark:border-zinc-700" />
-        ) : (
-          <div className="flex h-[5px] gap-[2px] overflow-hidden rounded-full">
-            {on.map((k) => {
-              const t = p.stationsPerLine[k] || 1
-              const f = (p.foundStationsPerLine[k] || 0) / t
-              const color = uiLine(LINES[k], dark).color
-              return (
-                <div key={k} className="relative h-full" style={{ flexGrow: t, flexBasis: 0, background: hexA(color, 0.2) }}>
-                  <div className="absolute inset-y-0 left-0" style={{ width: `${f * 100}%`, background: color, transition: 'width 600ms' }} />
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </button>
       {open && (
         <ul className="pb-2">
           {g.keys.map((k) => (

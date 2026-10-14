@@ -67,64 +67,6 @@ export function GroupPip({ state }: { state: 'all' | 'some' | 'none' }) {
   )
 }
 
-/* ------------------------------------------------------------------ */
-/* Barcode: one bar per line, grouped by mode                          */
-/* ------------------------------------------------------------------ */
-
-export function Barcode({
-  groups,
-  LINES,
-  enabled,
-  frac,
-  height = 28,
-  pulse,
-  dark = false,
-}: {
-  groups: KeyGroup[]
-  LINES: Record<string, Line>
-  enabled: Record<string, boolean>
-  frac: (k: string) => number
-  height?: number
-  pulse?: Set<string>
-  dark?: boolean
-}) {
-  return (
-    <div className="flex w-full items-end gap-[5px]" style={{ height }}>
-      {groups.map((g) => (
-        <div key={g.id} className="flex h-full items-end gap-[2px]" style={{ flexGrow: g.keys.length, flexBasis: 0 }}>
-          {g.keys.map((k) => {
-            const on = enabled[k]
-            const f = frac(k)
-            const color = uiLine(LINES[k], dark).color
-            return (
-              <div
-                key={k}
-                title={`${LINES[k].name}${on ? ` · ${Math.round(f * 100)}%` : ' · off'}`}
-                className={classNames(
-                  'relative h-full min-w-[2px] flex-1 overflow-hidden rounded-[2px]',
-                  !on && 'border border-dashed border-zinc-300 dark:border-zinc-600',
-                )}
-                style={on ? { background: hexA(color, 0.18) } : undefined}
-              >
-                {on && (
-                  <div
-                    className={classNames('absolute inset-x-0 bottom-0', pulse?.has(k) && 'animate-pulse')}
-                    style={{
-                      height: `${f > 0 ? Math.max(8, f * 100) : 0}%`,
-                      background: color,
-                      transition: 'height 600ms cubic-bezier(.2,.8,.2,1)',
-                    }}
-                  />
-                )}
-              </div>
-            )
-          })}
-        </div>
-      ))}
-    </div>
-  )
-}
-
 export function hexA(hex: string, a: number) {
   const h = hex.replace('#', '')
   const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h
