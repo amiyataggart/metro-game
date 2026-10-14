@@ -982,7 +982,7 @@ export default function GamePage({
       // camera out to the whole network on load.
 
       m.once('idle', () => {
-        setMap((prev) => (prev === null ? m : prev))
+        setMap(m)
         onMap?.(m)
         m.on('mousemove', 'stations-circles', (e) => {
           if (e.features && e.features.length > 0) {
@@ -1004,6 +1004,9 @@ export default function GamePage({
     })
 
     return () => {
+      // the effect can re-run (Fast Refresh, new fc/routes): drop the removed
+      // map so the settings effects never touch it (they crashed on getLayer)
+      setMap((prev) => (prev === m ? null : prev))
       m.remove()
     }
     // We deliberately depend only on fc/routes/MAP_CONFIG so settings changes
