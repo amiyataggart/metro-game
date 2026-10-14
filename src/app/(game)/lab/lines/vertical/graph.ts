@@ -85,19 +85,9 @@ export function layoutLine(
   // Splitting the trunk lets a trunk stretch step outward round a loop
   // (Tramlink's Croydon loop) but can zig-zag lines with two parallel routes
   // (c2c via Upminster / via Tilbury): lay out both ways, keep the better one.
-  // Shortest-first ordering (below) shortens the lanes trailing past other
-  // stations, but on some networks (Southern's tangle of routes) it boxes
-  // stations in: try each combination and keep the best scoring layout,
-  // shortest-first and unsplit preferred on ties.
-  let best: LineLayout | null = null
-  let bestScore = Infinity
-  for (const shortFirst of [true, false])
-    for (const splitTrunk of [false, true]) {
-      const l = layoutLineWith(services, coords, radial, splitTrunk, shortFirst)
-      const sc = layoutScore(l)
-      if (sc < bestScore) { best = l; bestScore = sc }
-    }
-  return best!
+  const whole = layoutLineWith(services, coords, radial, false)
+  const split = layoutLineWith(services, coords, radial, true)
+  return layoutScore(split) < layoutScore(whole) ? split : whole
 }
 
 /** Lower is better: stations with a lane wrongly passing outside them (it runs
@@ -143,7 +133,6 @@ function layoutLineWith(
   coords: Record<string, Coord | undefined>,
   radial: boolean,
   splitTrunk: boolean,
-  shortFirst = true,
 ): LineLayout {
   const svcs = services.map(cleanStops).filter((s) => s.length > 0)
   if (!svcs.length) return { rows: [], pieces: [], lanes: 1, busy: [], jumps: {} }
@@ -178,27 +167,6 @@ function layoutLineWith(
   const placed = new Set(order)
   type Seg = { stations: string[]; top?: string; bottom?: string }
   const segs: Seg[] = [{ stations: trunk.slice() }]
-  const segOf = new Map<string, number>(trunk.map((n) => [n, 0]))
-  // Shortest first: where a line splits, the shorter continuation's rows come
-  // straight after the junction and the longer one after them, so fewer lanes
-  // trail past other stations (Thameslink at Bickley: Petts Wood, Orpington,
-  // then the seven stops to Sevenoaks; c2c at Barking: via Upminster, then
-  // via Tilbury). tailEnd/headStart: the dead-end rest of X's own piece
-  // below/above X (anything spliced into it included), or null.
-  const tailEnd = (X: string): number | null => {
-    const sg = segs[segOf.get(X)!]
-    if (sg.bottom !== undefined) return null
-    const after = sg.stations.slice(sg.stations.indexOf(X) + 1)
-    if (!after.length) return null
-    return Math.max(...after.map((n) => idx(n)))
-  }
-  const headStart = (X: string): number | null => {
-    const sg = segs[segOf.get(X)!]
-    if (sg.top !== undefined) return null
-    const before = sg.stations.slice(0, sg.stations.indexOf(X))
-    if (!before.length) return null
-    return Math.min(...before.map((n) => idx(n)))
-  }
   const drawn = new Set<string>()
   const ek = (a: string, b: string) => (a < b ? `${a}\u0001${b}` : `${b}\u0001${a}`)
   const adj = new Map<string, Set<string>>()
@@ -247,9 +215,7 @@ function layoutLineWith(
         run = run.reverse()
         ;[A, B] = [B, A]
       }
-      // the shorter of the two routes between A and B goes first
-      const between = idx(B) - idx(A) - 1
-      order.splice(shortFirst && run.length < between ? idx(A) + 1 : idx(B), 0, ...run)
+      order.splice(idx(B), 0, ...run)
       segs.push({ stations: run, top: A, bottom: B })
       addDrawn(A, run[0])
       for (let k = 1; k < run.length; k++) addDrawn(run[k - 1], run[k])
@@ -276,22 +242,17 @@ function layoutLineWith(
         } else down = idx(X) >= order.length / 2
       }
       if (down) {
-        const t = tailEnd(X)
-        const at = shortFirst && t !== null && t - idx(X) < away.length ? t + 1 : idx(X) + 1
-        order.splice(at, 0, ...away)
+        order.splice(idx(X) + 1, 0, ...away)
         segs.push({ stations: away, top: X })
       } else {
         const up = away.slice().reverse()
-        const h = headStart(X)
-        const at = shortFirst && h !== null && idx(X) - h < up.length ? h : idx(X)
-        order.splice(at, 0, ...up)
+        order.splice(idx(X), 0, ...up)
         segs.push({ stations: up, bottom: X })
       }
       addDrawn(X, away[0])
       for (let k = 1; k < away.length; k++) addDrawn(away[k - 1], away[k])
     }
     run.forEach((n) => placed.add(n))
-    run.forEach((n) => segOf.set(n, segs.length - 1))
   }
 
   // ---- leftover edges (links) ----
