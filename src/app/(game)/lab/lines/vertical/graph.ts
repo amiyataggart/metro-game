@@ -254,27 +254,19 @@ export function layoutLine(
     !(occ[lane] || []).some(([x, y]) => !(b < x || a > y))
   const take = (lane: number, a: number, b: number) => (occ[lane] ||= []).push([a, b])
   const pieces: LPiece[] = []
+  // Pieces to place: segments (with their own station rows) and links (none).
+  // Each spans half-rows [a, b]; anchored ends curve in from the anchor row.
+  type Item = { rs: number[]; a: number; b: number; anchorRow?: number; top?: number; bottom?: number; trunk?: boolean }
+  const items: Item[] = []
   segs.forEach((seg, si) => {
     const rs = seg.stations.map((n) => rowOf.get(n)!)
     let a = 2 * Math.min(...rs)
     let b = 2 * Math.max(...rs)
     if (seg.top) a = 2 * rowOf.get(seg.top)! + 1
     if (seg.bottom) b = 2 * rowOf.get(seg.bottom)! - 1
-    let lane = 0
-    if (si > 0) {
-      // prefer the anchor's lane (straight continuation), else the lowest free one
-      const anchorLane = seg.top ? rows[rowOf.get(seg.top)!].lane : rows[rowOf.get(seg.bottom!)!].lane
-      lane = free(anchorLane, a, b) ? anchorLane : 0
-      while (!free(lane, a, b)) lane++
-    }
-    take(lane, a, b)
-    rs.forEach((r) => (rows[r].lane = lane))
-    pieces.push({
-      lane,
-      rows: rs,
-      top: seg.top !== undefined ? rowOf.get(seg.top) : undefined,
-      bottom: seg.bottom !== undefined ? rowOf.get(seg.bottom) : undefined,
-    })
+    const top = seg.top !== undefined ? rowOf.get(seg.top) : undefined
+    const bottom = seg.bottom !== undefined ? rowOf.get(seg.bottom) : undefined
+    items.push({ rs, a, b, anchorRow: top ?? bottom, top, bottom, trunk: si === 0 })
   })
   const jumps: Record<number, string[]> = {}
   for (const [u, v] of links) {
@@ -285,13 +277,81 @@ export function layoutLine(
       ;(jumps[rv] ||= []).push(u)
       continue
     }
-    const a = 2 * ru + 1
-    const b = 2 * rv - 1
-    let lane = rows[ru].lane === rows[rv].lane && free(rows[ru].lane, a, b) ? rows[ru].lane : 0
-    while (!free(lane, a, b)) lane++
-    take(lane, a, b)
-    pieces.push({ lane, rows: [], top: ru, bottom: rv })
+    items.push({ rs: [], a: 2 * ru + 1, b: 2 * rv - 1, anchorRow: ru, top: ru, bottom: rv })
   }
+  // Stations sit on the outermost lane of their row, next to their names: a
+  // piece that runs past a row without stopping there goes INSIDE (a lower
+  // lane than) the piece that has that row's station. Otherwise a through lane
+  // (Thameslink West Hampstead -> Kentish Town) boxes in a branch's stations
+  // (Cambridge). Place pieces in that order (trunk first; cycles fall back to
+  // build order), each on its anchor's lane if allowed, else the lowest free
+  // lane right of everything it must be inside of.
+  const owner = new Map<number, number>() // row -> item with its station
+  items.forEach((it, i) => it.rs.forEach((r) => owner.set(r, i)))
+  const inside: Set<number>[] = items.map(() => new Set()) // i -> items that must be left of i
+  items.forEach((it, i) => {
+    const own = new Set(it.rs)
+    for (let r = Math.ceil(it.a / 2); 2 * r <= it.b; r++) {
+      const o = owner.get(r)
+      if (o !== undefined && o !== i && !own.has(r)) inside[o].add(i)
+    }
+  })
+  const laneOf: number[] = items.map(() => -1)
+  const isLink = (i: number) => items[i].rs.length === 0
+  // segments first, ordered by the inside-of relation among segments
+  const done = new Set<number>()
+  const ready = (i: number) => [...inside[i]].every((j) => done.has(j) || isLink(j))
+  const orderIdx: number[] = []
+  const nSeg = items.filter((_, i) => !isLink(i)).length
+  for (let guard = 0; orderIdx.length < nSeg && guard < items.length * 4; guard++) {
+    let next = !done.has(0) ? 0 : items.findIndex((_, i) => !isLink(i) && !done.has(i) && ready(i))
+    if (next < 0) next = items.findIndex((_, i) => !isLink(i) && !done.has(i)) // cycle: build order
+    done.add(next)
+    orderIdx.push(next)
+  }
+  for (const i of orderIdx) {
+    const it = items[i]
+    let min = 0
+    inside[i].forEach((j) => { if (laneOf[j] >= 0) min = Math.max(min, laneOf[j] + 1) })
+    let lane: number
+    if (it.trunk) lane = 0
+    else {
+      // the anchor's lane (straight on), else the nearest free lane inside it
+      // (down to `min`), else the next free lane outside it
+      const al = it.anchorRow !== undefined ? rows[it.anchorRow].lane : 0
+      lane = -1
+      for (let l = al; l >= min && lane < 0; l--) if (free(l, it.a, it.b)) lane = l
+      if (lane < 0) {
+        lane = Math.max(al + 1, min)
+        while (!free(lane, it.a, it.b)) lane++
+      }
+    }
+    laneOf[i] = lane
+    take(lane, it.a, it.b)
+    it.rs.forEach((r) => (rows[r].lane = lane))
+  }
+  // then links (short skips between placed stations): the nearest free lane
+  // just inside the stations they run past, so they hug their own route;
+  // otherwise the old rule (their stations' lane, else the lowest free one)
+  items.forEach((it, i) => {
+    if (!isLink(i)) return
+    const ru = it.top!, rv = it.bottom!
+    const passed: number[] = []
+    for (let r = ru + 1; r < rv; r++) passed.push(rows[r].lane)
+    const ends = Math.max(rows[ru].lane, rows[rv].lane)
+    let lane = -1
+    if (passed.length) {
+      const cap = Math.min(...passed) - 1
+      for (let l = Math.min(cap, ends); l >= 0 && lane < 0; l--) if (free(l, it.a, it.b)) lane = l
+    }
+    if (lane < 0) {
+      lane = rows[ru].lane === rows[rv].lane && free(rows[ru].lane, it.a, it.b) ? rows[ru].lane : 0
+      while (!free(lane, it.a, it.b)) lane++
+    }
+    laneOf[i] = lane
+    take(lane, it.a, it.b)
+  })
+  items.forEach((it, i) => pieces.push({ lane: laneOf[i], rows: it.rs, top: it.top, bottom: it.bottom }))
   const lanes = occ.length || 1
   const busy = rows.map((row, r) => {
     let m = row.lane

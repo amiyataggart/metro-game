@@ -6,12 +6,31 @@ import type { GameShellProps } from '@/components/GamePage'
 import { useConfig } from '@/lib/configContext'
 import AboutModal from '@/components/AboutModal'
 import KeyInput, { GuessResult } from './KeyInput'
-import { buildGroups } from './groups'
-import { Barcode, KeyTimer, LineChip, fmtInt, hexA } from './parts'
-import { KeyGroups, Recent, SettingsBar } from './KeyBody'
-import useIsolate from './useIsolate'
+import { buildGroups, GroupId } from './groups'
+import { Barcode, KeyTimer, LineChip, fmtInt, hexA, uiLine } from './parts'
+import { Count, KeyGroups, Recent, SettingsBar } from './KeyBody'
+import useMapTheme, { Theme } from './useMapTheme'
 
-const PAPER = 'bg-[#fbfaf7]'
+const PAPER = 'bg-[#fbfaf7] dark:bg-[#1b1c20]'
+// heavy "key" rules: black on paper, a soft grey on dark
+const RULE = 'border-zinc-900 dark:border-zinc-600'
+const THEME_KEY = 'lab-ui-key-theme'
+
+function useTheme(): [Theme, (t: Theme) => void] {
+  const [theme, setThemeState] = useState<Theme>('light')
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(THEME_KEY) === 'dark') setThemeState('dark')
+    } catch {}
+  }, [])
+  const setTheme = useCallback((t: Theme) => {
+    setThemeState(t)
+    try {
+      window.localStorage.setItem(THEME_KEY, t)
+    } catch {}
+  }, [])
+  return [theme, setTheme]
+}
 
 // Phone: size the layout to the *visual* viewport so the dock (input) rides
 // on top of the on-screen keyboard and the map stays visible above it.
@@ -63,18 +82,20 @@ export default function Key(p: GameShellProps) {
   const [result, setResult] = useState<GuessResult | null>(null)
   const [resultLines, setResultLines] = useState<string[]>([])
   const [pulse, setPulse] = useState<Set<string>>(new Set())
-  const [isolate, setIsolate] = useState<string[] | null>(null)
   const [spine, setSpine] = useState(false)
   const [sheet, setSheet] = useState(false)
   const [about, setAbout] = useState(false)
   const [hintGone, setHintGone] = useState(false)
 
-  // only lines in play can be isolated (a row toggled off under the cursor un-isolates)
-  const isolateOn = useMemo(() => {
-    const ks = (isolate || []).filter((k) => p.enabledLines[k])
-    return ks.length ? ks : null
-  }, [isolate, p.enabledLines])
-  useIsolate(p.map, touch ? null : isolateOn)
+  const [theme, setTheme] = useTheme()
+  const dark = theme === 'dark'
+  useMapTheme(p.map, theme)
+
+  // names of found stations are always shown (the map control is Clean / Dots only)
+  const { showFoundLabels, setShowFoundLabels } = p
+  useEffect(() => {
+    if (showFoundLabels === false) setShowFoundLabels(true)
+  }, [showFoundLabels, setShowFoundLabels])
 
   const frac = useCallback(
     (k: string) => {
@@ -83,11 +104,53 @@ export default function Key(p: GameShellProps) {
     },
     [p.stationsPerLine, p.foundStationsPerLine],
   )
-  const inPlay = useMemo(
-    () => Object.keys(LINES).reduce((s, k) => s + (p.enabledLines[k] ? p.stationsPerLine[k] || 0 : 0), 0),
-    [LINES, p.enabledLines, p.stationsPerLine],
-  )
-  const pct = (p.foundProportion || 0) * 100
+
+  // Each station counts ONCE (by name), however many lines call there. A
+  // station is in play if any of its lines is, and found if any of its
+  // in-play line features is found. Per-line rows keep per-line counts.
+  const byName = useMemo(() => {
+    const m = new Map<string, { id: number; line: string }[]>()
+    p.idMap.forEach((f, id) => {
+      const name = f.properties.name
+      const line = f.properties.line
+      if (!name || !line) return
+      const e = m.get(name)
+      if (e) e.push({ id, line })
+      else m.set(name, [{ id, line }])
+    })
+    return m
+  }, [p.idMap])
+  const { overall, groupCount } = useMemo(() => {
+    const found = new Set(p.knownFound)
+    const gOf: Record<string, GroupId> = {}
+    groups.forEach((g) => g.keys.forEach((k) => (gOf[k] = g.id)))
+    const overall: Count = { got: 0, total: 0 }
+    const groupCount: Partial<Record<GroupId, Count>> = {}
+    groups.forEach((g) => (groupCount[g.id] = { got: 0, total: 0 }))
+    byName.forEach((list) => {
+      let inPlay = false
+      let isFound = false
+      const gIn = new Set<GroupId>()
+      const gFound = new Set<GroupId>()
+      list.forEach(({ id, line }) => {
+        if (!p.enabledLines[line]) return
+        const f = found.has(id)
+        inPlay = true
+        if (f) isFound = true
+        const g = gOf[line]
+        if (g) {
+          gIn.add(g)
+          if (f) gFound.add(g)
+        }
+      })
+      if (inPlay) overall.total++
+      if (isFound) overall.got++
+      gIn.forEach((g) => groupCount[g]!.total++)
+      gFound.forEach((g) => groupCount[g]!.got++)
+    })
+    return { overall, groupCount }
+  }, [byName, p.knownFound, p.enabledLines, groups])
+  const pct = overall.total ? (overall.got / overall.total) * 100 : 0
   const pctTxt = pct >= 100 ? '100' : pct.toFixed(1)
 
   // lines of the station hovered on the map -> tick their rows
@@ -142,7 +205,10 @@ export default function Key(p: GameShellProps) {
     p.inputRef.current?.focus({ preventScroll: true })
   }
 
-  const common = { p, LINES, groups, pulse, markLines, setIsolate, afterToggle, touch }
+  const common = { p, LINES, groups, pulse, markLines, afterToggle, touch, dark, groupCount }
+  const settings = (t: boolean) => (
+    <SettingsBar p={p} touch={t} openAbout={() => setAbout(true)} theme={theme} setTheme={setTheme} />
+  )
 
   const input = (
     <KeyInput
@@ -160,23 +226,29 @@ export default function Key(p: GameShellProps) {
   )
 
   return (
+    // `dark` sits on a layout-less wrapper: Tailwind's dark: variants match descendants of .dark
+    <div className={classNames('contents', dark && 'dark')}>
     <div
-      className={classNames('flex h-[100dvh] w-full overflow-hidden text-zinc-900', PAPER, desktop ? 'flex-row' : 'flex-col')}
+      className={classNames(
+        'flex h-[100dvh] w-full overflow-hidden text-zinc-900 dark:text-zinc-100',
+        PAPER,
+        desktop ? 'flex-row' : 'flex-col',
+      )}
       style={vv ? { height: vv.h, transform: vv.top ? `translateY(${vv.top}px)` : undefined } : undefined}
     >
       {/* ---------------- desktop key ---------------- */}
       {desktop &&
         (spine ? (
-          <Spine p={p} groups={groups} LINES={LINES} frac={frac} pctTxt={pctTxt} onOpen={() => setSpine(false)} />
+          <Spine p={p} groups={groups} LINES={LINES} frac={frac} pctTxt={pctTxt} dark={dark} onOpen={() => setSpine(false)} />
         ) : (
-          <aside className={classNames('z-10 flex h-full w-[360px] shrink-0 flex-col border-r-2 border-zinc-900', PAPER)}>
+          <aside className={classNames('z-10 flex h-full w-[360px] shrink-0 flex-col border-r-2', RULE, PAPER)}>
             <header className="px-5 pb-3 pt-4">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500">London Rail Memory · Key</span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">London Rail Memory · Key</span>
                 <button
                   type="button"
                   onClick={() => setSpine(true)}
-                  className="-mr-1.5 rounded-md p-1.5 text-zinc-400 hover:bg-zinc-200/70 hover:text-zinc-900"
+                  className="-mr-1.5 rounded-md p-1.5 text-zinc-400 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                   aria-label="Collapse key"
                   title="Collapse key"
                 >
@@ -188,14 +260,14 @@ export default function Key(p: GameShellProps) {
               <div className="mt-1 flex items-end gap-3">
                 <div className="text-[46px] font-bold leading-[0.95] tracking-tight tabular-nums">
                   {pctTxt}
-                  <span className="ml-0.5 text-[24px] text-zinc-400">%</span>
+                  <span className="ml-0.5 text-[24px] text-zinc-400 dark:text-zinc-500">%</span>
                 </div>
-                <div className="pb-0.5 text-[13px] leading-tight text-zinc-500">
+                <div className="pb-0.5 text-[13px] leading-tight text-zinc-500 dark:text-zinc-400">
                   <div>
-                    <span className="font-bold tabular-nums text-zinc-900">{fmtInt(p.found.length)}</span> of{' '}
-                    <span className="tabular-nums">{fmtInt(inPlay)}</span>
+                    <span className="font-bold tabular-nums text-zinc-900 dark:text-zinc-100">{fmtInt(overall.got)}</span> of{' '}
+                    <span className="tabular-nums">{fmtInt(overall.total)}</span>
                   </div>
-                  <div>stops on lines in play</div>
+                  <div>stations on lines in play</div>
                 </div>
                 <div className="ml-auto pb-0.5">
                   <KeyTimer hidden={!p.showTimer} />
@@ -209,9 +281,9 @@ export default function Key(p: GameShellProps) {
                   frac={frac}
                   height={30}
                   pulse={pulse}
-                  onHoverLine={(k) => setIsolate(k ? [k] : null)}
+                  dark={dark}
                 />
-                <div className="mt-1 flex gap-[5px] text-[9.5px] font-bold uppercase tracking-wider text-zinc-400">
+                <div className="mt-1 flex gap-[5px] text-[9.5px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
                   {groups.map((g) => (
                     <span key={g.id} className="truncate" style={{ flexGrow: g.keys.length, flexBasis: 0 }}>
                       {g.short}
@@ -220,13 +292,11 @@ export default function Key(p: GameShellProps) {
                 </div>
               </div>
             </header>
-            <div className="min-h-0 grow overflow-y-auto overscroll-contain border-t-[3px] border-zinc-900 [scrollbar-width:thin]">
+            <div className={classNames('min-h-0 grow overflow-y-auto overscroll-contain border-t-[3px] [scrollbar-width:thin]', RULE)}>
               <KeyGroups {...common} />
-              <Recent p={p} LINES={LINES} touch={false} />
+              <Recent p={p} LINES={LINES} touch={false} foundCount={overall.got} />
             </div>
-            <footer className="border-t-2 border-zinc-900 px-5 py-3">
-              <SettingsBar p={p} touch={false} openAbout={() => setAbout(true)} />
-            </footer>
+            <footer className={classNames('border-t-2 px-5 py-3', RULE)}>{settings(false)}</footer>
           </aside>
         ))}
 
@@ -236,7 +306,7 @@ export default function Key(p: GameShellProps) {
 
         {desktop && (
           <div className="pointer-events-none absolute left-1/2 top-5 z-20 flex w-[min(520px,calc(100%-40px))] -translate-x-1/2 flex-col items-stretch gap-2">
-            <div className="pointer-events-auto rounded-2xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.35)]">{input}</div>
+            <div className="pointer-events-auto rounded-full shadow-[0_10px_30px_-10px_rgba(0,0,0,0.35)] dark:shadow-[0_10px_30px_-8px_rgba(0,0,0,0.7)]">{input}</div>
             <Feedback result={result} lines={resultLines} LINES={LINES} />
             {showHint && (
               <Hint onClose={dismissHint}>
@@ -261,17 +331,17 @@ export default function Key(p: GameShellProps) {
               <div className="flex items-center gap-3 px-5 pb-3 pt-1">
                 <div className="text-[34px] font-bold leading-none tracking-tight tabular-nums">
                   {pctTxt}
-                  <span className="text-[18px] text-zinc-400">%</span>
+                  <span className="text-[18px] text-zinc-400 dark:text-zinc-500">%</span>
                 </div>
-                <div className="text-[12.5px] leading-tight text-zinc-500">
-                  <span className="font-bold tabular-nums text-zinc-900">{fmtInt(p.found.length)}</span> of {fmtInt(inPlay)}
+                <div className="text-[12.5px] leading-tight text-zinc-500 dark:text-zinc-400">
+                  <span className="font-bold tabular-nums text-zinc-900 dark:text-zinc-100">{fmtInt(overall.got)}</span> of {fmtInt(overall.total)}
                   <br />
-                  stops in play
+                  stations in play
                 </div>
                 <button
                   type="button"
                   onClick={() => setSheet(false)}
-                  className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-zinc-200/80 text-zinc-700"
+                  className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-zinc-200/80 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                   aria-label="Close key"
                 >
                   <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -279,12 +349,10 @@ export default function Key(p: GameShellProps) {
                   </svg>
                 </button>
               </div>
-              <div className="border-t-[3px] border-zinc-900">
+              <div className={classNames('border-t-[3px]', RULE)}>
                 <KeyGroups {...common} />
-                <Recent p={p} LINES={LINES} touch limit={8} />
-                <div className="border-t-2 border-zinc-900 px-5 pb-5 pt-3">
-                  <SettingsBar p={p} touch openAbout={() => setAbout(true)} />
-                </div>
+                <Recent p={p} LINES={LINES} touch limit={8} foundCount={overall.got} />
+                <div className={classNames('border-t-2 px-5 pb-5 pt-3', RULE)}>{settings(true)}</div>
               </div>
             </PhoneSheet>
           </>
@@ -293,7 +361,7 @@ export default function Key(p: GameShellProps) {
 
       {/* ---------------- phone dock ---------------- */}
       {!desktop && (
-        <div className={classNames('relative z-30 shrink-0 border-t-2 border-zinc-900 px-3 pb-[max(10px,env(safe-area-inset-bottom))] pt-2', PAPER)}>
+        <div className={classNames('relative z-30 shrink-0 border-t-2 px-3 pb-[max(10px,env(safe-area-inset-bottom))] pt-2', RULE, PAPER)}>
           <div className="flex items-center gap-2.5 pb-2">
             <button
               type="button"
@@ -304,14 +372,14 @@ export default function Key(p: GameShellProps) {
             >
               <span className="shrink-0 text-[19px] font-bold leading-none tabular-nums">
                 {pct >= 100 ? '100' : Math.floor(pct)}
-                <span className="text-[12px] text-zinc-400">%</span>
+                <span className="text-[12px] text-zinc-400 dark:text-zinc-500">%</span>
               </span>
               <span className="min-w-0 grow">
-                <Barcode groups={groups} LINES={LINES} enabled={p.enabledLines} frac={frac} height={22} pulse={pulse} />
+                <Barcode groups={groups} LINES={LINES} enabled={p.enabledLines} frac={frac} height={22} pulse={pulse} dark={dark} />
               </span>
               <svg
                 viewBox="0 0 16 16"
-                className={classNames('h-4 w-4 shrink-0 text-zinc-500 transition-transform', sheet && 'rotate-180')}
+                className={classNames('h-4 w-4 shrink-0 text-zinc-500 transition-transform dark:text-zinc-400', sheet && 'rotate-180')}
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
@@ -329,6 +397,7 @@ export default function Key(p: GameShellProps) {
       <AboutModal open={about} setOpen={setAbout} />
       <style>{`@keyframes keyIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}`}</style>
     </div>
+    </div>
   )
 }
 
@@ -340,23 +409,23 @@ function Feedback({ result, lines, LINES }: { result: GuessResult | null; lines:
   if (result.kind === 'found') return <FoundFeedback result={result} lines={lines} LINES={LINES} className={base} />
   if (result.kind === 'already')
     return (
-      <div key={result.t} className={classNames(base, 'self-center bg-white text-zinc-600')}>
+      <div key={result.t} className={classNames(base, 'self-center bg-white text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300')}>
         <span className="h-2 w-2 rounded-full bg-zinc-400" />
-        Already found: <b className="text-zinc-900">{result.name}</b>
+        Already found: <b className="text-zinc-900 dark:text-white">{result.name}</b>
       </div>
     )
   if (result.kind === 'ambiguous')
     return (
-      <div key={result.t} className={classNames(base, 'self-center bg-amber-100 text-amber-900')}>
+      <div key={result.t} className={classNames(base, 'self-center bg-amber-100 text-amber-900 dark:bg-amber-300 dark:text-amber-950')}>
         <b>Be more specific</b>
-        <span className="truncate text-amber-800">“{result.q}” matches several stations</span>
+        <span className="truncate text-amber-800 dark:text-amber-900">“{result.q}” matches several stations</span>
       </div>
     )
   return (
-    <div key={result.t} className={classNames(base, 'self-center bg-white text-zinc-600')}>
+    <div key={result.t} className={classNames(base, 'self-center bg-white text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300')}>
       <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />
       <span className="truncate">
-        No station <b className="text-zinc-900">“{result.q}”</b> on the lines in play
+        No station <b className="text-zinc-900 dark:text-white">“{result.q}”</b> on the lines in play
       </span>
     </div>
   )
@@ -374,7 +443,7 @@ function FoundFeedback({
   className: string
 }) {
   return (
-    <div key={result.t} className={classNames(className, 'flex-wrap self-center bg-zinc-900 text-white')}>
+    <div key={result.t} className={classNames(className, 'flex-wrap self-center bg-zinc-900 text-white dark:bg-zinc-800 dark:ring-1 dark:ring-white/10')}>
       <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3.5 8.5l3 3 6-7" />
       </svg>
@@ -388,10 +457,10 @@ function FoundFeedback({
 
 function Hint({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="pointer-events-auto flex items-start gap-3 rounded-xl border-2 border-zinc-900 bg-[#fffbe6] px-4 py-3 text-[14px] leading-snug text-zinc-800 shadow-[0_6px_20px_-8px_rgba(0,0,0,0.35)]">
-      <span className="mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-bold text-white">i</span>
+    <div className="pointer-events-auto flex items-start gap-3 rounded-xl border-2 border-zinc-900 bg-[#fffbe6] px-4 py-3 text-[14px] leading-snug text-zinc-800 shadow-[0_6px_20px_-8px_rgba(0,0,0,0.35)] dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200">
+      <span className="mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">i</span>
       <p className="grow">{children}</p>
-      <button type="button" onClick={onClose} className="-mr-1 shrink-0 rounded-md px-2 py-0.5 text-[13px] font-bold text-zinc-900 hover:bg-zinc-900/10">
+      <button type="button" onClick={onClose} className="-mr-1 shrink-0 rounded-md px-2 py-0.5 text-[13px] font-bold text-zinc-900 hover:bg-zinc-900/10 dark:text-zinc-100 dark:hover:bg-white/10">
         Got it
       </button>
     </div>
@@ -403,18 +472,19 @@ function PhoneSheet({ open, onClose, children }: { open: boolean; onClose: () =>
     <>
       <div
         onClick={onClose}
-        className={classNames('absolute inset-0 z-30 bg-zinc-900/25 transition-opacity duration-200', open ? 'opacity-100' : 'pointer-events-none opacity-0')}
+        className={classNames('absolute inset-0 z-30 bg-zinc-900/25 transition-opacity duration-200 dark:bg-black/40', open ? 'opacity-100' : 'pointer-events-none opacity-0')}
       />
       <div
         className={classNames(
-          'absolute inset-x-0 bottom-0 z-40 flex max-h-[88%] flex-col rounded-t-2xl border-x-2 border-t-2 border-zinc-900 shadow-[0_-10px_30px_-12px_rgba(0,0,0,0.4)] transition-transform duration-300 ease-out',
+          'absolute inset-x-0 bottom-0 z-40 flex max-h-[88%] flex-col rounded-t-2xl border-x-2 border-t-2 shadow-[0_-10px_30px_-12px_rgba(0,0,0,0.4)] transition-transform duration-300 ease-out',
+          RULE,
           PAPER,
           open ? 'translate-y-0' : 'pointer-events-none translate-y-full',
         )}
         aria-hidden={!open}
       >
         <div className="flex justify-center pb-1 pt-2">
-          <span className="h-1 w-10 rounded-full bg-zinc-300" />
+          <span className="h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-600" />
         </div>
         <div className="min-h-0 grow overflow-y-auto overscroll-contain">{children}</div>
       </div>
@@ -428,6 +498,7 @@ function Spine({
   LINES,
   frac,
   pctTxt,
+  dark,
   onOpen,
 }: {
   p: GameShellProps
@@ -435,6 +506,7 @@ function Spine({
   LINES: Record<string, any>
   frac: (k: string) => number
   pctTxt: string
+  dark: boolean
   onOpen: () => void
 }) {
   return (
@@ -443,28 +515,29 @@ function Spine({
       onClick={onOpen}
       title="Open key"
       aria-label="Open key"
-      className={classNames('z-10 flex h-full w-[68px] shrink-0 flex-col items-center gap-3 border-r-2 border-zinc-900 py-4 hover:bg-white', PAPER)}
+      className={classNames('z-10 flex h-full w-[68px] shrink-0 flex-col items-center gap-3 border-r-2 py-4 hover:bg-white dark:hover:bg-zinc-800', RULE, PAPER)}
     >
       <svg viewBox="0 0 16 16" className="h-4 w-4 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M6 3.5L10.5 8 6 12.5" />
       </svg>
       <span className="text-[17px] font-bold leading-none tabular-nums">
         {Math.floor(parseFloat(pctTxt))}
-        <span className="text-[11px] text-zinc-400">%</span>
+        <span className="text-[11px] text-zinc-400 dark:text-zinc-500">%</span>
       </span>
       <div className="flex min-h-0 flex-col gap-2.5 overflow-hidden">
         {groups.map((g) => (
           <div key={g.id} className="flex flex-col gap-[3px]">
             {g.keys.map((k) => {
               const on = p.enabledLines[k]
+              const color = uiLine(LINES[k], dark).color
               return (
                 <div
                   key={k}
                   title={LINES[k].name}
-                  className={classNames('relative h-[7px] w-10 overflow-hidden rounded-full', !on && 'border border-dashed border-zinc-300')}
-                  style={on ? { background: hexA(LINES[k].color, 0.2) } : undefined}
+                  className={classNames('relative h-[7px] w-10 overflow-hidden rounded-full', !on && 'border border-dashed border-zinc-300 dark:border-zinc-600')}
+                  style={on ? { background: hexA(color, 0.2) } : undefined}
                 >
-                  {on && <div className="absolute inset-y-0 left-0" style={{ width: `${frac(k) * 100}%`, background: LINES[k].color }} />}
+                  {on && <div className="absolute inset-y-0 left-0" style={{ width: `${frac(k) * 100}%`, background: color }} />}
                 </div>
               )
             })}
