@@ -19490,10 +19490,66 @@
         "line": "Thameslink"
       },
       "id": 2140
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1031791,
+          51.5088466
+        ]
+      },
+      "properties": {
+        "id": 2141,
+        "name": "Blackfriars",
+        "line": "Southeastern",
+        "alternate_names": [
+          "Blackfriars",
+          "London Blackfriars"
+        ]
+      },
+      "id": 2141
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.0987464,
+          51.4943679
+        ]
+      },
+      "properties": {
+        "id": 2142,
+        "name": "Elephant & Castle",
+        "line": "Southeastern",
+        "alternate_names": [
+          "Elephant and Castle",
+          "Elephant"
+        ]
+      },
+      "id": 2142
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1022973,
+          51.4667272
+        ]
+      },
+      "properties": {
+        "id": 2143,
+        "name": "Loughborough Junction",
+        "line": "Southeastern"
+      },
+      "id": 2143
     }
   ],
   "properties": {
-    "totalStations": 1208,
+    "totalStations": 1211,
     "stationsPerLine": {
       "Bakerloo": 25,
       "ElizabethLine": 41,
@@ -19520,7 +19576,7 @@
       "SouthWesternRailway": 91,
       "Southern": 101,
       "SoutheasternHighSpeed": 4,
-      "Southeastern": 79,
+      "Southeastern": 82,
       "HeathrowExpress": 3,
       "EastMidlandsRailway": 4,
       "GreatNorthern": 42,
