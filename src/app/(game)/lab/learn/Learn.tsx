@@ -1,38 +1,38 @@
 'use client'
 // /lab/learn: the "Next stops" demo (../lines/vertical) laid out like the
 // game's Key shell (../ui/shells/key). Desktop: the Key's left panel lists the
-// lines (progress from the real game's save, read-only) and the main area,
-// where the game has its map, holds Browse (the vertical line diagram) and
-// Test (type the stops in order). Phone: the main area is full screen, a dock
-// at the bottom shows the selected line and opens the list as a sheet.
+// lines; the selected one opens in place to list its services, which choose
+// what the main area shows. The main area, where the game has its map, holds
+// Browse (the vertical line diagram), Route (one service as the carriage strip,
+// ../lines/strip) and Test (type the stops in order). Found stations (ticks)
+// come from the real game's save, read-only. Phone: the main area is full
+// screen, a dock at the bottom shows the selected line and opens the list as a sheet.
 import classNames from 'classnames'
-import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createMatcher } from '@/lib/matching'
 import { LONDON_ALIASES } from '../../london/data/aliases'
 import Diagram, { RowView } from './Diagram'
-import { flipLayout, layoutLine, LineLayout } from '../lines/vertical/graph'
+import { layoutLine, LineLayout } from '../lines/vertical/graph'
 import type { LearnData, LineInfo } from './data'
-import { buildGroups, GroupId } from '../ui/shells/key/groups'
-import { KeyRoundel, fmtInt, uiLine } from '../ui/shells/key/parts'
+import { buildGroups } from '../ui/shells/key/groups'
+import { KeyRoundel, uiLine } from '../ui/shells/key/parts'
 import type { Theme } from '../ui/shells/key/useMapTheme'
-import { Count, KeyFooter, KeyLines, PAPER, PhoneSheet, RULE, Spine, inkOn, pctText } from './LearnKey'
+import { KeyFooter, KeyLines, PAPER, PhoneSheet, RULE, Spine, inkOn } from './LearnKey'
+import PlayLearnSwitch from '../ui/PlayLearnSwitch'
+import Route, { ROUTE_CSS, StationCard } from './Route'
+import Branches from './Branches'
+import TestStrip from './TestStrip'
+import { SHORT } from './short'
 
 const FOUND_KEY = 'london-stations' // the real game's save: READ ONLY here
 const PRACTICE_KEY = 'lab-learn-practice-v1' // this page's own Test results
 const PREFS_KEY = 'lab-learn-prefs-v1'
 const THEME_KEY = 'lab-ui-key-theme' // shared with the Key shell, so the theme matches the game
 
-const SHORT: Record<string, string> = {
-  Bakerloo: 'Bak', Central: 'Cen', Circle: 'Cir', District: 'Dis', HammersmithAndCity: 'H&C', Jubilee: 'Jub',
-  Metropolitan: 'Met', Northern: 'Nor', Piccadilly: 'Pic', Victoria: 'Vic', WaterlooAndCity: 'W&C', Liberty: 'Lib',
-  Lioness: 'Lio', Mildmay: 'Mil', Suffragette: 'Suf', Weaver: 'Wea', Windrush: 'Win', ElizabethLine: 'Eliz',
-  DLR: 'DLR', Thameslink: 'TL', Tramlink: 'Tram', C2c: 'c2c', Chiltern: 'Chil', EastMidlandsRailway: 'EMR',
-  GatwickExpress: 'GX', GreatNorthern: 'GN', GreatWesternRailway: 'GWR', GreaterAnglia: 'GA', HeathrowExpress: 'HEx',
-  SouthWesternRailway: 'SWR', Southeastern: 'SE', SoutheasternHighSpeed: 'HS1', Southern: 'Sthn',
-  LondonNorthwestern: 'LNR', CableCar: 'Cable',
-}
 
-type Mode = 'browse' | 'test'
+// Browse (the vertical diagram as a tab) is archived: archive/LearnWithBrowse.tsx
+type Mode = 'route' | 'test'
+const MODES: Mode[] = ['route', 'test']
 
 interface RunStats {
   mistakes: number
@@ -58,15 +58,6 @@ function writeJSON(key: string, value: unknown) {
   } catch {}
 }
 
-function linearLayout(stops: string[]): LineLayout {
-  return {
-    rows: stops.map((name) => ({ name, lane: 0 })),
-    pieces: [{ lane: 0, rows: stops.map((_, i) => i) }],
-    lanes: 1,
-    busy: stops.map(() => 0),
-    jumps: {},
-  }
-}
 function dedupe(stops: string[]) {
   return stops.filter((s, i) => s !== stops[i - 1])
 }
@@ -128,13 +119,13 @@ function useVisualViewport(active: boolean) {
   return vv
 }
 
-export default function Learn({ data, fontClass }: { data: LearnData; fontClass: string }) {
+export default function Learn({ data, fontClass, fontFamily }: { data: LearnData; fontClass: string; fontFamily: string }) {
   const { lines, services, linesAt, featureId } = data
   const lineByKey = useMemo(() => Object.fromEntries(lines.map((l) => [l.key, l])), [lines])
   const groups = useMemo(() => buildGroups(lineByKey), [lineByKey])
   const [lineKey, setLineKey] = useState('Northern')
-  const [mode, setMode] = useState<Mode>('browse')
-  const [svc, setSvc] = useState<number>(-1) // browse: -1 = whole line
+  const [mode, setMode] = useState<Mode>('route')
+  const [svc, setSvc] = useState<number>(-1) // -1 = all lines (lines with branches; Test then uses the first route)
   const [flip, setFlip] = useState(false)
   const [hideNames, setHideNames] = useState(false)
   const [found, setFound] = useState<Set<number>>(new Set())
@@ -158,7 +149,7 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
     const l = h.get('line')
     if (l && lineByKey[l]) setLineKey(l)
     const m = h.get('mode')
-    if (m === 'test' || m === 'practice') setMode('test')
+    if (m === 'test' || m === 'practice') setMode('test') // anything else (old #mode=browse links too) opens Route
     if (h.get('svc')) setSvc(+h.get('svc')!)
     if (h.get('flip') === '1') setFlip(true)
     if (h.get('hide') === '1') setHideNames(true)
@@ -170,7 +161,7 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
   useEffect(() => {
     if (!hydrated) return
     const h = new URLSearchParams({ line: lineKey })
-    if (mode === 'test') h.set('mode', 'test')
+    h.set('mode', mode)
     if (svc >= 0) h.set('svc', String(svc))
     if (flip) h.set('flip', '1')
     window.history.replaceState(null, '', `#${h.toString()}`)
@@ -180,14 +171,15 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
   useEffect(() => {
     if (!hydrated) return
     const box = asideRef.current
-    const el = box?.querySelector<HTMLElement>(`[data-line="${lineKey}"]`)
+    // the line's row with its routes under it
+    const el = box?.querySelector<HTMLElement>(`[data-line="${lineKey}"]`)?.parentElement
     // the list's own scroller (desktop: the list; phone: the sheet's body); never scrollIntoView,
     // which would also scroll the overflow-hidden page
     const sc = desktop ? box : box?.parentElement
     if (!el || !sc) return
     const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop
     if (top < sc.scrollTop || top + el.offsetHeight > sc.scrollTop + sc.clientHeight)
-      sc.scrollTop = Math.max(0, top - sc.clientHeight / 2)
+      sc.scrollTop = Math.max(0, el.offsetHeight > sc.clientHeight * 0.6 ? top - 40 : top - (sc.clientHeight - el.offsetHeight) / 2)
   }, [hydrated, lineKey, spine, desktop, sheet])
   useEffect(() => {
     if (hydrated) writeJSON(PREFS_KEY, { hideNames })
@@ -197,32 +189,14 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
   const lineOf = useCallback((k: string) => inkOn(uiLine(lineByKey[k], dark) as LineInfo), [lineByKey, dark])
   const line = lineOf(lineByKey[lineKey] ? lineKey : lines[0].key)
   const lineServices = useMemo(() => services[line.key] ?? [], [services, line.key])
-
-  // ---- progress (the real game's save) ----
-  const count = useCallback(
-    (k: string): Count => {
-      const st = data.stations[k] ?? []
-      return { got: st.filter(([, id]) => found.has(id)).length, total: st.length }
-    },
-    [data.stations, found],
-  )
-  // each station counts once per group (by name), as the Key counts
-  const groupCount = useMemo(() => {
-    const out: Partial<Record<GroupId, Count>> = {}
-    groups.forEach((g) => {
-      const all = new Set<string>()
-      const got = new Set<string>()
-      g.keys.forEach((k) =>
-        (data.stations[k] ?? []).forEach(([n, id]) => {
-          all.add(n)
-          if (found.has(id)) got.add(n)
-        }),
-      )
-      out[g.id] = { got: got.size, total: all.size }
-    })
-    return out
-  }, [groups, data.stations, found])
-  const lc = count(line.key)
+  // the line's distinct routes (no reversals or short runs of another service);
+  // "All lines" only for lines whose routes actually branch
+  const routesOf = useCallback((k: string) => (data.routes[k]?.length ? data.routes[k] : [0]), [data.routes])
+  const branchesOf = (k: string) => data.branches[k]
+  const lineRoutes = routesOf(line.key)
+  const hasBranches = !!branchesOf(line.key)
+  const allLines = svc < 0 && hasBranches
+  const svcEff = svc >= 0 && lineServices[svc] ? svc : lineRoutes[0]
 
   const scrollToTop = () => scroller.current?.scrollTo({ top: 0, behavior: 'smooth' })
   const scrollToRow = (el: HTMLElement | null, at: number) => {
@@ -232,23 +206,37 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
     s.scrollTo({ top: Math.max(0, top - s.clientHeight * at), behavior: 'smooth' })
   }
 
+  // a line opens in place in the list to show its services: on phones the
+  // sheet stays open so one can be picked; picking a service closes it
   const pickLine = (k: string) => {
+    if (k === line.key) {
+      setSheet(false)
+      return
+    }
     setLineKey(k)
-    setSvc(mode === 'test' ? 0 : -1)
+    setSvc(branchesOf(k) && mode === 'route' ? -1 : routesOf(k)[0])
+    setBrSel(null)
+    setFlip(false)
+    setRun(null)
+    scrollToTop()
+  }
+  const pickService = (i: number) => {
+    setSvc(i)
+    setBrSel(null)
     setFlip(false)
     setRun(null)
     setSheet(false)
     scrollToTop()
   }
+  const [brSel, setBrSel] = useState<string | null>(null) // the station picked on the All lines diagram
   const pickMode = (m: Mode) => {
     if (m === mode) return
     setMode(m)
-    setSvc(m === 'test' ? Math.max(0, svc) : -1)
     setRun(null)
     scrollToTop()
   }
 
-  // ---- browse ----
+  // ---- the whole line, every branch (desktop: Branches; phones: the vertical diagram) ----
   const isFound = useCallback(
     (name: string) => {
       const id = featureId[`${name}|${line.key}`]
@@ -311,12 +299,12 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
   const rowRefs = useRef<(HTMLDivElement | null)[]>([])
 
   const practiceStops = useMemo(() => {
-    const s = lineServices[Math.max(0, svc)]
+    const s = lineServices[svcEff]
     if (!s) return []
     const st = dedupe(s.stops)
     return flip ? st.slice().reverse() : st
-  }, [lineServices, svc, flip])
-  const practiceKey = `${line.key}|${Math.max(0, svc)}|${flip ? 'r' : 'f'}`
+  }, [lineServices, svcEff, flip])
+  const practiceKey = `${line.key}|${svcEff}|${flip ? 'r' : 'f'}`
 
   // stops that are given for free: the first, ones outside the game, and repeats on loops
   const autoFill = useCallback(
@@ -417,6 +405,7 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
     const expected = run.stops[run.answered]
     if (run.hint >= expected.length - 1) return
     setRun({ ...run, hint: run.hint + 1, hints: run.hints + 1 })
+    setFeedback({ kind: 'near', text: `Hint: stop ${run.answered + 1} starts “${expected.slice(0, run.hint + 1)}…”` })
     inputRef.current?.focus({ preventScroll: true })
   }
   const reveal = () => {
@@ -437,16 +426,16 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
     inputRef.current?.focus({ preventScroll: true })
   }
 
-  // keep the current blank in view
+  // keep the current blank in view (the strip's markup: see TestStrip)
   const currentRow = run && !run.done ? run.answered : undefined
   useEffect(() => {
     if (currentRow === undefined) return
-    scrollToRow(rowRefs.current[currentRow], 0.38)
-  }, [currentRow])
+    const sel = touch ? `.lr-test ol > li:nth-child(${currentRow + 1})` : `.lr-test g[aria-label="Hidden station ${currentRow + 1}"]`
+    scrollToRow(scroller.current?.querySelector<HTMLElement>(sel) ?? null, touch ? 0.4 : 0.3)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRow, touch])
 
-  // ---- what to draw ----
-  let layout: LineLayout
-  let views: RowView[]
+  // ---- phones, All lines: the vertical diagram (every branch once, names level) ----
   // termini: stations with only one neighbour in the drawn line (robust to how
   // the line is cut into pieces: a branch split at a junction still ends there)
   const termini = (L: LineLayout) => {
@@ -470,14 +459,9 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
     })
     return ends
   }
-
-  if (mode === 'browse') {
-    if (svc >= 0 && lineServices[svc]) layout = linearLayout(dedupe(lineServices[svc].stops))
-    else layout = wholeLayout
-    if (flip) layout = flipLayout(layout)
-    const L = layout
+  const verticalViews = (L: LineLayout): RowView[] => {
     const ends = termini(L)
-    views = L.rows.map((row, i) => {
+    return L.rows.map((row, i) => {
       const f = isFound(row.name)
       const out = f === null
       const show = f || !hideNames || out
@@ -491,13 +475,11 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
           <>
             {show ? (
               <span
-                className={`text-[16.5px] leading-[26px] ${
-                  out
-                    ? 'italic text-zinc-400 dark:text-zinc-500'
-                    : f
-                      ? 'font-bold text-zinc-900 dark:text-white'
-                      : 'text-zinc-400 dark:text-zinc-500'
-                } ${ends.has(i) ? 'uppercase tracking-wide' : ''}`}
+                className={classNames(
+                  'text-[16.5px] leading-[26px] text-zinc-900 dark:text-zinc-50',
+                  ends.has(i) ? 'font-bold uppercase tracking-wide' : 'font-medium',
+                  out && 'italic',
+                )}
               >
                 {row.name}
               </span>
@@ -509,7 +491,7 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
               />
             )}
             {chipList(row.name)}
-            {out && <span className="text-[11px] text-zinc-400">not in the game</span>}
+            {out && <span className="text-[11px] text-zinc-500 dark:text-zinc-400">not in the game</span>}
           </>
         ),
         extra: jumps ? (
@@ -525,50 +507,6 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
             ))}
           </div>
         ) : undefined,
-      } satisfies RowView
-    })
-  } else {
-    const stops = run ? run.stops : practiceStops
-    layout = linearLayout(stops)
-    const ends = termini(layout)
-    const answered = run ? run.answered : autoFill(stops, 0)
-    views = stops.map((name, i) => {
-      const isAnswered = i < answered || !!run?.done
-      const isCur = run && !run.done && i === answered
-      const revealed = run?.revealed.has(i)
-      const outOfGame = featureId[`${name}|${line.key}`] === undefined
-      const given = i === 0 || outOfGame || stops.indexOf(name) < i
-      let label: ReactNode
-      if (isAnswered) {
-        label = (
-          <>
-            <span
-              className={`text-[16.5px] leading-[26px] ${
-                revealed ? 'text-rose-600 dark:text-rose-400' : 'font-bold text-zinc-900 dark:text-white'
-              } ${run?.popAt === i ? 'ns-slide' : ''} ${ends.has(i) ? 'uppercase tracking-wide' : ''}`}
-            >
-              {name}
-            </span>
-            {chipList(name)}
-          </>
-        )
-      } else if (isCur) {
-        const shown = name.slice(0, run!.hint)
-        label = (
-          <span className="inline-flex h-[30px] items-center rounded-md border-2 border-dashed border-amber-400 px-2 font-mono text-[15px] tracking-wider text-amber-700 dark:text-amber-300">
-            {shown ? `${shown}…` : 'next stop?'}
-          </span>
-        )
-      } else {
-        label = <span className="text-[15px] tracking-[0.3em] text-zinc-300 dark:text-zinc-700">· · ·</span>
-      }
-      return {
-        key: `${practiceKey}:${i}`,
-        dot: isAnswered ? (revealed ? 'revealed' : given && i > 0 ? 'given' : 'found') : 'open',
-        interchange: isAnswered && chips(name).length > 0,
-        terminus: ends.has(i),
-        pop: run?.popAt === i,
-        label,
       } satisfies RowView
     })
   }
@@ -592,10 +530,10 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
     <div role="tablist" aria-label="Mode" className="relative grid w-full grid-cols-2 rounded-full bg-zinc-200/80 p-1 dark:bg-zinc-800">
       <span
         aria-hidden
-        className="absolute bottom-1 left-1 top-1 w-[calc(50%-4px)] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.18)] transition-transform duration-200 ease-out dark:bg-zinc-600"
-        style={{ transform: mode === 'test' ? 'translateX(100%)' : 'translateX(0)' }}
+        className="absolute bottom-1 left-1 top-1 w-[calc((100%-8px)/2)] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.18)] transition-transform duration-200 ease-out dark:bg-zinc-600"
+        style={{ transform: `translateX(${MODES.indexOf(mode) * 100}%)` }}
       />
-      {(['browse', 'test'] as Mode[]).map((m) => (
+      {MODES.map((m) => (
         <button
           key={m}
           type="button"
@@ -608,67 +546,61 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
             mode === m ? 'text-zinc-900 dark:text-white' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200',
           )}
         >
-          {m === 'browse' ? (
+          {m === 'route' ? (
             <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-              <path d="M5 2v12" />
-              <circle cx="5" cy="4.5" r="1.9" fill="currentColor" stroke="none" />
-              <circle cx="5" cy="11.5" r="1.9" fill="currentColor" stroke="none" />
-              <path d="M9 4.5h5M9 11.5h4" />
+              <path d="M1.5 9.5h13" strokeWidth="2.6" />
+              <path d="M5 9.5V6M11 9.5V6M8 9.5V4.5" />
             </svg>
           ) : (
             <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M10.5 2.5l3 3L6 13H3v-3z" />
             </svg>
           )}
-          {m === 'browse' ? 'Browse' : 'Test'}
+          {m === 'route' ? 'Route' : 'Test'}
         </button>
       ))}
     </div>
   )
 
-  const subtitle =
-    mode === 'browse'
-      ? svc >= 0
-        ? lineServices[svc]?.name
-        : `${plural(lineServices.length, 'service')} · ${lc.total} stations`
-      : `${practiceStops[0]} → ${practiceStops[practiceStops.length - 1]}`
+  const wholeCount = data.stations[line.key]?.length ?? 0
+  const showAll = mode === 'route' && allLines
+  const subtitle = showAll
+    ? `All lines · ${plural(lineRoutes.length, 'route')} · ${wholeCount} stations`
+    : `${practiceStops[0]} → ${practiceStops[practiceStops.length - 1]}${mode === 'route' ? ` · ${practiceStops.length} stops` : ''}`
+
+  // a test runs one route: with "All lines" picked it takes the first
+  const oneService = mode === 'test' && allLines && (
+    <div className="flex items-start gap-2 rounded-lg bg-zinc-100 px-3 py-2 text-[13px] leading-snug text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+      <svg viewBox="0 0 16 16" className="mt-0.5 h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+        <circle cx="8" cy="8" r="6.3" />
+        <path d="M8 7.3v3.6M8 5.1v.1" />
+      </svg>
+      <span>
+        A test runs one route at a time: this is <b className="text-zinc-900 dark:text-zinc-100">{lineServices[svcEff]?.name}</b>. Pick
+        another under the {line.name} in the line list.
+      </span>
+    </div>
+  )
 
   const controls = (
-    <div className="flex flex-wrap items-end gap-2">
-      <label className={touch ? 'basis-full' : 'min-w-[200px] flex-1'}>
-        <span className={classNames('mb-1 block', smallCaps)}>{mode === 'test' ? 'Service' : 'Show'}</span>
-        <select
-          value={svc}
-          onChange={(e) => {
-            setSvc(+e.target.value)
+    <div className="flex flex-wrap items-center gap-2">
+      {!showAll && (
+      <button
+          type="button"
+          onClick={() => {
+            setFlip(!flip)
             setRun(null)
           }}
-          style={{ colorScheme: dark ? 'dark' : 'light' }}
-          className="h-9 w-full rounded-lg border-2 border-zinc-900 bg-white py-0 pl-3 pr-8 text-[14px] text-zinc-900 focus:outline-none focus:ring-4 focus:ring-[rgba(0,25,168,0.15)] dark:border-zinc-600 dark:bg-black dark:text-zinc-100 dark:focus:ring-white/10"
+          aria-pressed={flip}
+          className={pill(false)}
         >
-          {mode === 'browse' && <option value={-1}>Whole line (all branches)</option>}
-          {lineServices.map((s, i) => (
-            <option key={i} value={i}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <button
-        type="button"
-        onClick={() => {
-          setFlip(!flip)
-          setRun(null)
-        }}
-        aria-pressed={flip}
-        className={pill(false)}
-      >
-        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 2.5v11M2.5 5L5 2.5 7.5 5M11 13.5v-11M8.5 11l2.5 2.5 2.5-2.5" />
-        </svg>
-        {mode === 'test' ? 'Other direction' : 'Flip'}
-      </button>
-      {mode === 'browse' && (
+          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 2.5v11M2.5 5L5 2.5 7.5 5M11 13.5v-11M8.5 11l2.5 2.5 2.5-2.5" />
+          </svg>
+          {mode === 'test' ? 'Other direction' : 'Flip'}
+        </button>
+      )}
+      {mode !== 'test' && (
         <button type="button" onClick={() => setHideNames(!hideNames)} aria-pressed={hideNames} className={pill(hideNames)}>
           {hideNames ? 'Unfound names hidden' : 'Hide unfound names'}
         </button>
@@ -747,7 +679,7 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onFocus={touch ? () => setSheet(false) : undefined}
-          placeholder="Next station…"
+          placeholder={run && run.hint ? `Stop ${run.answered + 1}: ${run.stops[run.answered].slice(0, run.hint)}…` : `Stop ${run ? run.answered + 1 : ''}: next station…`}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="words"
@@ -841,18 +773,29 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
   )
 
   const lineList = (t: boolean) => (
-    <KeyLines groups={groups} lineOf={lineOf} count={count} groupCount={groupCount} selected={line.key} onSelect={pickLine} touch={t} />
+    <KeyLines
+      groups={groups}
+      lineOf={lineOf}
+      selected={line.key}
+      onSelect={pickLine}
+      services={lineRoutes.map((i) => ({ i, name: lineServices[i]?.name ?? '', stops: dedupe(lineServices[i]?.stops ?? []).length }))}
+      allLines={hasBranches}
+      wholeCount={wholeCount}
+      svc={allLines ? -1 : svcEff}
+      onService={pickService}
+      touch={t}
+    />
   )
-  const readOnlyNote = (
-    <p className="mt-2 text-[11.5px] leading-snug text-zinc-400 dark:text-zinc-500">
-      {found.size ? 'Progress from your game on this device (read-only).' : 'Nothing found yet in your game on this device.'}
-    </p>
-  )
+  const wide = desktop // the strip wants the width the map has in the game
+  const maxW = wide ? 'max-w-[1120px]' : 'max-w-[600px]'
 
   return (
     // `dark` sits on a layout-less wrapper: Tailwind's dark: variants match descendants of .dark
     <div className={classNames('contents', fontClass, dark && 'dark')}>
-      <style>{`
+      {/* as HTML: the strip's attribute selectors hold quotes, which React would escape as text (hydration mismatch) */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         .ns-root { --ns-ink: #18181b; --ns-bg: #ffffff; --ns-reveal: #e11d48; }
         .dark .ns-root { --ns-ink: #f4f4f5; --ns-bg: #000000; --ns-reveal: #fb7185; }
         @keyframes ns-pop { 0% { transform: scale(.2); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
@@ -863,7 +806,10 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
         @keyframes ns-pulse { 0%,100% { opacity: .25 } 50% { opacity: 1 } }
         .ns-pulse { animation: ns-pulse 1.4s ease-in-out infinite }
         body { background: ${dark ? '#000' : '#fff'} }
-      `}</style>
+        ${ROUTE_CSS}
+      `,
+        }}
+      />
       <div
         className={classNames(
           'ns-root flex h-[100dvh] w-full overflow-hidden text-zinc-900 dark:text-zinc-100',
@@ -876,49 +822,45 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
         {/* ---------------- desktop key ---------------- */}
         {desktop &&
           (spine ? (
-            <Spine groups={groups} lineOf={lineOf} count={count} selected={line.key} onOpen={() => setSpine(false)} />
+            <Spine groups={groups} lineOf={lineOf} selected={line.key} onOpen={() => setSpine(false)} />
           ) : (
             <aside className={classNames('z-10 flex h-full w-[360px] shrink-0 flex-col border-r-2', RULE, PAPER)}>
+              {/* the whole header collapses the list to its spine, as the game's Key */}
               <header
                 role="button"
                 tabIndex={0}
                 aria-label="Collapse the line list"
                 title="Collapse the line list"
-                onClick={() => setSpine(true)}
+                onClick={(e) => {
+                  // as the game's Key: clicks on the Play | Learn switch are not collapses
+                  const b = (e.target as HTMLElement).closest('button, a, nav')
+                  if (b && !b.hasAttribute('data-collapse')) return
+                  setSpine(true)
+                }}
                 onKeyDown={(e) => {
                   if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
                     e.preventDefault()
                     setSpine(true)
                   }
                 }}
-                className="cursor-pointer select-none px-5 pb-3 pt-4 transition-colors hover:bg-zinc-100/70 focus-visible:outline-none dark:hover:bg-white/[0.04]"
+                className="flex cursor-pointer select-none items-center px-5 py-3 transition-colors hover:bg-zinc-100/70 focus-visible:outline-none dark:hover:bg-white/[0.04]"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-                    London Rail Memory · Learn
-                  </span>
-                  <span className="-mr-1.5 rounded-md p-1.5 text-zinc-400 dark:text-zinc-500" aria-hidden>
-                    <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M10 3.5L5.5 8l4.5 4.5" />
-                    </svg>
-                  </span>
-                </div>
-                <div className="mt-1 flex items-end gap-3">
-                  <div className="text-[46px] font-bold leading-[0.95] tracking-tight tabular-nums">
-                    {pctText(lc)}
-                    <span className="ml-0.5 text-[24px] text-zinc-400 dark:text-zinc-500">%</span>
-                  </div>
-                  <div className="min-w-0 pb-0.5 text-[13px] leading-tight text-zinc-500 dark:text-zinc-400">
-                    <div>
-                      <span className="font-bold tabular-nums text-zinc-900 dark:text-zinc-100">{fmtInt(lc.got)}</span> of{' '}
-                      <span className="tabular-nums">{fmtInt(lc.total)}</span>
-                    </div>
-                    <div className="truncate">
-                      stations on the <span className="text-zinc-900 dark:text-zinc-100">{line.name}</span>
-                    </div>
-                  </div>
-                </div>
-                {readOnlyNote}
+                <span className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">London Rail Memory</span>
+                <span className="ml-auto mr-1">
+                  <PlayLearnSwitch current="learn" />
+                </span>
+                <button
+                  type="button"
+                  data-collapse
+                  tabIndex={-1}
+                  className="-mr-1.5 rounded-md p-1.5 text-zinc-400 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                  aria-label="Collapse the line list"
+                  title="Collapse the line list"
+                >
+                  <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10 3.5L5.5 8l4.5 4.5" />
+                  </svg>
+                </button>
               </header>
               <div ref={asideRef} className={classNames('min-h-0 grow overflow-y-auto overscroll-contain border-t-[3px] [scrollbar-width:thin]', RULE)}>
                 {lineList(false)}
@@ -932,15 +874,15 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
         {/* ---------------- main (where the game has its map) ---------------- */}
         <div className="relative isolate z-0 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <div className={classNames('z-20 shrink-0 border-b-2', RULE, PAPER)}>
-            <div className={classNames('mx-auto w-full max-w-[600px]', touch ? 'px-4 pb-2.5 pt-2.5' : 'px-6 pb-3 pt-4')}>
+            <div className={classNames('mx-auto w-full', maxW, touch ? 'px-4 pb-2.5 pt-2.5' : 'px-6 pb-3 pt-4')}>
               {desktop ? (
                 <div className="flex items-center gap-4">
-                  <KeyRoundel line={line} pct={lc.total ? lc.got / lc.total : 0} on size={38} />
+                  <KeyRoundel line={line} pct={1} on size={38} />
                   <div className="min-w-0 grow">
                     <h1 className="truncate text-[24px] font-bold leading-tight tracking-tight">{line.name}</h1>
                     <div className="truncate text-[13px] text-zinc-500 dark:text-zinc-400">{subtitle}</div>
                   </div>
-                  <div className="w-[230px] shrink-0">{tabs}</div>
+                  <div className="w-[288px] shrink-0">{tabs}</div>
                 </div>
               ) : (
                 tabs
@@ -950,20 +892,76 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
           </div>
 
           <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:thin]">
-            <div className={classNames('mx-auto w-full max-w-[600px]', touch ? 'pt-3' : 'pt-5')}>
+            <div className={classNames('mx-auto w-full', maxW, touch ? 'pt-3' : 'pt-5')}>
               <div className={classNames('space-y-3', touch ? 'px-4' : 'px-6')}>
                 {touch && <div className="truncate text-[13px] text-zinc-500 dark:text-zinc-400">{subtitle}</div>}
                 {controls}
+                {oneService}
                 {mode === 'test' && run && <div className="pt-1">{best}</div>}
                 {startPanel}
               </div>
-              <div className={classNames('pt-3', touch ? 'px-1' : 'px-3', run?.done ? 'pb-72' : 'pb-10')}>
-                {layout.rows.length ? (
-                  <Diagram layout={layout} line={line} views={views} rowRefs={rowRefs} current={currentRow} />
-                ) : (
-                  <p className="p-6 text-zinc-500">No services for this line.</p>
-                )}
-              </div>
+              {mode === 'route' ? (
+                <div className={classNames('pb-10', touch ? 'px-1 pt-1' : 'px-3 pt-4')}>
+                  {showAll && desktop ? (
+                    <div className="lr-route">
+                      {hideNames && <p className="mb-2 px-3 text-[13px] text-zinc-600 dark:text-zinc-400">Unfound names are hidden: tap a blank to reveal it.</p>}
+                      <Branches
+                        body={branchesOf(line.key)}
+                        line={line}
+                        lineOf={lineOf}
+                        isFound={isFound}
+                        hideNames={hideNames}
+                        chipName={(k) => lineOf(k)?.name ?? k}
+                        onStation={(n) => setBrSel((c) => (c === n ? null : n))}
+                        selected={brSel}
+                        fontFamily={fontFamily}
+                      />
+                      {brSel && (
+                        <StationCard
+                          name={brSel}
+                          detail={isFound(brSel) === null ? 'not in the game' : isFound(brSel) ? 'found ✓' : 'not found yet'}
+                          chips={chipList(brSel)}
+                          hasChips={chips(brSel).length > 0}
+                        />
+                      )}
+                    </div>
+                  ) : showAll ? (
+                    // phones: the vertical diagram shows each branch once with level names;
+                    // a strip list per route would repeat the shared trunk for every route
+                    <Diagram layout={wholeLayout} line={line} views={verticalViews(wholeLayout)} rowRefs={rowRefs} />
+                  ) : practiceStops.length ? (
+                    <Route
+                      line={line}
+                      stops={practiceStops}
+                      lineOf={lineOf}
+                      linesAt={linesAt}
+                      isFound={isFound}
+                      hideNames={hideNames}
+                      touch={touch}
+                      fontFamily={fontFamily}
+                      chipList={chipList}
+                    />
+                  ) : (
+                    <p className="p-6 text-zinc-500">No services for this line.</p>
+                  )}
+                </div>
+              ) : (
+                <div className={classNames(touch ? 'px-1 pt-1' : 'px-3 pt-4', run?.done ? 'pb-72' : 'pb-10')}>
+                  <TestStrip
+                    key={practiceKey}
+                    line={line}
+                    stops={run ? run.stops : practiceStops}
+                    lineOf={lineOf}
+                    linesAt={linesAt}
+                    isFound={isFound}
+                    answered={run ? (run.done ? run.stops.length : run.answered) : autoFill(practiceStops, 0)}
+                    shown={run ? run.revealed : new Set()}
+                    current={currentRow}
+                    touch={touch}
+                    fontFamily={fontFamily}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -977,31 +975,21 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
 
           {touch && (
             <PhoneSheet open={sheet} onClose={() => setSheet(false)}>
-              <div className="px-5 pb-3 pt-1">
-                <div className="flex items-center gap-3">
-                  <div className="text-[34px] font-bold leading-none tracking-tight tabular-nums">
-                    {pctText(lc)}
-                    <span className="text-[18px] text-zinc-400 dark:text-zinc-500">%</span>
-                  </div>
-                  <div className="min-w-0 text-[12.5px] leading-tight text-zinc-500 dark:text-zinc-400">
-                    <span className="font-bold tabular-nums text-zinc-900 dark:text-zinc-100">{fmtInt(lc.got)}</span> of {fmtInt(lc.total)}
-                    <br />
-                    <span className="block truncate">
-                      stations on the <span className="text-zinc-900 dark:text-zinc-100">{line.name}</span>
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSheet(false)}
-                    className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-200/80 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-                    aria-label="Close the line list"
-                  >
-                    <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                      <path d="M4 6l4 4 4-4" />
-                    </svg>
-                  </button>
-                </div>
-                {readOnlyNote}
+              <div className="flex items-center gap-2 px-5 pb-2.5 pt-1">
+                <span className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">London Rail Memory</span>
+                <span className="ml-auto">
+                  <PlayLearnSwitch current="learn" touch />
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSheet(false)}
+                  className="-mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-200/80 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                  aria-label="Close the line list"
+                >
+                  <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M4 6l4 4 4-4" />
+                  </svg>
+                </button>
               </div>
               <div ref={asideRef} className={classNames('border-t-[3px]', RULE)}>
                 {lineList(true)}
@@ -1023,11 +1011,14 @@ export default function Learn({ data, fontClass }: { data: LearnData; fontClass:
               aria-label={sheet ? 'Close the line list' : 'Choose a line'}
               className={classNames('flex w-full min-w-0 items-center gap-2.5 px-1', running ? 'pb-1' : 'py-1')}
             >
-              <KeyRoundel line={line} pct={lc.total ? lc.got / lc.total : 0} on size={26} />
-              <span className="min-w-0 grow truncate text-left text-[16px] font-bold">{line.name}</span>
-              <span className="shrink-0 text-[13px] tabular-nums">
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">{lc.got}</span>
-                <span className="text-zinc-400 dark:text-zinc-500">/{lc.total}</span>
+              <KeyRoundel line={line} pct={1} on size={26} />
+              <span className="flex min-w-0 grow flex-col text-left">
+                <span className="truncate text-[16px] font-bold leading-tight">{line.name}</span>
+                {!running && (
+                  <span className="truncate text-[12px] leading-tight text-zinc-500 dark:text-zinc-400">
+                    {showAll ? 'All lines' : lineServices[svcEff]?.name}
+                  </span>
+                )}
               </span>
               <svg
                 viewBox="0 0 16 16"
