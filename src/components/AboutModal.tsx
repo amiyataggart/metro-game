@@ -51,13 +51,15 @@ export default function AboutModal({
                     </Dialog.Title>
                     <div className="mt-2 space-y-2">
                       <p className="text-sm text-gray-500">
-                        Developed by <strong>AJ Taggart</strong> — extended with
-                        Thameslink and the 2024 Overground line names
-                        (Lioness, Mildmay, Windrush, Weaver, Suffragette,
-                        Liberty).
+                        Developed by <strong>AJ Taggart</strong>. Name every
+                        station across London&rsquo;s rail network &mdash; the
+                        Underground, Overground, Elizabeth line, DLR, trams and
+                        National Rail &mdash; on a map whose lines follow the
+                        real tracks, then learn each line route by route and
+                        test yourself stop by stop.
                       </p>
                       <p className="text-sm text-gray-500">
-                        Based on{' '}
+                        Inspired by{' '}
                         <a
                           href="https://github.com/benjamintd/metro-memory.com"
                           target="_blank"

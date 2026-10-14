@@ -49,7 +49,7 @@ const routes = {
 
 // The /london line geometry as it was until October 2026 (ribbons from
 // scripts/build-ribbons.js -> london/data/routes.json), kept for comparison.
-export const metadata = { ...londonConfig.METADATA, title: 'London Rail Memory (Oct 2026 map)' }
+export const metadata = { ...londonConfig.METADATA, title: 'London Rail Memory (old map 1)' }
 
 export default function LondonOldOct26() {
   return (

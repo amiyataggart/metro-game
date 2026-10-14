@@ -122,21 +122,25 @@ describe('network trimmed to scope (spec §3)', () => {
     expect(visibility.scopedStationFeatures([farStation as never])).toEqual([farStation])
   })
 
-  it('/london uses londonConfig (scoped bounds) and the scoped filters, never the legacy ones', () => {
+  // /london now redirects to /play (Oct 2026); its previous page is /old2 and
+  // the map before that is /old1. /play and /old2 share /london's data setup.
+  it('/play and /old2 use londonConfig (scoped bounds) and the scoped filters, never the legacy ones', () => {
     expect(config.londonConfig.MAP_CONFIG.maxBounds).toEqual(config.MAP_CONFIG.maxBounds)
     expect(config.londonConfig.MAP_CONFIG.maxBounds).not.toEqual(config.DISPLAY_BOUNDS)
-    const page = readFileSync(path.join(__dirname, 'page.tsx'), 'utf8')
-    expect(page).toMatch(/import \{[^}]*\blondonConfig\b[^}]*\} from '\.\/config'/)
-    expect(page).toMatch(/\bscopedStationFeatures\(/)
-    expect(page).not.toMatch(/\bvisible(Station|Route)Features\b/)
-    expect(page).not.toMatch(/import config\b/)
-    // Route geometry: either filtered here, or (since Oct 2026) the promoted lab
-    // geometry served as static files from public/london-data/, which can't be
-    // filtered per line, so no line may be hidden while that's the case.
-    if (/\/london-data\//.test(page)) expect(visibility.HIDDEN_LINES.size).toBe(0)
-    else expect(page).toMatch(/\bscopedRouteFeatures\(/)
-    // the previous map keeps the scoped route filter
-    const old = readFileSync(path.join(__dirname, '..', 'london-old-oct-26', 'page.tsx'), 'utf8')
+    for (const route of ['play', 'old2']) {
+      const page = readFileSync(path.join(__dirname, '..', route, 'page.tsx'), 'utf8')
+      expect(page, route).toMatch(/import \{[^}]*\blondonConfig\b[^}]*\} from '\.\.\/london\/config'/)
+      expect(page, route).toMatch(/\bscopedStationFeatures\(/)
+      expect(page, route).not.toMatch(/\bvisible(Station|Route)Features\b/)
+      expect(page, route).not.toMatch(/import config\b/)
+      // Route geometry: either filtered here, or the promoted lab geometry
+      // served as static files from public/london-data/, which can't be
+      // filtered per line, so no line may be hidden while that's the case.
+      if (/\/london-data\//.test(page)) expect(visibility.HIDDEN_LINES.size).toBe(0)
+      else expect(page, route).toMatch(/\bscopedRouteFeatures\(/)
+    }
+    // the map before that (/old1) keeps the scoped route filter
+    const old = readFileSync(path.join(__dirname, '..', 'old1', 'page.tsx'), 'utf8')
     expect(old).toMatch(/\bscopedRouteFeatures\(/)
   })
 
