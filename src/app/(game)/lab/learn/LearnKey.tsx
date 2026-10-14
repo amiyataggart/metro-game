@@ -1,13 +1,13 @@
 'use client'
 // The Learn page's line list, in the Key's visual language (lab/ui/shells/key):
-// grouped like the Key, one row per line (roundel = progress ring, regular
-// weight name, found/total). A row selects the line; there are no in-play
-// toggles here.
+// grouped like the Key, one row per line (full roundel, regular weight name).
+// A row selects the line, which then opens in place to list its distinct
+// routes ("All lines" first when they branch): they choose what the main area shows. No progress
+// counts here: the list is for picking what to learn.
 import classNames from 'classnames'
-import Link from 'next/link'
 import { useState } from 'react'
 import type { KeyGroup, GroupId } from '../ui/shells/key/groups'
-import { KeyRoundel, fmtInt, hexA } from '../ui/shells/key/parts'
+import { KeyRoundel } from '../ui/shells/key/parts'
 import { ThemeButton } from '../ui/shells/key/KeyBody'
 import type { Theme } from '../ui/shells/key/useMapTheme'
 import type { LineInfo } from './data'
@@ -16,7 +16,8 @@ export const PAPER = 'bg-white dark:bg-black'
 // heavy "key" rules: black on paper, a soft grey on dark
 export const RULE = 'border-zinc-900 dark:border-zinc-600'
 
-export type Count = { got: number; total: number }
+/** one of the selected line's distinct routes: its index in the line's services */
+export type ServiceRow = { i: number; name: string; stops: number }
 
 function luminance(hex: string) {
   const h = hex.replace('#', '')
@@ -31,19 +32,28 @@ export function inkOn(l: LineInfo): LineInfo {
 export function KeyLines({
   groups,
   lineOf,
-  count,
-  groupCount,
   selected,
   onSelect,
+  services,
+  allLines,
+  wholeCount,
+  svc,
+  onService,
   touch,
 }: {
   groups: KeyGroup[]
   /** the line as drawn in the current theme */
   lineOf: (k: string) => LineInfo
-  count: (k: string) => Count
-  groupCount: Partial<Record<GroupId, Count>>
   selected: string
   onSelect: (k: string) => void
+  /** the selected line's distinct routes, listed under it (none when it has just one) */
+  services: ServiceRow[]
+  /** offer "All lines" first (lines whose routes branch) */
+  allLines: boolean
+  /** stations on the selected line (for the "All lines" row) */
+  wholeCount: number
+  svc: number
+  onService: (i: number) => void
   touch: boolean
 }) {
   const [open, setOpen] = useState<Partial<Record<GroupId, boolean>>>({})
@@ -51,7 +61,6 @@ export function KeyLines({
     <div className="flex flex-col">
       {groups.map((g) => {
         const isOpen = open[g.id] ?? (g.id !== 'nr' || g.keys.includes(selected))
-        const { got, total } = groupCount[g.id] ?? { got: 0, total: 0 }
         return (
           <section key={g.id} className="border-t border-zinc-900/90 first:border-t-0 dark:border-zinc-700">
             <button
@@ -64,15 +73,22 @@ export function KeyLines({
               <svg viewBox="0 0 10 10" className={classNames('h-2.5 w-2.5 shrink-0 text-zinc-400 transition-transform', isOpen ? 'rotate-0' : '-rotate-90')}>
                 <path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <span className="ml-auto shrink-0 text-[12px] font-bold tabular-nums text-zinc-500">
-                <span className="text-zinc-900 dark:text-zinc-100">{fmtInt(got)}</span>
-                <span className="text-zinc-400 dark:text-zinc-500"> / {fmtInt(total)}</span>
-              </span>
             </button>
             {isOpen && (
               <ul className="pb-2">
                 {g.keys.map((k) => (
-                  <LineRow key={k} line={lineOf(k)} c={count(k)} sel={k === selected} onClick={() => onSelect(k)} touch={touch} />
+                  <LineRow
+                    key={k}
+                    line={lineOf(k)}
+                    sel={k === selected}
+                    onClick={() => onSelect(k)}
+                    touch={touch}
+                    services={k === selected ? services : undefined}
+                    allLines={allLines}
+                    wholeCount={wholeCount}
+                    svc={svc}
+                    onService={onService}
+                  />
                 ))}
               </ul>
             )}
@@ -83,67 +99,103 @@ export function KeyLines({
   )
 }
 
-function LineRow({ line, c, sel, onClick, touch }: { line: LineInfo; c: Count; sel: boolean; onClick: () => void; touch: boolean }) {
-  const frac = c.total ? c.got / c.total : 0
-  const done = c.total > 0 && c.got >= c.total
+function LineRow({
+  line,
+  sel,
+  onClick,
+  touch,
+  services,
+  allLines,
+  wholeCount,
+  svc,
+  onService,
+}: {
+  line: LineInfo
+  sel: boolean
+  onClick: () => void
+  touch: boolean
+  services?: ServiceRow[]
+  allLines: boolean
+  wholeCount: number
+  svc: number
+  onService: (i: number) => void
+}) {
+  // a line with a single route has no sub-rows: selecting the line selects it
+  const rows: { i: number; name: string; meta: string }[] =
+    services && services.length > 1
+      ? [
+          ...(allLines ? [{ i: -1, name: 'All lines', meta: `${wholeCount} stations` }] : []),
+          ...services.map((s) => ({ i: s.i, name: s.name, meta: `${s.stops} stops` })),
+        ]
+      : []
+  const R = touch ? 26 : 24
+  const cx = 20 + R / 2 // the roundel's centre: the services hang off it
   return (
-    <li>
+    <li className={classNames('relative', sel && 'bg-zinc-900/[0.06] pb-1.5 dark:bg-white/[0.08]')}>
+      {sel && <span className="absolute inset-y-1 left-0 z-10 w-1 rounded-r" style={{ background: line.color }} />}
       <button
         type="button"
         onClick={onClick}
         data-line={line.key}
         aria-current={sel || undefined}
+        aria-expanded={sel && rows.length > 0}
         title={`Learn the ${line.name}`}
         className={classNames(
           'relative flex w-full items-center gap-3 px-5 text-left transition-colors',
           touch ? 'h-11' : 'h-[34px]',
-          sel ? 'bg-zinc-900/[0.07] dark:bg-white/[0.09]' : 'hover:bg-zinc-900/[0.045] dark:hover:bg-white/[0.05]',
+          !sel && 'hover:bg-zinc-900/[0.045] dark:hover:bg-white/[0.05]',
         )}
       >
-        {sel && <span className="absolute inset-y-1 left-0 w-1 rounded-r" style={{ background: line.color }} />}
-        <KeyRoundel line={line} pct={frac} on size={touch ? 26 : 24} />
-        <span className="min-w-0 grow truncate text-[14.5px] font-normal leading-tight text-zinc-900 dark:text-zinc-100">{line.name}</span>
-        <span className="shrink-0 text-right text-[12.5px] tabular-nums">
-          {done ? (
-            <span className="inline-flex items-center gap-1 font-bold text-zinc-900 dark:text-zinc-100">
-              <svg viewBox="0 0 12 12" className="h-3 w-3 text-amber-500" fill="currentColor">
-                <path d="M6 .8l1.6 3.4 3.7.4-2.8 2.5.8 3.7L6 9 2.7 10.8l.8-3.7L.7 4.6l3.7-.4z" />
-              </svg>
-              {c.total}
-            </span>
-          ) : (
-            <>
-              <span className="font-bold text-zinc-900 dark:text-zinc-100">{c.got}</span>
-              <span className="text-zinc-400 dark:text-zinc-500">/{c.total}</span>
-            </>
-          )}
+        <KeyRoundel line={line} pct={1} on size={R} />
+        <span className={classNames('min-w-0 grow truncate text-[14.5px] leading-tight text-zinc-900 dark:text-zinc-100', sel ? 'font-bold' : 'font-normal')}>
+          {line.name}
         </span>
       </button>
+      {rows.length > 0 && (
+        <ul className="relative" aria-label={`${line.name} services`}>
+          {/* the rail the services hang off */}
+          <span
+            aria-hidden
+            className="absolute top-0 w-[3px] -translate-x-1/2 rounded-b-full opacity-60"
+            style={{ left: cx, bottom: touch ? 20 : 15, background: line.color }}
+          />
+          {rows.map((r) => {
+            const on = r.i === svc
+            return (
+              <li key={r.i}>
+                <button
+                  type="button"
+                  onClick={() => onService(r.i)}
+                  aria-current={on || undefined}
+                  className={classNames(
+                    'group relative flex w-full items-start gap-2 pr-4 text-left transition-colors',
+                    touch ? 'min-h-[40px] py-2.5' : 'min-h-[30px] py-[6px]',
+                    on ? 'text-zinc-900 dark:text-white' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100',
+                  )}
+                  style={{ paddingLeft: 20 + R + 12 }}
+                >
+                  <span
+                    aria-hidden
+                    className="absolute h-[11px] w-[11px] -translate-x-1/2 rounded-full border-[2.5px] bg-white dark:bg-black"
+                    style={{ left: cx, top: touch ? 15 : 10.5, borderColor: line.color, background: on ? line.color : undefined }}
+                  />
+                  <span className={classNames('min-w-0 grow text-[13px] leading-[18px]', on ? 'font-bold' : 'font-normal')}>
+                    {r.name}
+                  </span>
+                  <span className="shrink-0 pt-px text-[11.5px] leading-[18px] tabular-nums text-zinc-400 dark:text-zinc-500">{r.meta}</span>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </li>
   )
-}
-
-/** "46.2%" for the selected line, as the Key's header shows the whole game's. */
-export function pctText(c: Count) {
-  const pct = c.total ? (c.got / c.total) * 100 : 0
-  return pct >= 100 ? '100' : pct.toFixed(1)
 }
 
 export function KeyFooter({ theme, setTheme, touch }: { theme: Theme; setTheme: (t: Theme) => void; touch: boolean }) {
   return (
     <div className="flex items-center gap-2">
-      <Link
-        href="/lab/ui/key"
-        className={classNames(
-          'inline-flex items-center gap-1.5 rounded-md px-2 text-[12.5px] font-bold text-zinc-600 transition-colors hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-800',
-          touch ? '-ml-2 h-10' : '-ml-2 h-8',
-        )}
-      >
-        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M10 3.5L5.5 8l4.5 4.5" />
-        </svg>
-        Back to the game
-      </Link>
       <span className="grow" />
       <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">{theme === 'dark' ? 'Dark' : 'Light'}</span>
       <ThemeButton theme={theme} setTheme={setTheme} touch={touch} />
@@ -154,17 +206,14 @@ export function KeyFooter({ theme, setTheme, touch }: { theme: Theme; setTheme: 
 export function Spine({
   groups,
   lineOf,
-  count,
   selected,
   onOpen,
 }: {
   groups: KeyGroup[]
   lineOf: (k: string) => LineInfo
-  count: (k: string) => Count
   selected: string
   onOpen: () => void
 }) {
-  const c = count(selected)
   return (
     <button
       type="button"
@@ -176,28 +225,18 @@ export function Spine({
       <svg viewBox="0 0 16 16" className="h-4 w-4 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M6 3.5L10.5 8 6 12.5" />
       </svg>
-      <KeyRoundel line={lineOf(selected)} pct={c.total ? c.got / c.total : 0} on size={30} />
-      <span className="text-[17px] font-bold leading-none tabular-nums">
-        {Math.floor(parseFloat(pctText(c)))}
-        <span className="text-[11px] text-zinc-400 dark:text-zinc-500">%</span>
-      </span>
-      <div className="flex min-h-0 flex-col gap-2.5 overflow-hidden">
+      <KeyRoundel line={lineOf(selected)} pct={1} on size={30} />
+      <div className="flex min-h-0 flex-col gap-2.5 overflow-hidden pt-1">
         {groups.map((g) => (
           <div key={g.id} className="flex flex-col gap-[3px]">
-            {g.keys.map((k) => {
-              const color = lineOf(k).color
-              const n = count(k)
-              return (
-                <div
-                  key={k}
-                  title={lineOf(k).name}
-                  className={classNames('relative h-[7px] w-10 overflow-hidden rounded-full', k === selected && 'outline outline-2 outline-offset-1 outline-zinc-900 dark:outline-zinc-100')}
-                  style={{ background: hexA(color, 0.2) }}
-                >
-                  <div className="absolute inset-y-0 left-0" style={{ width: `${(n.total ? n.got / n.total : 0) * 100}%`, background: color }} />
-                </div>
-              )
-            })}
+            {g.keys.map((k) => (
+              <div
+                key={k}
+                title={lineOf(k).name}
+                className={classNames('h-[7px] w-10 rounded-full', k === selected && 'outline outline-2 outline-offset-1 outline-zinc-900 dark:outline-zinc-100')}
+                style={{ background: lineOf(k).color }}
+              />
+            ))}
           </div>
         ))}
       </div>
