@@ -25,9 +25,9 @@ import TestStrip from './TestStrip'
 import { SHORT } from './short'
 
 const FOUND_KEY = 'london-stations' // the real game's save: READ ONLY here
-const PRACTICE_KEY = 'lab-learn-practice-v1' // this page's own Test results
-const PREFS_KEY = 'lab-learn-prefs-v1'
-const THEME_KEY = 'lab-ui-key-theme' // shared with the Key shell, so the theme matches the game
+const PRACTICE_KEY = 'london-learn-practice-v1' // this page's own Test results
+const PREFS_KEY = 'london-learn-prefs-v1'
+const THEME_KEY = 'london-theme' // shared with the Key shell, so the theme matches the game
 
 
 // Browse (the vertical diagram as a tab) is archived: archive/LearnWithBrowse.tsx

@@ -5,8 +5,8 @@ import classNames from 'classnames'
 // Play | Learn: the two pages of the site, styled like the Key's Clean / Dots
 // slider. They are separate pages (each loads only what it needs), so the
 // options are plain links: the current one is highlighted, the other navigates.
-export const PLAY_HREF = '/lab/ui/key'
-export const LEARN_HREF = '/lab/learn'
+export const PLAY_HREF = '/play'
+export const LEARN_HREF = '/learn'
 
 export default function PlayLearnSwitch({ current, touch = false }: { current: 'play' | 'learn'; touch?: boolean }) {
   const opts = [

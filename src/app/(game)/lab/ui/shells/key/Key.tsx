@@ -15,7 +15,7 @@ import useMapTheme, { Theme } from './useMapTheme'
 const PAPER = 'bg-white dark:bg-black'
 // heavy "key" rules: black on paper, a soft grey on dark
 const RULE = 'border-zinc-900 dark:border-zinc-600'
-const THEME_KEY = 'lab-ui-key-theme'
+const THEME_KEY = 'london-theme'
 
 function useTheme(): [Theme, (t: Theme) => void] {
   const [theme, setThemeState] = useState<Theme>('light')
