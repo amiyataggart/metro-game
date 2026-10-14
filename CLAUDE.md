@@ -113,6 +113,8 @@ TRACKS=1 node scripts/lab/find-kinks.js graph7 --sheet 27   # network-wide detec
 - EXIT/GLOBAL lane ordering flips lanes along tube corridors (Barbican): tube corridors use the static order.
 - One geometry serves every zoom from z11.4 in, so neighbouring tracks are bundled even at z16 (a line is ~43 m wide at z12.4 but ~11 m at z14+). Staging 3 · true track is the experiment for showing real tracks when zoomed in.
 
+**`/lab/ui` (page layouts) and `/lab/lines` (line diagrams).** `/lab/ui/<slug>` runs the real `/london` game inside an alternative layout: `GamePage` takes an optional `Shell` (`GameShellProps`: all game state plus `mapSlot`, the map container to render once); `/london` passes none. Shells live in `lab/ui/shells/<slug>/`, are registered in `lab/ui/uiVariants.ts` + `UiLab.tsx`, and share one saved game (`CITY_NAME` `lab-ui`). `/lab/lines/<slug>` are standalone line-diagram demos (carriage strip, whole-line, next stops + Line Run practice, stopping patterns) built from `london/services/` via `lab/lines/lineData.ts`; they only read `/london`'s save (`london-stations`). Never name a file `layout.ts`/`page.ts`/`loading.ts` etc. inside `src/app` unless it is meant to be that Next special file (`pageExtensions` includes `ts`): a stray `layout.ts` broke routes until the dev server restarted.
+
 **Performance:** zoom jank on the lab pages (6× CPU-throttled Chrome: ~74 fps vs `/london` 104) comes from the main thread receiving heavier worker tile results; packing/static files cut page weight (HTML 7.5 MB -> 0.5 MB) but not the jank. Not yet solved.
 
 ## QA / verification (`/london`)

@@ -35,7 +35,24 @@ export default function Lab() {
           drawn differs. <Link href="/london" className="text-blue-600 hover:underline dark:text-blue-400">Back to the game</Link>.
         </p>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <Link
+          href="/lab/ui"
+          className="mt-8 block rounded-xl bg-white p-4 shadow-sm ring-1 ring-zinc-200 transition hover:shadow-md hover:ring-blue-400 dark:bg-zinc-900 dark:ring-zinc-800"
+        >
+          <div className="text-lg font-bold">UI layouts →</div>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Different ways of laying out the site around the same map.</p>
+        </Link>
+
+        <Link
+          href="/lab/lines"
+          className="mt-4 block rounded-xl bg-white p-4 shadow-sm ring-1 ring-zinc-200 transition hover:shadow-md hover:ring-blue-400 dark:bg-zinc-900 dark:ring-zinc-800"
+        >
+          <div className="text-lg font-bold">Line diagrams →</div>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Simplified train-style line maps for learning the network.</p>
+        </Link>
+
+        <h2 className="mt-10 text-lg font-bold">Line geometry</h2>
+        <div className="mt-3 grid gap-4 sm:grid-cols-3">
           {VARIANTS.map((v) => (
             <Link
               key={v.slug}
