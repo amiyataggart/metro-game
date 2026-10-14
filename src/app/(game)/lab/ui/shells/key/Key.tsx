@@ -7,7 +7,7 @@ import { useConfig } from '@/lib/configContext'
 import AboutModal from '@/components/AboutModal'
 import KeyInput, { GuessResult } from './KeyInput'
 import { buildGroups, GroupId } from './groups'
-import { Barcode, KeyTimer, LineChip, fmtInt, hexA, uiLine } from './parts'
+import { KeyTimer, LineChip, fmtInt, hexA, uiLine } from './parts'
 import { Count, KeyGroups, Recent, SettingsBar } from './KeyBody'
 import useMapTheme, { Theme } from './useMapTheme'
 
@@ -273,24 +273,6 @@ export default function Key(p: GameShellProps) {
                   <KeyTimer hidden={!p.showTimer} />
                 </div>
               </div>
-              <div className="mt-3">
-                <Barcode
-                  groups={groups}
-                  LINES={LINES}
-                  enabled={p.enabledLines}
-                  frac={frac}
-                  height={30}
-                  pulse={pulse}
-                  dark={dark}
-                />
-                <div className="mt-1 flex gap-[5px] text-[9.5px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-                  {groups.map((g) => (
-                    <span key={g.id} className="truncate" style={{ flexGrow: g.keys.length, flexBasis: 0 }}>
-                      {g.short}
-                    </span>
-                  ))}
-                </div>
-              </div>
             </header>
             <div className={classNames('min-h-0 grow overflow-y-auto overscroll-contain border-t-[3px] [scrollbar-width:thin]', RULE)}>
               <KeyGroups {...common} />
@@ -322,7 +304,7 @@ export default function Key(p: GameShellProps) {
             <div className="pointer-events-none absolute inset-x-3 bottom-3 z-20 flex flex-col items-center gap-2">
               {showHint && !sheet && (
                 <Hint onClose={dismissHint}>
-                  Type any station you remember, then <b>Go</b>. Tap the bar below to see your lines.
+                  Type any station you remember, then <b>Go</b>. Tap the count below to see your lines.
                 </Hint>
               )}
               {!sheet && <Feedback result={result} lines={resultLines} LINES={LINES} />}
@@ -374,8 +356,9 @@ export default function Key(p: GameShellProps) {
                 {pct >= 100 ? '100' : Math.floor(pct)}
                 <span className="text-[12px] text-zinc-400 dark:text-zinc-500">%</span>
               </span>
-              <span className="min-w-0 grow">
-                <Barcode groups={groups} LINES={LINES} enabled={p.enabledLines} frac={frac} height={22} pulse={pulse} dark={dark} />
+              <span className="min-w-0 grow truncate text-left text-[13px] text-zinc-500 dark:text-zinc-400">
+                <span className="font-bold tabular-nums text-zinc-900 dark:text-zinc-100">{fmtInt(overall.got)}</span> of{' '}
+                <span className="tabular-nums">{fmtInt(overall.total)}</span> stations
               </span>
               <svg
                 viewBox="0 0 16 16"
