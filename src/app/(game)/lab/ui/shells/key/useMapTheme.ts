@@ -120,6 +120,26 @@ export default function useMapTheme(map: maplibregl.Map | null, theme: Theme) {
           }
         }
       })
+      // the white cores of striped lines (Overground, Elizabeth, DLR, Cable
+      // Car, National Rail) turn black at night; custom stripe colours stay
+      ;(m.getStyle()?.layers || []).forEach((l) => {
+        if (!/-stripe-/.test(l.id)) return
+        const key = `${l.id}|line-color|stripe`
+        const cur = m.getPaintProperty(l.id, 'line-color') as unknown
+        const isWhite = (v: unknown) => typeof v === 'string' && /^(#fff(fff)?|white)$/i.test(v)
+        if (theme === 'dark') {
+          if (saved.current.has(key)) return
+          const next = Array.isArray(cur) ? cur.map((v) => (isWhite(v) ? '#000000' : v)) : isWhite(cur) ? '#000000' : cur
+          if (JSON.stringify(next) === JSON.stringify(cur)) return
+          saved.current.set(key, { v: cur })
+          m.setPaintProperty(l.id, 'line-color', next as any)
+        } else {
+          const orig = saved.current.get(key)
+          if (!orig) return
+          m.setPaintProperty(l.id, 'line-color', orig.v as any)
+          saved.current.delete(key)
+        }
+      })
       // station names: swap to light-on-dark in dark mode (see HALO)
       HALO.forEach(({ id, prop, dark }) => {
         if (!m.getLayer(id)) return

@@ -13,6 +13,8 @@ export const fmtInt = (n: number) => n.toLocaleString('en-GB')
 /** Dark mode: the Northern line is white (as on the Night Tube map); other near-black lines (Gatwick Express) light grey. */
 export function uiLine(line: Line, dark: boolean): Line {
   if (!dark) return line
+  // white stripe cores turn black at night, as on the map
+  if (line.stripe && !line.stripeColor) line = { ...line, stripeColor: '#000000' }
   if (line.name === 'Northern') return { ...line, color: '#ffffff' } // white on the Night Tube map
   const h = line.color.replace('#', '')
   const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16)
@@ -99,7 +101,7 @@ export function LineStripe({
           style={{ transition: 'width 600ms cubic-bezier(.2,.8,.2,1)' }}
         />
         {line.stripe === 'solid' && fw > 0 && (
-          <line x1={0} y1={cy} x2={fw} y2={cy} stroke="#fff" strokeWidth={sw} />
+          <line x1={0} y1={cy} x2={fw} y2={cy} stroke={line.stripeColor ?? '#fff'} strokeWidth={sw} />
         )}
         {line.stripe === 'dashed' && fw > 0 && (
           <line
@@ -114,8 +116,8 @@ export function LineStripe({
         )}
         {line.stripe === 'triple' && fw > 0 && (
           <>
-            <line x1={0} y1={height * 0.33} x2={fw} y2={height * 0.33} stroke="#fff" strokeWidth={1} />
-            <line x1={0} y1={height * 0.67} x2={fw} y2={height * 0.67} stroke="#fff" strokeWidth={1} />
+            <line x1={0} y1={height * 0.33} x2={fw} y2={height * 0.33} stroke={line.stripeColor ?? '#fff'} strokeWidth={1} />
+            <line x1={0} y1={height * 0.67} x2={fw} y2={height * 0.67} stroke={line.stripeColor ?? '#fff'} strokeWidth={1} />
           </>
         )}
       </g>
