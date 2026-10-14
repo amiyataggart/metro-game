@@ -11,7 +11,7 @@ import { Barcode, KeyTimer, LineChip, fmtInt, hexA, uiLine } from './parts'
 import { Count, KeyGroups, Recent, SettingsBar } from './KeyBody'
 import useMapTheme, { Theme } from './useMapTheme'
 
-const PAPER = 'bg-[#fbfaf7] dark:bg-[#1b1c20]'
+const PAPER = 'bg-white dark:bg-black'
 // heavy "key" rules: black on paper, a soft grey on dark
 const RULE = 'border-zinc-900 dark:border-zinc-600'
 const THEME_KEY = 'lab-ui-key-theme'
@@ -457,7 +457,7 @@ function FoundFeedback({
 
 function Hint({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="pointer-events-auto flex items-start gap-3 rounded-xl border-2 border-zinc-900 bg-[#fffbe6] px-4 py-3 text-[14px] leading-snug text-zinc-800 shadow-[0_6px_20px_-8px_rgba(0,0,0,0.35)] dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200">
+    <div className="pointer-events-auto flex items-start gap-3 rounded-xl border-2 border-zinc-900 bg-white px-4 py-3 text-[14px] leading-snug text-zinc-800 shadow-[0_6px_20px_-8px_rgba(0,0,0,0.35)] dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200">
       <span className="mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">i</span>
       <p className="grow">{children}</p>
       <button type="button" onClick={onClose} className="-mr-1 shrink-0 rounded-md px-2 py-0.5 text-[13px] font-bold text-zinc-900 hover:bg-zinc-900/10 dark:text-zinc-100 dark:hover:bg-white/10">

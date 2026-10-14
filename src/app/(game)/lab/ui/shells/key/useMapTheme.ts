@@ -11,12 +11,17 @@ export type Theme = 'light' | 'dark'
 // own layers (lines*, stations*, labels, mask, borders) all use GeoJSON
 // sources, so they are never recoloured. The original paint values are saved
 // the first time a layer is changed and restored exactly for light mode.
-const BG = '#23252a'
+const BG = '#000000'
+const LIGHT_BG = '#ffffff' // light mode: plain white ground, not Positron's off-white
 // station names: light text on a dark halo in dark mode (dark text on a light
 // halo read as doubled, embossed lettering on the dark basemap)
-const HALO: { id: string; prop: 'text-color' | 'text-halo-color' | 'text-halo-width' | 'text-halo-blur'; dark: string | number }[] = [
-  { id: 'stations-labels', prop: 'text-color', dark: '#eceef1' },
-  { id: 'stations-labels', prop: 'text-halo-color', dark: 'rgba(20, 21, 24, 0.9)' },
+// GamePage hides an unfound station's name by colouring it transparent
+// (`case found -> colour, else transparent`), so the dark values keep that
+// rule and only swap the found colours.
+const found = (yes: string) => ['case', ['to-boolean', ['feature-state', 'found']], yes, 'rgba(0, 0, 0, 0)']
+const HALO: { id: string; prop: 'text-color' | 'text-halo-color' | 'text-halo-width' | 'text-halo-blur'; dark: unknown }[] = [
+  { id: 'stations-labels', prop: 'text-color', dark: found('#eceef1') },
+  { id: 'stations-labels', prop: 'text-halo-color', dark: found('rgba(0, 0, 0, 0.9)') },
   { id: 'stations-labels', prop: 'text-halo-width', dark: 1.4 },
   { id: 'stations-labels', prop: 'text-halo-blur', dark: 0.2 },
 ]
@@ -24,22 +29,22 @@ const COLOR_PROPS = ['background-color', 'fill-color', 'fill-outline-color', 'li
 
 function darkColor(id: string, prop: string): string | null {
   if (id === 'background') return BG
-  if (id === 'water' || id === 'waterway') return '#151d25'
+  if (id === 'water' || id === 'waterway') return '#0b1218'
   if (id === 'water_shadow') return null
-  if (id === 'landuse_residential') return 'rgba(255, 255, 255, 0.022)'
-  if (/^(landcover|landuse|park_)/.test(id)) return 'rgba(92, 120, 92, 0.16)'
-  if (id === 'building') return '#2a2c31'
-  if (id === 'building-top') return prop === 'fill-outline-color' ? '#2a2c31' : '#2e3035'
-  if (/^boundary/.test(id)) return '#3a3337'
-  if (/^aeroway/.test(id)) return '#2d3035'
-  if (/rail_dash$/.test(id)) return '#23252a'
-  if (/rail$/.test(id)) return '#3a3d44'
-  if (/path$/.test(id)) return '#33363b'
-  if (/_case/.test(id)) return '#1c1e22'
-  if (/^tunnel_.*_fill$/.test(id)) return '#2c2f34'
-  if (/(service|minor)_fill/.test(id)) return '#2f3237'
-  if (/_fill/.test(id)) return '#34373d'
-  return '#2e3136' // unknown basemap layer: a neutral dark tone
+  if (id === 'landuse_residential') return 'rgba(255, 255, 255, 0.02)'
+  if (/^(landcover|landuse|park_)/.test(id)) return 'rgba(80, 110, 80, 0.14)'
+  if (id === 'building') return '#111111'
+  if (id === 'building-top') return prop === 'fill-outline-color' ? '#111111' : '#151515'
+  if (/^boundary/.test(id)) return '#2a2a2a'
+  if (/^aeroway/.test(id)) return '#1a1a1a'
+  if (/rail_dash$/.test(id)) return '#000000'
+  if (/rail$/.test(id)) return '#2c2c2c'
+  if (/path$/.test(id)) return '#1f1f1f'
+  if (/_case/.test(id)) return '#0a0a0a'
+  if (/^tunnel_.*_fill$/.test(id)) return '#181818'
+  if (/(service|minor)_fill/.test(id)) return '#1c1c1c'
+  if (/_fill/.test(id)) return '#232323'
+  return '#1a1a1a' // unknown basemap layer: a neutral dark tone
 }
 
 function basemapLayerIds(m: maplibregl.Map): string[] {
@@ -87,13 +92,38 @@ export default function useMapTheme(map: maplibregl.Map | null, theme: Theme) {
           Object.keys(orig).forEach((pr) => m.setPaintProperty(id, pr, orig[pr] as any))
         }
       })
+      if (theme === 'light') m.setPaintProperty('background', 'background-color', LIGHT_BG)
+      // the Northern line turns white in dark mode, as on the Night Tube map:
+      // swap its entry in the game's line/marker colour matches
+      ;(m.getStyle()?.layers || []).forEach((l) => {
+        if (ids.includes(l.id)) return
+        for (const pr of ['line-color', 'circle-color'] as const) {
+          if (!pr.startsWith(l.type)) continue
+          const key = `${l.id}|${pr}|northern`
+          const cur = m.getPaintProperty(l.id, pr) as unknown
+          if (theme === 'dark') {
+            if (saved.current.has(key) || !Array.isArray(cur) || cur[0] !== 'match') continue
+            const at = cur.findIndex((v, i) => i > 1 && Array.isArray(v) && v.includes('Northern'))
+            if (at < 0) continue
+            saved.current.set(key, { v: cur })
+            const next = cur.slice()
+            next[at + 1] = '#ffffff'
+            m.setPaintProperty(l.id, pr, next as any)
+          } else {
+            const orig = saved.current.get(key)
+            if (!orig) continue
+            m.setPaintProperty(l.id, pr, orig.v as any)
+            saved.current.delete(key)
+          }
+        }
+      })
       // station names: swap to light-on-dark in dark mode (see HALO)
       HALO.forEach(({ id, prop, dark }) => {
         if (!m.getLayer(id)) return
         const key = `${id}|${prop}`
         if (theme === 'dark') {
           if (!saved.current.has(key)) saved.current.set(key, { v: m.getPaintProperty(id, prop) })
-          m.setPaintProperty(id, prop, dark)
+          m.setPaintProperty(id, prop, dark as any)
         } else {
           const orig = saved.current.get(key)
           if (orig) m.setPaintProperty(id, prop, orig.v as any)

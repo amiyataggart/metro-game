@@ -10,9 +10,10 @@ import { shortName } from './groups'
 export const ACCENT = '#0019a8'
 export const fmtInt = (n: number) => n.toLocaleString('en-GB')
 
-/** Near-black lines (Northern, Gatwick Express) vanish on the dark panel: draw them light grey there. */
+/** Dark mode: the Northern line is white (as on the Night Tube map); other near-black lines (Gatwick Express) light grey. */
 export function uiLine(line: Line, dark: boolean): Line {
   if (!dark) return line
+  if (line.name === 'Northern') return { ...line, color: '#ffffff' } // white on the Night Tube map
   const h = line.color.replace('#', '')
   const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16)
   const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255
