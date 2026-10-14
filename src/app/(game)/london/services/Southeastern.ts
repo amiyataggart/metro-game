@@ -272,4 +272,60 @@ export const services: Service[] = [
       'Bromley North',
     ],
   },
+  // Blackfriars services (weekday peaks only), via Elephant & Castle.
+  // source: Realtime Trains WTT, Mon–Fri 15 Oct 2026 (2D81–2D89 up 0700–0900
+  // half-hourly from Beckenham Jn; 2M83/2M87 down 1728/1828). Holborn Viaduct –
+  // Herne Hill line via Loughborough Jn, then the Chatham main line.
+  {
+    line: 'Southeastern',
+    name: 'Blackfriars – Beckenham Junction (via Herne Hill; weekday peaks)',
+    stops: [
+      'Blackfriars',
+      'Elephant & Castle',
+      'Loughborough Junction',
+      'Herne Hill',
+      'West Dulwich',
+      'Sydenham Hill',
+      'Penge East',
+      'Kent House',
+      'Beckenham Junction',
+    ],
+  },
+  // source: Realtime Trains WTT 15 Oct 2026 (1F91 0649 Maidstone East – Blackfriars,
+  // 1F97 1744 back); fast Elephant & Castle – Bromley South over the Catford loop.
+  // Cut at Otford. One train each way, weekdays.
+  {
+    line: 'Southeastern',
+    name: 'Blackfriars – Otford (Maidstone East peak service via Catford loop, cut at Otford)',
+    stops: ['Blackfriars', 'Elephant & Castle', 'Bromley South', 'St Mary Cray', 'Swanley', 'Otford'],
+  },
+  // source: Realtime Trains WTT 15 Oct 2026 (2K93 0730 Gillingham – Blackfriars,
+  // 2K95 1710 Blackfriars – Rochester). Same route; cut at Swanley.
+  {
+    line: 'Southeastern',
+    name: 'Blackfriars – Swanley (Gillingham/Rochester peak service via Catford loop, cut at Swanley)',
+    stops: ['Blackfriars', 'Elephant & Castle', 'Bromley South', 'St Mary Cray', 'Swanley'],
+  },
+  // source: Realtime Trains WTT 15 Oct 2026 (2Y95 0847 Crayford – Blackfriars,
+  // Mon–Fri, up only) via Sidcup, Lewisham, Nunhead, Peckham Rye, Denmark Hill.
+  {
+    line: 'Southeastern',
+    name: 'Blackfriars – Crayford (via Denmark Hill, Lewisham & Sidcup; one morning train)',
+    stops: [
+      'Blackfriars',
+      'Elephant & Castle',
+      'Denmark Hill',
+      'Peckham Rye',
+      'Nunhead',
+      'Lewisham',
+      'Hither Green',
+      'Lee',
+      'Mottingham',
+      'New Eltham',
+      'Sidcup',
+      'Albany Park',
+      'Bexley',
+      'Crayford',
+    ],
+  },
 ]

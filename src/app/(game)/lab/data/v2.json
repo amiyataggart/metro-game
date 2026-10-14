@@ -5,101 +5,6 @@
   ],
   "failures": [],
   "variants": {
-    "graph2": {
-      "d": 35,
-      "ribbon": {
-        "D": 11.666666666666666,
-        "D2": 23.333333333333332,
-        "NO_SNAP_DROP": [
-          {
-            "line": "Thameslink",
-            "radius": 5000
-          }
-        ],
-        "STRATA_TUBE": [
-          "Bakerloo",
-          "Central",
-          "Circle",
-          "District",
-          "HammersmithAndCity",
-          "Jubilee",
-          "Metropolitan",
-          "Northern",
-          "Piccadilly",
-          "Victoria",
-          "WaterlooAndCity"
-        ],
-        "ORIENT_SPINES": true,
-        "EXIT_ORDER": true,
-        "STRATA": true
-      },
-      "features": 8512,
-      "taperedEnds": 4812,
-      "endHooksTrimmed": 34
-    },
-    "graph3": {
-      "d": 0,
-      "ribbon": {
-        "NO_SNAP_DROP": [
-          {
-            "line": "Thameslink",
-            "radius": 5000
-          }
-        ],
-        "STRATA_TUBE": [
-          "Bakerloo",
-          "Central",
-          "Circle",
-          "District",
-          "HammersmithAndCity",
-          "Jubilee",
-          "Metropolitan",
-          "Northern",
-          "Piccadilly",
-          "Victoria",
-          "WaterlooAndCity"
-        ],
-        "ORIENT_SPINES": true,
-        "EXIT_ORDER": true,
-        "STRATA": true
-      },
-      "features": 9065,
-      "taperedEnds": 5164,
-      "endHooksTrimmed": 6
-    },
-    "graph4": {
-      "d": 35,
-      "ribbon": {
-        "D": 11.666666666666666,
-        "D2": 23.333333333333332,
-        "GLOBAL_ORDER": 4,
-        "NO_SNAP_DROP": [
-          {
-            "line": "Thameslink",
-            "radius": 5000
-          }
-        ],
-        "STRATA_TUBE": [
-          "Bakerloo",
-          "Central",
-          "Circle",
-          "District",
-          "HammersmithAndCity",
-          "Jubilee",
-          "Metropolitan",
-          "Northern",
-          "Piccadilly",
-          "Victoria",
-          "WaterlooAndCity"
-        ],
-        "ORIENT_SPINES": true,
-        "EXIT_ORDER": true,
-        "STRATA": true
-      },
-      "features": 7876,
-      "taperedEnds": 4510,
-      "endHooksTrimmed": 82
-    },
     "graph7": {
       "d": 35,
       "ribbon": {
@@ -150,8 +55,8 @@
         "EXIT_ORDER": true,
         "STRATA": true
       },
-      "features": 7474,
-      "taperedEnds": 3527,
+      "features": 7589,
+      "taperedEnds": 3627,
       "endHooksTrimmed": 41
     },
     "graph7t": {
@@ -204,9 +109,9 @@
         "EXIT_ORDER": true,
         "STRATA": true
       },
-      "features": 10536,
-      "taperedEnds": 5406,
-      "endHooksTrimmed": 13
+      "features": 10466,
+      "taperedEnds": 5413,
+      "endHooksTrimmed": 12
     },
     "graph5": {
       "d": 42.91122728852295,
@@ -237,9 +142,9 @@
         "EXIT_ORDER": true,
         "STRATA": true
       },
-      "features": 384,
-      "taperedEnds": 4993,
-      "endHooksTrimmed": 13
+      "features": 406,
+      "taperedEnds": 5061,
+      "endHooksTrimmed": 12
     }
   }
 }
