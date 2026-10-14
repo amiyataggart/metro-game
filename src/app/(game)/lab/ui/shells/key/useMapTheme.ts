@@ -11,7 +11,7 @@ export type Theme = 'light' | 'dark'
 // own layers (lines*, stations*, labels, mask, borders) all use GeoJSON
 // sources, so they are never recoloured. The original paint values are saved
 // the first time a layer is changed and restored exactly for light mode.
-const BG = '#000000'
+const BG = '#111214' // off-black, so the basemap's outlines read (Google Maps-dark-like)
 const LIGHT_BG = '#ffffff' // light mode: plain white ground, not Positron's off-white
 // station names: light text on a dark halo in dark mode (dark text on a light
 // halo read as doubled, embossed lettering on the dark basemap)
@@ -24,27 +24,30 @@ const HALO: { id: string; prop: 'text-color' | 'text-halo-color' | 'text-halo-wi
   { id: 'stations-labels', prop: 'text-halo-color', dark: found('rgba(0, 0, 0, 0.9)') },
   { id: 'stations-labels', prop: 'text-halo-width', dark: 1.4 },
   { id: 'stations-labels', prop: 'text-halo-blur', dark: 0.2 },
+  // the hovered station's name (its own layer, found stations only)
+  { id: 'hover-label-point', prop: 'text-color', dark: '#ffffff' },
+  { id: 'hover-label-point', prop: 'text-halo-color', dark: 'rgba(0, 0, 0, 0.95)' },
 ]
 const COLOR_PROPS = ['background-color', 'fill-color', 'fill-outline-color', 'line-color'] as const
 
 function darkColor(id: string, prop: string): string | null {
   if (id === 'background') return BG
-  if (id === 'water' || id === 'waterway') return '#0b1218'
+  if (id === 'water' || id === 'waterway') return '#17263c'
   if (id === 'water_shadow') return null
-  if (id === 'landuse_residential') return 'rgba(255, 255, 255, 0.02)'
-  if (/^(landcover|landuse|park_)/.test(id)) return 'rgba(80, 110, 80, 0.14)'
-  if (id === 'building') return '#111111'
-  if (id === 'building-top') return prop === 'fill-outline-color' ? '#111111' : '#151515'
-  if (/^boundary/.test(id)) return '#2a2a2a'
-  if (/^aeroway/.test(id)) return '#1a1a1a'
-  if (/rail_dash$/.test(id)) return '#000000'
-  if (/rail$/.test(id)) return '#2c2c2c'
-  if (/path$/.test(id)) return '#1f1f1f'
-  if (/_case/.test(id)) return '#0a0a0a'
-  if (/^tunnel_.*_fill$/.test(id)) return '#181818'
-  if (/(service|minor)_fill/.test(id)) return '#1c1c1c'
-  if (/_fill/.test(id)) return '#232323'
-  return '#1a1a1a' // unknown basemap layer: a neutral dark tone
+  if (id === 'landuse_residential') return 'rgba(255, 255, 255, 0.035)'
+  if (/^(landcover|landuse|park_)/.test(id)) return 'rgba(70, 125, 80, 0.32)'
+  if (id === 'building') return '#1d1e21'
+  if (id === 'building-top') return prop === 'fill-outline-color' ? '#1d1e21' : '#222326'
+  if (/^boundary/.test(id)) return '#3a3b3f'
+  if (/^aeroway/.test(id)) return '#26272a'
+  if (/rail_dash$/.test(id)) return '#111214'
+  if (/rail$/.test(id)) return '#45464b'
+  if (/path$/.test(id)) return '#2c2d31'
+  if (/_case/.test(id)) return '#1a1b1e'
+  if (/^tunnel_.*_fill$/.test(id)) return '#2a2b2f'
+  if (/(service|minor)_fill/.test(id)) return '#303136'
+  if (/_fill/.test(id)) return '#3c3d43'
+  return '#2a2b2f' // unknown basemap layer: a neutral dark tone
 }
 
 function basemapLayerIds(m: maplibregl.Map): string[] {
