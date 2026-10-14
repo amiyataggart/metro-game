@@ -39,6 +39,8 @@ export interface LineLayout {
   busy: number[]
   /** long connections drawn as cross-references: row -> station names it also connects to */
   jumps: Record<number, string[]>
+  /** internal: shortest-first moves that turned out not to be shorter */
+  wrongMoves?: string[]
 }
 
 /** Links spanning more rows than this become cross-reference chips instead of long lanes. */
@@ -85,9 +87,29 @@ export function layoutLine(
   // Splitting the trunk lets a trunk stretch step outward round a loop
   // (Tramlink's Croydon loop) but can zig-zag lines with two parallel routes
   // (c2c via Upminster / via Tilbury): lay out both ways, keep the better one.
-  const whole = layoutLineWith(services, coords, radial, false)
-  const split = layoutLineWith(services, coords, radial, true)
-  return layoutScore(split) < layoutScore(whole) ? split : whole
+  // Shortest-first ordering (below) shortens the lanes trailing past other
+  // stations, but on some networks (Southern's tangle of routes) it boxes
+  // stations in: try each combination and keep the best scoring layout,
+  // shortest-first and unsplit preferred on ties.
+  let best: LineLayout | null = null
+  let bestScore = Infinity
+  for (const shortFirst of [true, false])
+    for (const splitTrunk of [false, true]) {
+      // a shortest-first move is judged when the branch is placed; branches
+      // added later can make the other side the longer one after all (GWR at
+      // Maidenhead: Twyford, Reading, then the Henley branch beat Marlow):
+      // veto such moves and lay out again
+      const veto = new Set<string>()
+      let l = layoutLineWith(services, coords, radial, splitTrunk, shortFirst, veto)
+      for (let k = 0; k < 6 && l.wrongMoves?.length; k++) {
+        l.wrongMoves.forEach((m) => veto.add(m))
+        l = layoutLineWith(services, coords, radial, splitTrunk, shortFirst, veto)
+      }
+      const sc = layoutScore(l)
+      if (sc < bestScore) { best = l; bestScore = sc }
+    }
+  delete best!.wrongMoves
+  return best!
 }
 
 /** Lower is better: stations with a lane wrongly passing outside them (it runs
@@ -133,6 +155,8 @@ function layoutLineWith(
   coords: Record<string, Coord | undefined>,
   radial: boolean,
   splitTrunk: boolean,
+  shortFirst = true,
+  veto: Set<string> = new Set(),
 ): LineLayout {
   const svcs = services.map(cleanStops).filter((s) => s.length > 0)
   if (!svcs.length) return { rows: [], pieces: [], lanes: 1, busy: [], jumps: {} }
@@ -167,6 +191,34 @@ function layoutLineWith(
   const placed = new Set(order)
   type Seg = { stations: string[]; top?: string; bottom?: string }
   const segs: Seg[] = [{ stations: trunk.slice() }]
+  const segOf = new Map<string, number>(trunk.map((n) => [n, 0]))
+  // trunk rows where shortest-first put a branch past the trunk's own shorter
+  // dead-end rest: the trunk is split there so that rest can step outward
+  // while the longer branch carries straight on (Elizabeth line at
+  // Whitechapel: Canary Wharf … Abbey Wood beside the line on to Shenfield)
+  const splitAfter = new Set<string>()
+  const moves: { key: string; X: string; first: string; n: number; down: boolean }[] = []
+  const splitBefore = new Set<string>()
+  // Shortest first: where a line splits, the shorter continuation's rows come
+  // straight after the junction and the longer one after them, so fewer lanes
+  // trail past other stations (Thameslink at Bickley: Petts Wood, Orpington,
+  // then the seven stops to Sevenoaks; c2c at Barking: via Upminster, then
+  // via Tilbury). tailEnd/headStart: the dead-end rest of X's own piece
+  // below/above X (anything spliced into it included), or null.
+  const tailEnd = (X: string): number | null => {
+    const sg = segs[segOf.get(X)!]
+    if (sg.bottom !== undefined) return null
+    const after = sg.stations.slice(sg.stations.indexOf(X) + 1)
+    if (!after.length) return null
+    return Math.max(...after.map((n) => idx(n)))
+  }
+  const headStart = (X: string): number | null => {
+    const sg = segs[segOf.get(X)!]
+    if (sg.top !== undefined) return null
+    const before = sg.stations.slice(0, sg.stations.indexOf(X))
+    if (!before.length) return null
+    return Math.min(...before.map((n) => idx(n)))
+  }
   const drawn = new Set<string>()
   const ek = (a: string, b: string) => (a < b ? `${a}\u0001${b}` : `${b}\u0001${a}`)
   const adj = new Map<string, Set<string>>()
@@ -215,7 +267,9 @@ function layoutLineWith(
         run = run.reverse()
         ;[A, B] = [B, A]
       }
-      order.splice(idx(B), 0, ...run)
+      // the shorter of the two routes between A and B goes first
+      const between = idx(B) - idx(A) - 1
+      order.splice(shortFirst && run.length < between ? idx(A) + 1 : idx(B), 0, ...run)
       segs.push({ stations: run, top: A, bottom: B })
       addDrawn(A, run[0])
       for (let k = 1; k < run.length; k++) addDrawn(run[k - 1], run[k])
@@ -242,17 +296,28 @@ function layoutLineWith(
         } else down = idx(X) >= order.length / 2
       }
       if (down) {
-        order.splice(idx(X) + 1, 0, ...away)
+        const t = tailEnd(X)
+        const key = `${X}>${away[0]}`
+        const past = shortFirst && !veto.has(key) && t !== null && t - idx(X) < away.length
+        if (past) moves.push({ key, X, first: away[0], n: away.length, down: true })
+        if (past && segOf.get(X) === 0) splitAfter.add(X)
+        order.splice(past ? t! + 1 : idx(X) + 1, 0, ...away)
         segs.push({ stations: away, top: X })
       } else {
         const up = away.slice().reverse()
-        order.splice(idx(X), 0, ...up)
+        const h = headStart(X)
+        const key = `${X}<${up[up.length - 1]}`
+        const past = shortFirst && !veto.has(key) && h !== null && idx(X) - h < up.length
+        if (past) moves.push({ key, X, first: up[up.length - 1], n: up.length, down: false })
+        if (past && segOf.get(X) === 0) splitBefore.add(X)
+        order.splice(past ? h! : idx(X), 0, ...up)
         segs.push({ stations: up, bottom: X })
       }
       addDrawn(X, away[0])
       for (let k = 1; k < away.length; k++) addDrawn(away[k - 1], away[k])
     }
     run.forEach((n) => placed.add(n))
+    run.forEach((n) => segOf.set(n, segs.length - 1))
   }
 
   // ---- leftover edges (links) ----
@@ -298,6 +363,11 @@ function layoutLineWith(
     }
   }
 
+  // shortest-first moves whose skipped side ended up longer than the branch
+  const wrongMoves = moves
+    .filter((m) => (m.down ? idx(m.first) - idx(m.X) - 1 : idx(m.X) - idx(m.first) - 1) > m.n)
+    .map((m) => m.key)
+
   // ---- rows & lanes ----
   const rowOf = new Map(order.map((n, r) => [n, r]))
   const rows: LRow[] = order.map((name) => ({ name, lane: 0 }))
@@ -328,18 +398,24 @@ function layoutLineWith(
   {
     const tr = segs[0].stations.map((n) => rowOf.get(n)!)
     const parts: number[][] = []
+    const cutAfter = new Set([...splitAfter].map((n) => rowOf.get(n)!))
+    const cutBefore = new Set([...splitBefore].map((n) => rowOf.get(n)!))
     for (const r of tr) {
       const last = parts[parts.length - 1]
-      if (splitTrunk && (junction.has(r) || !last || junction.has(last[last.length - 1]))) parts.push([r])
-      else if (!last) parts.push([r])
+      const prev = last ? last[last.length - 1] : undefined
+      if (!last) parts.push([r])
+      else if (splitTrunk && (junction.has(r) || junction.has(prev!))) parts.push([r])
+      else if (cutAfter.has(prev!) || cutBefore.has(r)) parts.push([r])
       else last.push(r)
     }
     parts.forEach((rs, k) => {
       const top = k > 0 ? parts[k - 1][parts[k - 1].length - 1] : undefined
-      const bottom = k < parts.length - 1 ? parts[k + 1][0] : undefined
+      // joined to the previous section only: the next section curves in from
+      // this one's last row, so this one must not claim the lane below it
+      // (it kept the Shenfield branch off lane 0 at Whitechapel)
       const a = top !== undefined ? 2 * top + 1 : 2 * rs[0]
-      const b = bottom !== undefined ? 2 * bottom - 1 : 2 * rs[rs.length - 1]
-      items.push({ rs, a, b, anchorRow: top, top, bottom, trunk: true })
+      const b = 2 * rs[rs.length - 1]
+      items.push({ rs, a, b, anchorRow: top, top, trunk: true })
     })
   }
   segs.forEach((seg, si) => {
@@ -481,7 +557,7 @@ function layoutLineWith(
     })
     return m
   })
-  return { rows, pieces, lanes, busy, jumps }
+  return { rows, pieces, lanes, busy, jumps, wrongMoves }
 }
 
 /** Reverse a layout top-to-bottom. */
