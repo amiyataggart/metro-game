@@ -7,6 +7,7 @@ import { useConfig } from '@/lib/configContext'
 import AboutModal from '@/components/AboutModal'
 import KeyInput, { GuessResult } from './KeyInput'
 import { buildGroups, GroupId } from './groups'
+import PlayLearnSwitch from '../../PlayLearnSwitch'
 import { KeyTimer, LineChip, fmtInt, hexA, uiLine } from './parts'
 import { Count, KeyGroups, Recent, SettingsBar } from './KeyBody'
 import useMapTheme, { Theme } from './useMapTheme'
@@ -250,7 +251,7 @@ export default function Key(p: GameShellProps) {
               aria-label="Collapse key"
               title="Collapse key"
               onClick={(e) => {
-                const b = (e.target as HTMLElement).closest('button, a')
+                const b = (e.target as HTMLElement).closest('button, a, nav')
                 if (b && !b.hasAttribute('data-collapse')) return
                 setSpine(true)
               }}
@@ -263,14 +264,10 @@ export default function Key(p: GameShellProps) {
               className="cursor-pointer select-none px-5 pb-3 pt-4 transition-colors hover:bg-zinc-100/70 focus-visible:outline-none dark:hover:bg-white/[0.04]"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">London Rail Memory · Key</span>
-                {/* Play and Learn are separate pages; this is the way across */}
-                <a
-                  href="/lab/learn"
-                  className="ml-auto mr-1 rounded-full border border-zinc-300 px-2.5 py-0.5 text-[12px] font-bold text-zinc-700 hover:border-zinc-900 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-300 dark:hover:text-white"
-                >
-                  Learn
-                </a>
+                <span className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">London Rail Memory</span>
+                <span className="ml-auto mr-1">
+                  <PlayLearnSwitch current="play" />
+                </span>
                 <button
                   type="button"
                   data-collapse
