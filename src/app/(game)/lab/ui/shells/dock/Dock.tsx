@@ -227,6 +227,13 @@ export default function Dock(p: GameShellProps) {
     padded.current = true
   }, [p.map, desktop, panel])
 
+  // phones: the map credit starts collapsed to its (i) button (MapLibre opens
+  // it expanded), so it doesn't sit across the top of the map
+  useEffect(() => {
+    if (!p.map || desktop !== false) return
+    p.map.getContainer().querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show')
+  }, [p.map, desktop])
+
   const flyOffset = useCallback((): [number, number] => {
     if (desktop) return [0, 0]
     return [0, -(vv?.keyboard ?? 0) / 2]
@@ -373,7 +380,7 @@ export default function Dock(p: GameShellProps) {
       <style>
         {desktop
           ? `.maplibregl-ctrl-bottom-right{right:${panel ? PANEL_W + 24 : 8}px!important;bottom:2px!important}.maplibregl-ctrl-attrib{font-size:10px;background:rgba(255,255,255,.55)!important}`
-          : `.maplibregl-ctrl-bottom-right{top:calc(max(env(safe-area-inset-top),12px) + 46px)!important;bottom:auto!important;right:4px!important}.maplibregl-ctrl-attrib{font-size:9px;background:rgba(255,255,255,.55)!important}`}
+          : `.maplibregl-ctrl-bottom-right{top:calc(max(env(safe-area-inset-top),12px) + 46px)!important;bottom:auto!important;right:4px!important}.maplibregl-ctrl-attrib{font-size:9px;background:rgba(255,255,255,.55)!important}.maplibregl-ctrl-attrib:not(.maplibregl-compact-show) .maplibregl-ctrl-attrib-inner{display:none}.maplibregl-ctrl-attrib:not(.maplibregl-compact-show){background:transparent!important;min-height:24px}`}
       </style>
       <div className="relative h-full w-full">{p.mapSlot}</div>
 
