@@ -175,6 +175,7 @@ function layoutLineWith(
       trunkScore = score
     }
   }
+
   const firstC = trunk.map((n) => coords[n]).find(Boolean)
   const lastC = trunk.map((n) => coords[n]).reverse().find(Boolean)
   if (firstC && lastC) {
@@ -269,7 +270,15 @@ function layoutLineWith(
       }
       // the shorter of the two routes between A and B goes first
       const between = idx(B) - idx(A) - 1
-      order.splice(shortFirst && run.length < between ? idx(A) + 1 : idx(B), 0, ...run)
+      // shorter of the two routes first; but a short route whose ends are far
+      // apart in the order (B placed much later) goes next to the end it is
+      // geographically near, or its link trails past everything in between
+      // (Thameslink's Purley, between Redhill and South Croydon, sat after
+      // Redhill and pushed Gatwick Airport out a lane at Horley)
+      const dA = dist(coords[run[0]], coords[A])
+      const dB = dist(coords[run[run.length - 1]], coords[B])
+      const nearB = !isNaN(dA) && !isNaN(dB) && dB * 3 < dA && between > 2 * run.length + 4
+      order.splice(shortFirst && run.length < between && !nearB ? idx(A) + 1 : idx(B), 0, ...run)
       segs.push({ stations: run, top: A, bottom: B })
       addDrawn(A, run[0])
       for (let k = 1; k < run.length; k++) addDrawn(run[k - 1], run[k])
